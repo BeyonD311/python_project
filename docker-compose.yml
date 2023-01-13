@@ -1,0 +1,57 @@
+version: '3.9'
+
+services:
+  app:
+    container_name: project-app
+    build: 
+      context: .
+      dockerfile: docker/app/Dockerfile
+    volumes:
+      - "./:/app/"
+    links:
+      - db
+      - redis
+    ports:
+      - 8000:8000
+    networks:
+      - project
+  redis:
+    container_name: project-redis
+    build: 
+      context: .
+      dockerfile: docker/redis/Dockerfile
+    networks:
+      - project
+  db:
+    container_name: project-db
+    build: 
+      context: .
+      dockerfile: docker/db/Dockerfile
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./database/migration:/docker-entrypoint-initdb.d
+      - ./database_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U project -d project"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    networks:
+      - project
+
+networks: 
+  project:
+    driver: "bridge"
