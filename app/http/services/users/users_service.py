@@ -1,6 +1,6 @@
 from uuid import uuid4
 from typing import Iterator
-from database import UserRepository, UserModel
+from app.database import UserRepository, UserModel
 
 
 class UserService:

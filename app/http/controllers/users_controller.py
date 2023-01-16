@@ -1,14 +1,16 @@
 from fastapi import Depends, APIRouter, HTTPException, Response, status
 from dependency_injector.wiring import inject, Provide
-import kernel
-from app.services.users import UserService
+import app.kernel as kernel
+from app.http.services.users import UserService
+from app.http.services import UserLoginParams
+
+print(UserLoginParams)
 
 route = APIRouter(
     prefix="/users",
     tags=['users'],
     responses={404: {"description": "Not found"}}
 )
-
 
 @route.get("/")
 async def get_users():
@@ -18,4 +20,4 @@ async def get_users():
 @inject
 async def get_user_id(id: int, user_service: UserService = Depends(Provide[kernel.Container.user_service])):
     user_service.create_user()
-    return user_service.get_users(), id
+    return user_service.get_users(), id 

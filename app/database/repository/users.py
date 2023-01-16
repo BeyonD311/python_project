@@ -1,5 +1,5 @@
 from .super import SuperRepository, NotFoundError
-from database.models import UserModel as User
+from app.database.models import UserModel as User
 from typing import Iterator
 
 class UserRepository(SuperRepository):
