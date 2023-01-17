@@ -2,9 +2,6 @@ from fastapi import Depends, APIRouter, HTTPException, Response, status
 from dependency_injector.wiring import inject, Provide
 import app.kernel as kernel
 from app.http.services.users import UserService
-from app.http.services import UserLoginParams
-
-print(UserLoginParams)
 
 route = APIRouter(
     prefix="/users",
