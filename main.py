@@ -2,7 +2,7 @@ from dotenv import load_dotenv, find_dotenv
 from fastapi import FastAPI, Request
 from dependency_injector.wiring import register_loader_containers
 from starlette.middleware.cors import CORSMiddleware
-from app.http.middleware.auth_middleware import Auth
+from app.http.middleware.auth_middleware import Auth, ProcessTime
 find_dotenv()
 load_dotenv()   
 
@@ -37,6 +37,7 @@ app.add_middleware(
 )
 
 app.add_middleware(Auth)
+app.add_middleware(ProcessTime)
 
 modules = import_modules_controller(container) 
 
