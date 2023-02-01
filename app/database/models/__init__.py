@@ -1,2 +1,3 @@
 from .users import UserModel
-__all__ = ['UserModel']
+from .departments import DepartmentsModel
+__all__ = ['UserModel', 'DepartmentsModel']

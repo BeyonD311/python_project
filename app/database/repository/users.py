@@ -3,9 +3,9 @@ from app.database.models import UserModel as User
 from typing import Iterator
 
 class UserRepository(SuperRepository):
-    def get_all(self) -> Iterator[User]:
+    def get_all(self, limit: int = 100, offset: int = 1) -> Iterator[User]:
         with self.session_factory() as session:
-            return session.query(User).all()
+            return session.query(User).slice(offset, limit).all()
 
     def get_by_id(self, user_id: int) -> User:
         with self.session_factory() as session:
