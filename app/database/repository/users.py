@@ -22,9 +22,9 @@ class UserRepository(SuperRepository):
             session.delete(entity)
             session.commit()
 
-    def add(self, email: str, password: str, is_active: bool = True) -> User:
+    def add(self, email: str, password: str, is_active: bool = True, user_name: str = "test") -> User:
         with self.session_factory() as session:
-            user = User(email=email, hashed_password=password, is_active=is_active)
+            user = User(email=email, hashed_password=password, is_operator=is_active, user_name = user_name)
             session.add(user)
             session.commit()
             session.refresh(user)

@@ -6,15 +6,15 @@ class UserModel(Base):
     id = Column(Integer, primary_key=True)
     email = Column(String, unique=True)
     hashed_password = Column(String)
-    name = Column(String, VARCHAR(length=50))
-    last_name = Column(String, VARCHAR(length=50))
-    patronymic = Column(String, VARCHAR(length=50))
-    user_name = Column(String, VARCHAR(length=50))
+    name = Column(String)
+    last_name = Column(String)
+    patronymic = Column(String)
+    user_name = Column(String)
     is_operator = Column(Boolean, default=False)
     def __repr__(self):
         return f"<User(id={self.id}, " \
                f"email=\"{self.email}\", " \
                f"hashed_password=\"{self.hashed_password}\", " \
-               f"is_active={self.is_active})>"
+               f"is_operator={self.is_operator})>"
 
 
