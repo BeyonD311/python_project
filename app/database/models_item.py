@@ -1,5 +1,4 @@
-from datetime import datetime
-from sqlalchemy import Column, String, Boolean, BIGINT, SMALLINT, Integer, TIMESTAMP, ForeignKey
+from sqlalchemy import Column, String, Boolean, BIGINT, SMALLINT, Integer, TIMESTAMP, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.kernel.database import Base
@@ -25,7 +24,7 @@ class UserModel(Base):
     created_at = Column(TIMESTAMP,server_default=func.now())
     updated_at = Column(TIMESTAMP,server_default=func.now(),onupdate=func.now()) 
     # Relationships
-    deparment = relationship("DepartmentsModel") 
+    deparment = relationship("DepartmentsModel")
     def __repr__(self): 
         return f"<User(id={self.id}, " \
                f"email=\"{self.email}\", " \
@@ -45,3 +44,12 @@ class UserModel(Base):
                f"updated_at={self.updated_at})>"
 
 
+class DepartmentsModel(Base):
+    
+    __tablename__ = "departments"
+
+    id = Column(SMALLINT, primary_key=True)
+    name = Column(String(30))
+    def __repr__(self) -> str:
+        return f"<Departments(id={self.id}, " \
+            f"name={self.name})>"
