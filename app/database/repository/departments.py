@@ -3,15 +3,13 @@ from app.database import DepartmentsModel
 from typing import Iterator
 
 class DeparmentsRepository(SuperRepository):
+
+    base_model = SuperRepository
+
     def get_all(self) -> Iterator[DepartmentsModel]:
-        with self.session_factory() as session:
-            return session.query(DepartmentsModel).all()
+        return super().get_all()
     def get_by_id(self, department_id: int) -> DepartmentsModel:
-        with self.session_factory() as session:
-            department = session.query(DepartmentsModel).filter(DepartmentsModel.id == department_id).first()
-            if not department:
-                raise DeparmentNotFound(department_id)
-            return department
+        return super().get_by_id(department_id)
 
 class DeparmentNotFound(NotFoundError):
     entity_name: str = "department"

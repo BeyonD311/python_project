@@ -1,16 +1,11 @@
-from sqlalchemy import Boolean, Column, ForeignKey
+from sqlalchemy import Boolean, Column, ForeignKey, Integer
 from app.kernel.database import Base
 
 class UserRoles(Base):
-
     __tablename__ = "user_roles"
 
-    user_id = Column(ForeignKey("user.id"))
-    role_id = Column(ForeignKey("roles.id"))
-
-    def __repr__(self) -> str:
-        return "<UserRoles("\
-            f"user_id={self.user_id}"\
-            f"role_id={self.role_id}"\
-            ")>"
+    id = Column('id', Integer, primary_key=True),
+    user_id = Column(ForeignKey("users.id"), primary_key=True)
+    role_id = Column(ForeignKey("roles.id"), primary_key=True)
             
+__all__ = ('UserRoles')

@@ -1,5 +1,4 @@
 from sqlalchemy import String, SMALLINT, Column
-from sqlalchemy.orm import relationship
 from app.kernel.database import Base
 
 class DepartmentsModel(Base):

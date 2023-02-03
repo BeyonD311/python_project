@@ -4,24 +4,19 @@ from app.database import UserModel as User
 from typing import Iterator
 
 class UserRepository(SuperRepository):
-    def get_all(self, start: int = 0, end: int = 1) -> Iterator[User]:
+    base_model = User
+    
+    def get_all(self, offset, limit) -> dict[User]:
         with self.session_factory() as session:
-            return session.query(User).slice(start, end).all()
+            result = self.get_pagination(session, offset, limit)
+            result['items'] = session.query(self.base_model).limit(limit).offset(offset).all()
+            return result
 
     def get_by_id(self, user_id: int) -> User:
-        with self.session_factory() as session:
-            user = session.query(User).filter(User.id == user_id).first()
-            if not user:
-                raise UserNotFoundError(user_id)
-            return user
+        return super().get_by_id(user_id)
 
-    def delete_by_id(self, user_id: int) -> None:
-        with self.session_factory() as session:
-            entity: User = session.query(User).filter(User.id == user_id).first()
-            if not entity:
-                raise UserNotFoundError(user_id)
-            session.delete(entity)
-            session.commit()
+    def update(self):
+        return "this update"
 
     def add(self, 
     email: str, 

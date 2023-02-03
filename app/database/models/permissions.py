@@ -1,15 +1,15 @@
 from sqlalchemy import String, SMALLINT, Column
+from sqlalchemy.orm import relationship
 from app.kernel.database import Base
 
-class Departments(Base):
+class PermissionsAccessModel(Base):
     
-    __tablename__ = "departments"
+    __tablename__ = "permissions"
 
     id = Column(SMALLINT, primary_key=True)
     module_name = Column(String(40))
     name = Column(String(40))
-    method_access = Column(String(10), default='0000')
-
+    roles = relationship("RolesModel", secondary="roles_permission", back_populates="permissions")
     def __repr__(self) -> str:
         return f"<Departments(id={self.id}, " \
             f"module_name={self.module_name}"\

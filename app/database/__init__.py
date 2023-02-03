@@ -1,2 +1,2 @@
-from .models_item import UserModel, DepartmentsModel
+from .models import *
 from .repository import *

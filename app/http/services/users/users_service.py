@@ -1,15 +1,19 @@
 from uuid import uuid4
-from typing import Iterator
 from app.database import UserRepository, UserModel
 from datetime import datetime
-
 
 class UserService:
     def __init__(self, user_repository: UserRepository) -> None:
         self._repository: UserRepository = user_repository
 
-    def get_all(self, start: int = 1, end: int = 100) -> Iterator[UserModel]:
-        result = self._repository.get_all(start, end)
+    def get_all(self, offset: int = 1, limit: int = 100):
+        result = self._repository.get_all(offset, limit)
+        for user in result['items']:
+            del user.hashed_password
+            user.deparment
+            user.roles
+            user.position
+            user.group_user
         return result
 
     def get_user_by_id(self, user_id: int) -> UserModel:
@@ -28,3 +32,5 @@ class UserService:
 
     def delete_user_by_id(self, user_id: int) -> None:
         return self._repository.delete_by_id(user_id)
+
+__all__ = ('UserService')

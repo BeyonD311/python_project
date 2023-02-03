@@ -1,7 +1,7 @@
 from sqlalchemy import String, SMALLINT, Column
 from app.kernel.database import Base
 
-class Position(Base):
+class PositionModel(Base):
 
     __tablename__ = "position"
 

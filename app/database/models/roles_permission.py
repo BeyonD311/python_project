@@ -1,15 +1,15 @@
-from sqlalchemy import Boolean, Column, ForeignKey
+from sqlalchemy import Boolean, Column, ForeignKey, String
 from app.kernel.database import Base
 
 class RolesPermission(Base):
 
     __tablename__ = "roles_permission"
 
-    role_id = Column(ForeignKey("roles.id"))
-    module_id = Column(ForeignKey("module_id"))
+    role_id = Column(ForeignKey("roles.id"), primary_key=True)
+    module_id = Column(ForeignKey("permissions.id"), primary_key=True)
     is_active = Column(Boolean, default=True)
     is_available = Column(Boolean, default=True)
-
+    method_access = Column(String(10), default='0000')
     def __repr__(self) -> str:
         return "<RolesPermission("\
             f"role_id={self.role_id}"\

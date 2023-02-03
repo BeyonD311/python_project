@@ -21,3 +21,11 @@ class Container(containers.DeclarativeContainer):
         DatabaseCustom.DeparmentsRepository,
         session_factory=db.provided.session,
     )
+    position_repository = providers.Factory(
+        DatabaseCustom.PositionRepository,
+        session_factory=db.provided.session,
+    )
+    groups_repository = providers.Factory(
+        DatabaseCustom.GroupsRepository,
+        session_factory=db.provided.session,
+    )
