@@ -28,6 +28,7 @@ class Database:
     @contextmanager
     def session(self) -> Callable[..., AbstractContextManager[Session]]:
         session: Session = self._session_factory()
+        self.event_listner(session=session)
         try:
             yield session
         except Exception:
@@ -36,5 +37,10 @@ class Database:
             session.rollback()
             raise
         finally:
-            # session.close()
-            ...
+            if session.event == "after_commit":
+                session.close()
+    def event_listner(self, session: Session):
+        session.event = None
+        @event.listens_for(session, "after_commit")
+        def functest(session):
+            session.event = "after_commit"

@@ -7,7 +7,7 @@ from logging import Logger, log
 route = APIRouter(
     prefix="/users",
     tags=['users'],
-    responses={404: {"description": "Not found"}}
+    responses={404: {"description": "Not found"}} 
 )
 
 @route.get("/")
@@ -15,15 +15,14 @@ route = APIRouter(
 async def get_users(user_service: UserService = Depends(Provide[kernel.Container.user_service])):
     result = []
     try: 
-        for user in user_service.get_all(0, 1):
+        for user in user_service.get_all(0, 100):
             print(user.deparment)
             result.append(user)
     except Exception as e:
         print(e)
-    return result
+    return result 
 
 @route.get("/{id}")
 @inject
 async def get_user_id(id: int, user_service: UserService = Depends(Provide[kernel.Container.user_service])):
-    user_service.create_user()
-    return user_service.get_all(0, 100), id 
+    return user_service.create_user()
