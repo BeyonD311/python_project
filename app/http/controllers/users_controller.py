@@ -10,7 +10,7 @@ route = APIRouter(
     responses={404: {"description": "Not found"}} 
 )
 
-@route.get("/", status_code = 200, response_model=ResponseList)
+@route.get("/", status_code = 200)
 @inject
 async def get_users(
     response: Response,

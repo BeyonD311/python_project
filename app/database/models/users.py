@@ -5,14 +5,14 @@ from app.kernel.database import Base
 
 class UserModel(Base):
     __tablename__ = "users"
-    id = Column(BIGINT, primary_key=True)
-    email = Column(String, unique=True)
+    id = Column(BIGINT, primary_key=True, autoincrement='ignore_fk')
+    email = Column(String, unique=True, nullable = False)
     hashed_password = Column(String)
     password = Column(String)
-    name = Column(String)
+    name = Column(String) 
     last_name = Column(String)
     patronymic = Column(String,nullable=True)
-    login = Column(String)
+    login = Column(String, unique=True, nullable = False)
     is_operator = Column(Boolean, default = False)
     phone = Column(String(15), nullable=True)
     inner_phone = Column(Integer, nullable=True)

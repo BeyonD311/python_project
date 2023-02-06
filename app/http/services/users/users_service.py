@@ -1,6 +1,6 @@
 from hashlib import sha256
 from app.database.repository import UserRepository
-from app.database import UserModel, DepartmentsModel
+from app.database import UserModel, DepartmentsModel, UserRoles
 from app.http.services.users.user_base_models import UserResponse, ResponseList, UserRequestCreateUser
 
 class UserService:
@@ -50,9 +50,11 @@ class UserService:
         user_create.inner_phone = user.inner_phone
         user_create.login = user.login
         user_create.password = user.password
+        user_create.email = user.email
         user_create.date_employment_at = user.date_employment_at
-        # user_create.roles = user.roles_id
+        user_create.roles_id = user.roles_id
         return self._repository.add(user_create)
+        return "add user"
 
     def delete_user_by_id(self, user_id: int) -> None:
         return self._repository.delete_by_id(user_id)

@@ -1,6 +1,5 @@
 from .super import SuperRepository, NotFoundError
-from app.database.models.users import UserModel as User
-
+from app.database import UserModel as User, UserRoles, RolesModel
 
 class UserRepository(SuperRepository): 
     base_model = User
@@ -19,11 +18,13 @@ class UserRepository(SuperRepository):
 
     def add(self, user_model: User) -> any:
        with self.session_factory() as session:
-           
-           add = session.add(user_model)
-           print(add)
-           session.commit()
-           session.flush(user_model)
+            user = user_model
+            roles = session.query(RolesModel).filter(RolesModel.id.in_(user.roles_id)).all()
+            [user.roles.append(r) for r in roles]
+            session.add(user)
+            session.commit()
+            return user
+
 
 class UserNotFoundError(NotFoundError):
     entity_name: str = "User"
