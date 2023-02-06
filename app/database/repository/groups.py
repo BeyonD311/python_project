@@ -1,5 +1,5 @@
 from .super import SuperRepository, NotFoundError
-from app.database import GroupsModel
+from app.database.models import GroupsModel
 
 class GroupsRepository(SuperRepository):
     base_model = GroupsModel

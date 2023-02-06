@@ -41,6 +41,8 @@ class UserModel(Base):
                f"phone={self.phone}"\
                f"inner_phone={self.inner_phone}"\
                f"photo_path={self.photo_path}"\
+               f"deparment_id={self.department_id}"\
+               f"position_id={self.position_id}"\
                f"date_employment_at={self.date_employment_at}"\
                f"date_dismissal_at={self.date_dismissal_at}"\
                f"created_at={self.created_at}"\

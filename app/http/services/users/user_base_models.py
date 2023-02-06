@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
+from app.http.services.dto import BaseDTO
+from app.database.repository.super import Pagination
 
 class UserLoginParams(BaseModel):
     login: str
@@ -8,38 +10,45 @@ class UserLoginParams(BaseModel):
 """ Поля пользователя """
 class UserResponse(BaseModel):
     id: int = None
-    email: str = None
-    password: str = None
     name: str = None
     last_name: str = None
     patronymic: str = None
-    login: str = None
-    is_operator: bool = None
+    inner_phone: int = None
+    deparment: str = None
+    position: str = None
+
+class UserRequestCreateUser(BaseModel):
+    email: str = None
+    password: str
+    name: str
+    last_name: str
+    patronymic: str
+    login: str
+    is_operator: bool
     phone: str = None
     inner_phone: int = None
-    is_active: bool = True
     photo_path: str = None
+    deparment_id: int
+    position_id: int
+    group_id: list[int]
+    roles_id: list[int]
     date_employment_at: datetime = None
     date_dismissal_at: datetime = None
-    created_at: datetime = None
-    updated_at: datetime = None
 
-class UserRequest(BaseModel):
+
+class ResponseUser(BaseDTO):
     id: int = None
     email: str = None
-    password: str = None
     name: str = None
     last_name: str = None
     patronymic: str = None
-    login: str = None
-    is_operator: bool = None
     phone: str = None
     inner_phone: int = None
     is_active: bool = True
     photo_path: str = None
-    date_employment_at: datetime = None
-    date_dismissal_at: datetime = None
-    created_at: datetime = None
-    updated_at: datetime = None
+    deparment: str = None
+    position: str = None
 
-__all__ = ('UserLoginParams', 'UserResponse', 'UserRequest')
+class ResponseList(BaseModel):
+    pagination: Pagination
+    users: list[UserResponse]

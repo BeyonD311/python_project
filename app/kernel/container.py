@@ -29,3 +29,11 @@ class Container(containers.DeclarativeContainer):
         DatabaseCustom.GroupsRepository,
         session_factory=db.provided.session,
     )
+    roles_repository = providers.Factory(
+        DatabaseCustom.RolesRepository,
+        session_factory=db.provided.session,
+    )
+    roles_service = providers.Factory(
+        services.RolesServices,
+        roles_repository=roles_repository
+    )

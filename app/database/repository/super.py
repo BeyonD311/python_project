@@ -15,7 +15,7 @@ class Pagination(BaseModel):
         return json.dumps(self.__dict__)
 
 class SuperRepository(ABC):
-    """ base_model используется для  """
+    
     base_model = None
 
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]) -> None:

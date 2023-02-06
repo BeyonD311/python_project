@@ -1,5 +1,5 @@
 from .super import SuperRepository, NotFoundError
-from app.database import DepartmentsModel
+from app.database.models import DepartmentsModel
 from typing import Iterator
 
 class DeparmentsRepository(SuperRepository):

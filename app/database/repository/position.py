@@ -1,5 +1,5 @@
 from .super import SuperRepository, NotFoundError
-from app.database import PositionModel
+from app.database.models import PositionModel
 from typing import Iterator
 
 

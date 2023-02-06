@@ -1,9 +1,8 @@
 from fastapi import Depends, APIRouter, HTTPException, Response, status
 from fastapi.responses import JSONResponse
 from dependency_injector.wiring import inject, Provide
-import app.kernel as kernel
-from app.http.services import UserService, factory_base_model, UserResponse
-from pydantic import create_model
+from app.kernel.container import Container
+from app.http.services import UserService, ResponseList, UserRequestCreateUser
 
 route = APIRouter(
     prefix="/users",
@@ -11,13 +10,13 @@ route = APIRouter(
     responses={404: {"description": "Not found"}} 
 )
 
-@route.get("/", status_code = 200)
+@route.get("/", status_code = 200, response_model=ResponseList)
 @inject
 async def get_users(
-    page: int,
-    size: int,
     response: Response,
-    user_service: UserService = Depends(Provide[kernel.Container.user_service])
+    page: int = 1,
+    size: int = 100,
+    user_service: UserService = Depends(Provide[Container.user_service])
     ):
     result = []
     if page == 1 or page <= 0:
@@ -28,7 +27,9 @@ async def get_users(
         result = user_service.get_all(page, size)
     except Exception as e:
         response.status_code = status.HTTP_417_EXPECTATION_FAILED
+        print("error --------------------")
         print(e)
+        print("error --------------------")
         return {
             "status": "fail",
             "message": e
@@ -40,9 +41,8 @@ async def get_users(
 async def get_user_id(
     id: int, 
     response: Response,
-    user_service: UserService = Depends(Provide[kernel.Container.user_service])
+    user_service: UserService = Depends(Provide[Container.user_service])
     ):
-    result = UserResponse()
     try:
         user = user_service.get_user_by_id(id)
         user.deparment
@@ -57,3 +57,8 @@ async def get_user_id(
             "status": "fail",
             "message": "Not found user"
         }
+
+@route.post("/")
+@inject
+async def add_user(item: UserRequestCreateUser, user_service: UserService = Depends(Provide[Container.user_service])):
+    return user_service.create_user(item)
