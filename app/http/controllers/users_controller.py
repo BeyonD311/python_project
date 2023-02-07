@@ -1,10 +1,11 @@
-from fastapi import Depends, APIRouter, HTTPException, Response, status, UploadFile, Body, File
+import inspect
+from fastapi import Depends, APIRouter, HTTPException, Response, status, UploadFile, Body, File, Form
 from typing import List
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 from dependency_injector.wiring import inject, Provide
 from app.kernel.container import Container
-from app.http.services import UserService, ResponseList, UserRequest
+from app.http.services import UserService, UserRequest
 
 route = APIRouter(
     prefix="/users",
@@ -73,21 +74,26 @@ async def add_user(
     is_operator: bool = Body(default=False),
     deparment_id: int = Body(),
     position_id: int = Body(),
-    group_id: List[int] = Body(),
-    roles_id: List[int] = Body(),
+    group_id: List[str] = Body(),
+    roles_id: List[str] = Body(),
     date_employment_at: datetime = Body(default=datetime.now()),
-    date_dismissal_at: datetime = Body(default=datetime.now()),
+    date_dismissal_at: datetime = Body(default=None),
     phone: str = Body(default=None),
-    inner_phone: int = Body(default=None),
-    image: UploadFile = File(default=None),
+    inner_phone: int|str = Body(default=None),
+    image: UploadFile|str = File(default=None),
     user_service: UserService = Depends(Provide[Container.user_service])
     ):
 
-    if image is not None and image.content_type.find("image") == -1:
+    if check_file(image):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {
             "message": "not an image uploaded"
-        }
+        } 
+    if bool(image) == False:
+        image = None
+    if bool(inner_phone) == False:
+        inner_phone = None
+
     user_request = UserRequest(
         email=email,
         password = password,
@@ -99,8 +105,8 @@ async def add_user(
         is_operator = is_operator,
         deparment_id = deparment_id,
         position_id = position_id,
-        group_id = group_id,
-        roles_id = roles_id,
+        group_id = group_id[0].split(","),
+        roles_id = roles_id[0].split(","),
         date_employment_at = date_employment_at,
         phone = phone,
         inner_phone = inner_phone,
@@ -115,11 +121,11 @@ async def add_user(
         }
     return user
 
-@route.put("/")
+@route.put("/{id}")
 @inject
 async def add_user(
+    id: int,
     response: Response,
-    id: int = Body(),
     email: str = Body(),
     password: str = Body(),
     name: str = Body(),
@@ -129,22 +135,28 @@ async def add_user(
     is_operator: bool = Body(default=False),
     deparment_id: int = Body(),
     position_id: int = Body(),
-    group_id: list = Body(),
-    roles_id: list[int] = Body(),
+    group_id: List[str] = Body(),
+    roles_id: List[str] = Body(),
     date_employment_at: datetime = Body(default=datetime.now()),
     date_dismissal_at: datetime = Body(default=datetime.now()),
     phone: str = Body(default=None),
-    inner_phone: int = Body(default=None),
-    image: UploadFile = File(default=None),
+    inner_phone: int|str = Body(default=None),
+    image: UploadFile|str = File(default=None),
     user_service: UserService = Depends(Provide[Container.user_service])
     ):
-    print(roles_id)
-    return 123
-    if image is not None and image.content_type.find("image") == -1:
+    if check_file(image):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {
             "message": "not an image uploaded"
-        }
+        } 
+    if bool(image) == False:
+        image = None
+    if bool(inner_phone) == False:
+        inner_phone = None
+    if len(group_id) > 0:
+        group_id = group_id[0].split(",")
+    if len(roles_id) > 0:
+        roles_id = roles_id[0].split(",")
     user_request = UserRequest(
         id=id,
         email=email,
@@ -172,3 +184,11 @@ async def add_user(
             "message": "Bad request"
         }
     return user
+
+@route.delete("/{id}")
+@inject
+def user_delete(id: int, user_service: UserService = Depends(Provide[Container.user_service])):
+    user_service.delete_user_by_id(id)
+
+def check_file(image):
+    return bool(image) and image.content_type.find("image") == -1

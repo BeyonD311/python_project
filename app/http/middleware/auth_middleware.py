@@ -5,5 +5,4 @@ class Auth(BaseHTTPMiddleware):
         next = await call_next(request)
         if "/auth/login" == request.get("path"):
             return next
-        print(request.cookies)
         return next

@@ -1,5 +1,6 @@
 from pydantic import BaseModel
-from fastapi import UploadFile
+from fastapi import UploadFile,File,Body,Form
+from typing import List
 from datetime import datetime
 from app.http.services.dto import BaseDTO
 from app.database.repository.super import Pagination

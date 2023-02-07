@@ -34,7 +34,7 @@ class UserRepository(SuperRepository):
                 session.commit()
                 user.__delattr__("hashed_password")
                 user.__delattr__("password")
-                return values
+                return user
         except IntegrityError as e:
             os.remove(user_model.photo_path)
             return False, e
@@ -52,7 +52,8 @@ class UserRepository(SuperRepository):
                 user.__delattr__("password")
                 return user
         except IntegrityError as e:
-            os.remove(user_model.photo_path)
+            if user_model.photo_path is not None:
+                os.remove(user_model.photo_path)
             return False, e
 
 class UserNotFoundError(NotFoundError):

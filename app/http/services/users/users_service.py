@@ -41,75 +41,39 @@ class UserService:
         return self._repository.get_by_id(user_id)
 
     def create_user(self, user: UserRequest) -> any:
-        
-        user_create = UserModel()
-        if user.image is not None:
-            chuck_size = 4000
-            file_name = user.image.filename.replace(" ", "_")
-            output_file = f"/app/images/user_image/{file_name}"
-            if os.path.isfile(output_file):
-                os.remove(output_file)
-            file = open(output_file, "wb+")
-            data = user.image.file.read(chuck_size)
-            while(data != b''):
-                file.write(data)
-                data = user.image.file.read(chuck_size)
-            user.image.close()
-            file.close()
-            user_create.photo_path = output_file
-        user_create.hashed_password = sha256(user.password.encode()).hexdigest()
-        user_create.department_id = user.deparment_id
-        user_create.position_id = user.position_id
-        user_create.name = user.name
-        user_create.last_name = user.last_name
-        user_create.patronymic = user.patronymic
-        user_create.inner_phone = user.inner_phone
-        user_create.login = user.login
-        user_create.password = user.password
-        user_create.email = user.email
-        user_create.phone = user.phone
-        user_create.date_employment_at = user.date_employment_at
-        user_create.roles_id = user.roles_id
-        user_create.fio = user.fio
-
-
-        user_create = self._repository.add(user_create)
+        user_create = self._repository.add(self.__fill_fields(user))
         return user_create
     
     def update_user(self, user: UserRequest) -> any:
-        user_create = UserModel()
-        user_create.id = user.id
-        if user.image is not None:
-            chuck_size = 4000
-            file_name = user.image.filename.replace(" ", "_")
-            output_file = f"/app/images/user_image/{file_name}"
-            if os.path.isfile(output_file):
-                os.remove(output_file)
-            file = open(output_file, "wb+")
-            data = user.image.file.read(chuck_size)
-            while(data != b''):
-                file.write(data)
-                data = user.image.file.read(chuck_size)
-            user.image.close()
-            file.close()
-            user_create.photo_path = output_file
-        user_create.hashed_password = sha256(user.password.encode()).hexdigest()
-        user_create.department_id = user.deparment_id
-        user_create.position_id = user.position_id
-        user_create.name = user.name
-        user_create.last_name = user.last_name
-        user_create.patronymic = user.patronymic
-        user_create.inner_phone = user.inner_phone
-        user_create.login = user.login
-        user_create.password = user.password
-        user_create.email = user.email
-        user_create.phone = user.phone
-        user_create.date_employment_at = user.date_employment_at
-        user_create.roles_id = user.roles_id
-        user_create.fio = user.fio
-        return self._repository.update(user_create)
+        return self._repository.update(self.__fill_fields(user))
 
     def delete_user_by_id(self, user_id: int) -> None:
         return self._repository.delete_by_id(user_id)
+    
+    def __save_file(self, image) -> str:
+        chuck_size = 4000
+        file_name = image.filename.replace(" ", "_")
+        output_file = f"/app/images/user_image/{file_name}"
+        if os.path.isfile(output_file):
+            os.remove(output_file)
+        file = open(output_file, "wb+")
+        data = image.file.read(chuck_size)
+        while(data != b''):
+            file.write(data)
+            data = image.file.read(chuck_size)
+        image.close()
+        file.close()
+        return output_file
+    
+    def __fill_fields(self, user: UserRequest):
+        user_create = UserModel()
+        user_fields = user.__dict__
+        if user.image is not None:
+            user_create.photo_path = self.__save_file(user.image)
+        for field in user_fields:
+            user_create.__setattr__(field, user_fields[field])
+        user_create.hashed_password = sha256(user.password.encode()).hexdigest()
+        return user_create
+
 
 __all__ = ('UserService')
