@@ -1,8 +1,10 @@
-from fastapi import Depends, APIRouter, HTTPException, Response, status
-from fastapi.responses import JSONResponse
+from fastapi import Depends, APIRouter, HTTPException, Response, status, UploadFile, Body, File
+from typing import List
+from datetime import datetime
+from sqlalchemy.exc import IntegrityError
 from dependency_injector.wiring import inject, Provide
 from app.kernel.container import Container
-from app.http.services import UserService, ResponseList, UserRequestCreateUser
+from app.http.services import UserService, ResponseList, UserRequest
 
 route = APIRouter(
     prefix="/users",
@@ -60,5 +62,113 @@ async def get_user_id(
 
 @route.post("/")
 @inject
-async def add_user(item: UserRequestCreateUser, user_service: UserService = Depends(Provide[Container.user_service])):
-    return user_service.create_user(item)
+async def add_user(
+    response: Response,
+    email: str = Body(),
+    password: str = Body(),
+    name: str = Body(),
+    last_name: str = Body(),
+    patronymic: str = Body(default=None),
+    login: str = Body(),
+    is_operator: bool = Body(default=False),
+    deparment_id: int = Body(),
+    position_id: int = Body(),
+    group_id: List[int] = Body(),
+    roles_id: List[int] = Body(),
+    date_employment_at: datetime = Body(default=datetime.now()),
+    date_dismissal_at: datetime = Body(default=datetime.now()),
+    phone: str = Body(default=None),
+    inner_phone: int = Body(default=None),
+    image: UploadFile = File(default=None),
+    user_service: UserService = Depends(Provide[Container.user_service])
+    ):
+
+    if image is not None and image.content_type.find("image") == -1:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {
+            "message": "not an image uploaded"
+        }
+    user_request = UserRequest(
+        email=email,
+        password = password,
+        login = login,
+        name = name,
+        last_name = last_name,
+        patronymic = patronymic,
+        fio=f"{name} {last_name} {patronymic}".strip(),
+        is_operator = is_operator,
+        deparment_id = deparment_id,
+        position_id = position_id,
+        group_id = group_id,
+        roles_id = roles_id,
+        date_employment_at = date_employment_at,
+        phone = phone,
+        inner_phone = inner_phone,
+        date_dismissal_at = date_dismissal_at,
+        image = image,
+    )
+    user = user_service.create_user(user_request)
+    if type(user) == tuple:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {
+            "message": "Bad request"
+        }
+    return user
+
+@route.put("/")
+@inject
+async def add_user(
+    response: Response,
+    id: int = Body(),
+    email: str = Body(),
+    password: str = Body(),
+    name: str = Body(),
+    last_name: str = Body(),
+    patronymic: str = Body(default=None),
+    login: str = Body(),
+    is_operator: bool = Body(default=False),
+    deparment_id: int = Body(),
+    position_id: int = Body(),
+    group_id: list = Body(),
+    roles_id: list[int] = Body(),
+    date_employment_at: datetime = Body(default=datetime.now()),
+    date_dismissal_at: datetime = Body(default=datetime.now()),
+    phone: str = Body(default=None),
+    inner_phone: int = Body(default=None),
+    image: UploadFile = File(default=None),
+    user_service: UserService = Depends(Provide[Container.user_service])
+    ):
+    print(roles_id)
+    return 123
+    if image is not None and image.content_type.find("image") == -1:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {
+            "message": "not an image uploaded"
+        }
+    user_request = UserRequest(
+        id=id,
+        email=email,
+        password = password,
+        login = login,
+        name = name,
+        last_name = last_name,
+        patronymic = patronymic,
+        fio=f"{name} {last_name} {patronymic}".strip(),
+        is_operator = is_operator,
+        deparment_id = deparment_id,
+        position_id = position_id,
+        group_id = group_id,
+        roles_id = roles_id,
+        date_employment_at = date_employment_at,
+        phone = phone,
+        inner_phone = inner_phone,
+        date_dismissal_at = date_dismissal_at,
+        image = image,
+    )
+    user = user_service.update_user(user_request)
+    if type(user) == tuple:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {
+            "message": "Bad request"
+        }
+    return user

@@ -9,14 +9,15 @@ class UserModel(Base):
     email = Column(String, unique=True, nullable = False)
     hashed_password = Column(String)
     password = Column(String)
-    name = Column(String) 
-    last_name = Column(String)
+    name = Column(String, nullable=False) 
+    last_name = Column(String, nullable=False)
     patronymic = Column(String,nullable=True)
+    fio = Column(String)
     login = Column(String, unique=True, nullable = False)
     is_operator = Column(Boolean, default = False)
-    phone = Column(String(15), nullable=True)
+    phone = Column(String(25), nullable=True)
     inner_phone = Column(Integer, nullable=True)
-    is_active = Column(Boolean, default = True)
+    is_active = Column(Boolean, default = True) 
     photo_path = Column(String, nullable=True)
     department_id = Column(SMALLINT, ForeignKey('departments.id'))
     position_id = Column(SMALLINT, ForeignKey('position.id'))
@@ -30,9 +31,9 @@ class UserModel(Base):
     group_user = relationship("GroupsModel", secondary='user_groups', back_populates="users")
     roles = relationship("RolesModel", secondary='user_roles', back_populates="users")
     def __repr__(self): 
-        return f"<User(id={self.id}, " \
-               f"email=\"{self.email}\", " \
-               f"hashed_password=\"{self.hashed_password}\", " \
+        return f"<User(id={self.id}" \
+               f"email=\"{self.email}\"" \
+               f"hashed_password=\"{self.hashed_password}\"" \
                f"is_active={self.is_active}"\
                f"name={self.name}"\
                f"last_name={self.last_name}"\

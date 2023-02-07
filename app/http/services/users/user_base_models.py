@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from fastapi import UploadFile
 from datetime import datetime
 from app.http.services.dto import BaseDTO
 from app.database.repository.super import Pagination
@@ -17,17 +18,19 @@ class UserResponse(BaseModel):
     deparment: str = None
     position: str = None
 
-class UserRequestCreateUser(BaseModel):
+class UserRequest(BaseModel):
+    id: int = None
     email: str = None
-    password: str
+    password: str = None
     name: str
     last_name: str
-    patronymic: str
+    patronymic: str = None
+    fio: str
     login: str
     is_operator: bool
     phone: str = None
     inner_phone: int = None
-    photo_path: str = None
+    image: UploadFile = None
     deparment_id: int
     position_id: int
     group_id: list[int]
