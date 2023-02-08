@@ -15,15 +15,21 @@ class UserService:
         for user in result['items']:
             user.deparment
             position = None
+            
             if user.position is not None:
                 position = user.position.name
+            else: 
+                position = None
+            if user.deparment is not None:
+                deparment = user.deparment.name
+            else:
+                deparment = None
+            
             user = UserResponse(
                 id = user.id, 
-                name = user.name, 
-                last_name = user.last_name, 
-                patronymic = user.patronymic,
+                fio = user.fio,
                 inner_phone = user.inner_phone,
-                deparment = user.deparment.name,
+                deparment = deparment,
                 position = position
             )
             users.append(user)
@@ -39,6 +45,9 @@ class UserService:
             user.__delattr__("password")
             user.__delattr__("hashed_password")
         return self._repository.get_by_id(user_id)
+
+    def find_user_by_login(self, login: str):
+        return self._repository.get_by_login(login)
 
     def create_user(self, user: UserRequest) -> any:
         user_create = self._repository.add(self.__fill_fields(user))

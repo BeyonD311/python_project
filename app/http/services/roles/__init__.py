@@ -1,1 +1,1 @@
-from .roles import RolesServices
+from .roles import RolesServices, RolesPermission

@@ -11,9 +11,12 @@ class RolesModel(Base):
     is_active = Column(Boolean, default=True)
     users = relationship("UserModel", secondary="user_roles", back_populates = "roles")
     permissions = relationship("PermissionsAccessModel", secondary="roles_permission", back_populates = "roles")
+    permission_model = relationship("RolesPermission")
     def __repr__(self) -> str:
         return f"<Roles(id={self.id}, " \
             f"name={self.name}, " \
-            f"is_active={self.is_active})>"
+            f"is_active={self.is_active}"\
+            f"permissions={self.permissions}"\
+            f"permission_model={self.permission_model})>"
 
 __all__ = ("RolesModel")

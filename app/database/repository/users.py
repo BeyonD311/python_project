@@ -12,6 +12,13 @@ class UserRepository(SuperRepository):
             result['items'] = session.query(self.base_model).limit(limit).offset(offset).all()
             return result
 
+    def get_by_login(self, login: str) -> User:
+        with self.session_factory() as session:
+            user = session.query(self.base_model).filter(self.base_model.login == login).first()
+            if user is None:
+                raise UserNotFoundError(login)
+            return user
+
     def get_by_id(self, user_id: int) -> User:
         return super().get_by_id(user_id)
 

@@ -12,9 +12,7 @@ class UserLoginParams(BaseModel):
 """ Поля пользователя """
 class UserResponse(BaseModel):
     id: int = None
-    name: str = None
-    last_name: str = None
-    patronymic: str = None
+    fio: str = None
     inner_phone: int = None
     deparment: str = None
     position: str = None

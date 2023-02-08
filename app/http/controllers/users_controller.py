@@ -1,11 +1,11 @@
 import inspect
-from fastapi import Depends, APIRouter, HTTPException, Response, status, UploadFile, Body, File, Form
+from fastapi import Depends, APIRouter, Response, status, UploadFile, Body, File
 from typing import List
 from datetime import datetime
-from sqlalchemy.exc import IntegrityError
 from dependency_injector.wiring import inject, Provide
 from app.kernel.container import Container
 from app.http.services import UserService, UserRequest
+from app.database import NotFoundError
 
 route = APIRouter(
     prefix="/users",
@@ -18,7 +18,7 @@ route = APIRouter(
 async def get_users(
     response: Response,
     page: int = 1,
-    size: int = 100,
+    size: int = 10,
     user_service: UserService = Depends(Provide[Container.user_service])
     ):
     result = []
@@ -35,7 +35,7 @@ async def get_users(
         print("error --------------------")
         return {
             "status": "fail",
-            "message": e
+            "message": str(e)
         }
     return result
 
@@ -93,6 +93,10 @@ async def add_user(
         image = None
     if bool(inner_phone) == False:
         inner_phone = None
+    if len(group_id) > 0:
+        group_id = group_id[0].split(",")
+    if len(roles_id) > 0:
+        roles_id = roles_id[0].split(",")
 
     user_request = UserRequest(
         email=email,
@@ -105,8 +109,8 @@ async def add_user(
         is_operator = is_operator,
         deparment_id = deparment_id,
         position_id = position_id,
-        group_id = group_id[0].split(","),
-        roles_id = roles_id[0].split(","),
+        group_id = group_id,
+        roles_id = roles_id,
         date_employment_at = date_employment_at,
         phone = phone,
         inner_phone = inner_phone,
@@ -187,8 +191,16 @@ async def add_user(
 
 @route.delete("/{id}")
 @inject
-def user_delete(id: int, user_service: UserService = Depends(Provide[Container.user_service])):
-    user_service.delete_user_by_id(id)
+def user_delete(id: int, response: Response, user_service: UserService = Depends(Provide[Container.user_service])):
+    try:
+        return user_service.delete_user_by_id(id)
+    except NotFoundError as e:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {
+            "message": str(e)
+        }
 
 def check_file(image):
     return bool(image) and image.content_type.find("image") == -1
+    
+    
