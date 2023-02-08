@@ -3,7 +3,7 @@ import jwt
 from hashlib import sha256
 from fastapi import APIRouter, Depends, status, Response, Request
 from dependency_injector.wiring import Provide, inject
-from app.http.services import UserLoginParams, UserService, JwtManagement, RolesPermission
+from app.http.services import UserLoginParams, UserService, JwtManagement, RolesPermission, TokenInBlackList, TokenNotFound
 from app.database import NotFoundError
 from app.kernel import Container
 
@@ -12,18 +12,27 @@ route = APIRouter(
     tags=['auth'],
 )
 
-@route.get("/refresh")
+@route.get("/logout")
 @inject
-async def login(
+async def logout(
     request: Request,
     response: Response,
     user_servive: UserService = Depends(Provide[Container.user_service]),
     jwt_m: JwtManagement = Depends(Provide[Container.jwt])):
     try:
-        access_token = request.headers.get('authorization').replace("Bearer ", "")
+        access_token = request.headers.get('authorization').replace("Bearer", "").strip()
         decode = jwt.decode(access_token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
-        user = user_servive.get_user_by_id(decode['azp'])
-        
+        user = user_servive.get_user_by_id(decode['azp'], True)
+        jwt_gen = await jwt_m.generate(user)
+        async with jwt_gen as j:
+            tokens = await j.get_tokens() 
+            await j.add_to_black_list(tokens['access_token'])
+            await j.add_to_black_list(tokens['refresh_token'])
+            await j.remove_token()
+            return {
+                "message": "logout success"
+            }
+            
     except jwt.exceptions.InvalidSignatureError as e:
         response.status_code = status.HTTP_409_CONFLICT
         return {
@@ -33,6 +42,55 @@ async def login(
         response.status_code = status.HTTP_404_NOT_FOUND
         return {
             "massage": "user not found"
+        }
+    except TokenInBlackList as e:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {
+            "massage": str(e)
+        }
+    except TokenNotFound as e:
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return {
+            "massage": "Pleace auth"
+        }
+
+@route.get("/refresh")
+@inject
+async def refresh(
+    request: Request,
+    response: Response,
+    user_servive: UserService = Depends(Provide[Container.user_service]),
+    jwt_m: JwtManagement = Depends(Provide[Container.jwt])):
+    try:
+        access_token = request.headers.get('authorization').replace("Bearer", "").strip()
+        decode = jwt.decode(access_token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
+        user = user_servive.get_user_by_id(decode['azp'], True)
+        jwt_gen = await jwt_m.generate(user)
+        async with jwt_gen as j:
+            await j.get_tokens()
+            await j.add_to_black_list(access_token)
+            tokens = await j.tokens()
+            return tokens
+            
+    except jwt.exceptions.InvalidSignatureError as e:
+        response.status_code = status.HTTP_409_CONFLICT
+        return {
+            "message": str(e)
+        }
+    except NotFoundError as e:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {
+            "massage": "user not found"
+        }
+    except TokenInBlackList as e:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {
+            "massage": str(e)
+        }
+    except TokenNotFound as e:
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return {
+            "massage": "Pleace auth"
         }
     
 @route.post("/login")
