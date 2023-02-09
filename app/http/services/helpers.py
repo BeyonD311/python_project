@@ -10,6 +10,8 @@ class Access(BaseModel):
     read: bool
     update: bool
     delete: bool
+    map: dict
+
     def __str__(self):
         self.create = int(self.create)
         self.read = int(self.read)
@@ -26,5 +28,12 @@ def parse_access(str_model: str) -> Access:
         create=modules[0],
         read=modules[1],
         update=modules[2],
-        delete=modules[3]
+        delete=modules[3],
+        map={
+            "get": modules[1],
+            "post": modules[0],
+            "put": modules[2],
+            "patch": modules[2],
+            "delete": modules[3]
+        }
     )

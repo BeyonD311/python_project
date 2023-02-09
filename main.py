@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from dependency_injector.wiring import register_loader_containers
 from starlette.middleware.cors import CORSMiddleware
 from app.http.middleware.auth_middleware import Auth
+
 find_dotenv()
 load_dotenv()   
 
@@ -20,6 +21,7 @@ def import_modules_controller(container):
             nameSplit = module_name.split("_")
             routes[nameSplit[0]] = module.__dict__['route']
     return routes
+
 
 container = create_container()
 db = container.db()

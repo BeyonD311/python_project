@@ -1,11 +1,14 @@
-import inspect
+import re
 from fastapi import Depends, APIRouter, Response, status, UploadFile, Body, File
 from typing import List
 from datetime import datetime
 from dependency_injector.wiring import inject, Provide
 from app.kernel.container import Container
-from app.http.services import UserService, UserRequest
+from app.http.services import UserService, UserRequest, UsersFilter, UserParams
 from app.database import NotFoundError
+from fastapi.security import HTTPBearer
+
+security = HTTPBearer()
 
 route = APIRouter(
     prefix="/users",
@@ -19,32 +22,52 @@ async def get_users(
     response: Response,
     page: int = 1,
     size: int = 10,
-    user_service: UserService = Depends(Provide[Container.user_service])
+    sort_field: str = 'id',
+    sort_dir: str = 'asc',
+    filter: str = None,
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
-    result = []
+    """ 
+    описание полей \n
+        ** fileter - должен содержать строку типа fio=Фамилия имя отчестов;login=логин пользователя;status=id статуса;
+     """
+    
     if page == 1 or page <= 0:
         page = 0
     else:
         page = page - 1
+    params = UserParams(
+        page=page,
+        size=size,
+        sort_field=sort_field,
+        sort_dir=sort_dir
+    )
+    if filter is not None:
+        reg = r'([a-z]*)(=)([А-Яа-яa-zA-Z?\s]*)'
+        user_filter = UsersFilter
+        result = re.findall(reg,filter) 
+        for r in result:
+            if r in user_filter.__fields__:
+                user_filter.__setattr__(r[0], r[2])
+        params.filter = user_filter
     try: 
-        result = user_service.get_all(page, size)
+        return user_service.get_all(params=params) 
     except Exception as e:
         response.status_code = status.HTTP_417_EXPECTATION_FAILED
-        print("error --------------------")
-        print(e)
-        print("error --------------------")
         return {
             "status": "fail",
             "message": str(e)
         }
-    return result
+    
 
 @route.get("/{id}")
 @inject
 async def get_user_id(
     id: int, 
     response: Response,
-    user_service: UserService = Depends(Provide[Container.user_service])
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
     try:
         user = user_service.get_user_by_id(id)
@@ -77,13 +100,13 @@ async def add_user(
     group_id: List[str] = Body(),
     roles_id: List[str] = Body(),
     date_employment_at: datetime = Body(default=datetime.now()),
-    date_dismissal_at: datetime = Body(default=None),
+    date_dismissal_at: datetime|str = Body(default=None),
     phone: str = Body(default=None),
     inner_phone: int|str = Body(default=None),
-    image: UploadFile|str = File(default=None),
-    user_service: UserService = Depends(Provide[Container.user_service])
+    image: UploadFile|None = File(default=None),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
-
     if check_file(image):
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {
@@ -93,6 +116,8 @@ async def add_user(
         image = None
     if bool(inner_phone) == False:
         inner_phone = None
+    if bool(date_dismissal_at) == False:
+        date_dismissal_at = None
     if len(group_id) > 0:
         group_id = group_id[0].split(",")
     if len(roles_id) > 0:
@@ -127,7 +152,7 @@ async def add_user(
 
 @route.put("/{id}")
 @inject
-async def add_user(
+async def update_user(
     id: int,
     response: Response,
     email: str = Body(),
@@ -142,11 +167,12 @@ async def add_user(
     group_id: List[str] = Body(),
     roles_id: List[str] = Body(),
     date_employment_at: datetime = Body(default=datetime.now()),
-    date_dismissal_at: datetime = Body(default=datetime.now()),
+    date_dismissal_at: datetime|str = Body(default=None),
     phone: str = Body(default=None),
     inner_phone: int|str = Body(default=None),
-    image: UploadFile|str = File(default=None),
-    user_service: UserService = Depends(Provide[Container.user_service])
+    image: UploadFile|None = File(default=None),
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
     if check_file(image):
         response.status_code = status.HTTP_400_BAD_REQUEST
@@ -157,6 +183,8 @@ async def add_user(
         image = None
     if bool(inner_phone) == False:
         inner_phone = None
+    if bool(date_dismissal_at) == False:
+        date_dismissal_at = None
     if len(group_id) > 0:
         group_id = group_id[0].split(",")
     if len(roles_id) > 0:
@@ -191,7 +219,7 @@ async def add_user(
 
 @route.delete("/{id}")
 @inject
-def user_delete(id: int, response: Response, user_service: UserService = Depends(Provide[Container.user_service])):
+def user_delete(id: int, response: Response, user_service: UserService = Depends(Provide[Container.user_service]),HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
         return user_service.delete_user_by_id(id)
     except NotFoundError as e:

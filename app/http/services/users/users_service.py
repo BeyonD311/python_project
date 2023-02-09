@@ -1,7 +1,7 @@
 import os
 from hashlib import sha256
 from app.database import UserModel, DepartmentsModel, UserRoles, UserRepository
-from app.http.services.users.user_base_models import UserResponse, ResponseList, UserRequest
+from app.http.services.users.user_base_models import UserResponse, ResponseList, UserRequest, UserParams
 from sqlalchemy.exc import IntegrityError
 
 
@@ -9,8 +9,8 @@ class UserService:
     def __init__(self, user_repository: UserRepository) -> None:
         self._repository: UserRepository = user_repository
 
-    def get_all(self, offset: int = 1, limit: int = 10) -> ResponseList:
-        result = self._repository.get_all(offset, limit)
+    def get_all(self, params: UserParams) -> ResponseList:
+        result = self._repository.get_all(params)
         users = []
         for user in result['items']:
             user.deparment
@@ -79,7 +79,10 @@ class UserService:
         user_fields = user.__dict__
         if user.image is not None:
             user_create.photo_path = self.__save_file(user.image)
+            
         for field in user_fields:
+            if field == "image":
+                continue
             user_create.__setattr__(field, user_fields[field])
         user_create.hashed_password = sha256(user.password.encode()).hexdigest()
         return user_create

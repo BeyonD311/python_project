@@ -54,3 +54,15 @@ class ResponseUser(BaseDTO):
 class ResponseList(BaseModel):
     pagination: Pagination
     users: list[UserResponse]
+
+class UsersFilter(BaseModel):
+    fio: str = None
+    login: str = None
+    status: str = None
+
+class UserParams(BaseModel):
+    page: int
+    size: int
+    sort_field: str
+    sort_dir: str 
+    filter: UsersFilter = None

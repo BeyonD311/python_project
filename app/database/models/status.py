@@ -1,12 +1,10 @@
-from sqlalchemy import String, Column, Integer
-from sqlalchemy.orm import relationship
+from sqlalchemy import String, Column, SMALLINT
 from app.kernel.database import Base
 
-class Status(Base):
-    __tablename__ = "status"
+class StatusModel(Base):
+    __tablename__ = "status_users"
 
-    id = Column('id', Integer, primary_key=True),
+    id = Column(SMALLINT, primary_key=True, autoincrement='ignore_fk')
     name = Column(String)
-    users = relationship("UserModel", secondary="user_status", back_populates = "roles")
             
-__all__ = ('UserRoles')
+__all__ = ('StatusModel')

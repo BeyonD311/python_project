@@ -9,7 +9,7 @@ class GroupsModel(Base):
     id = Column(SMALLINT, primary_key=True)
     name = Column(String(40))
 
-    users = relationship("UserModel", secondary='user_groups', back_populates="group_user")
+    users = relationship("UserModel", secondary='user_groups', back_populates="groups")
 
     def __repr__(self) -> str:
         return f"<Groups(id={self.id}, " \

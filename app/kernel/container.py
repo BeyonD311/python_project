@@ -8,7 +8,7 @@ from app.http.services import JwtManagement
 
 
 class Container(containers.DeclarativeContainer):
-    # wiring_config = containers.WiringConfiguration(packages=["app.http.controllers"])
+    wiring_config = containers.WiringConfiguration(modules=['app.http.middleware.auth_middleware'])
     config = providers.Configuration(yaml_files=[Path('config.yml')])
     db = providers.Singleton(Database, db_url=config.db.uri) 
     # Service Provider

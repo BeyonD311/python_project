@@ -1,5 +1,5 @@
 from .users_service import UserService
-from .user_base_models import UserLoginParams, ResponseUser, UserResponse, ResponseList, UserRequest
+from .user_base_models import UserLoginParams, ResponseUser, UserResponse, ResponseList, UserRequest, UsersFilter, UserParams
 
 
 __all__ = [
@@ -8,5 +8,7 @@ __all__ = [
     'ResponseUser', 
     'UserResponse', 
     'ResponseList',
-    'UserRequest'
+    'UserRequest',
+    'UsersFilter',
+    'UserParams'
 ]

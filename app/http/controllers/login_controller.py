@@ -1,5 +1,6 @@
 import os
 import jwt
+import typing
 from hashlib import sha256
 from fastapi import APIRouter, Depends, status, Response, Request
 from dependency_injector.wiring import Provide, inject
@@ -12,6 +13,16 @@ route = APIRouter(
     tags=['auth'],
 )
 
+
+def get_token(request: Request) -> str:
+    access_token = request.headers.get('authorization')
+    if access_token is None:
+        raise TokenNotFound
+    return access_token.replace("Bearer", "").strip()
+
+def token_decode(token: str) -> typing.Mapping:
+    return jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
+
 @route.get("/logout")
 @inject
 async def logout(
@@ -20,8 +31,8 @@ async def logout(
     user_servive: UserService = Depends(Provide[Container.user_service]),
     jwt_m: JwtManagement = Depends(Provide[Container.jwt])):
     try:
-        access_token = request.headers.get('authorization').replace("Bearer", "").strip()
-        decode = jwt.decode(access_token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
+        access_token = get_token(request)
+        decode = token_decode(access_token)
         user = user_servive.get_user_by_id(decode['azp'], True)
         jwt_gen = await jwt_m.generate(user)
         async with jwt_gen as j:
@@ -62,8 +73,8 @@ async def refresh(
     user_servive: UserService = Depends(Provide[Container.user_service]),
     jwt_m: JwtManagement = Depends(Provide[Container.jwt])):
     try:
-        access_token = request.headers.get('authorization').replace("Bearer", "").strip()
-        decode = jwt.decode(access_token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
+        access_token = get_token(request)
+        decode = token_decode(access_token)
         user = user_servive.get_user_by_id(decode['azp'], True)
         jwt_gen = await jwt_m.generate(user)
         async with jwt_gen as j:

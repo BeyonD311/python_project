@@ -1,16 +1,28 @@
 import os
 from .super import SuperRepository, NotFoundError
-from app.database import UserModel as User, UserRoles, RolesModel
+from app.database import UserModel as User, UserRoles, RolesModel, GroupsModel
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import text
 
 class UserRepository(SuperRepository): 
     base_model = User
     
-    def get_all(self, offset, limit) -> dict[User]:
+    def get_all(self, params) -> dict[User]:
         with self.session_factory() as session:
-            result = self.get_pagination(session, offset, limit)
-            result['items'] = session.query(self.base_model).limit(limit).offset(offset).all()
-            return result
+            result = self.get_pagination(session, params.page, params.size)
+            sort_d = "asc"
+            if params.sort_dir.lower() == "desc":
+                sort_d = params.sort_dir.lower()
+            # result['items'] = session.execute(f"select usersid, ")
+            where = ""
+            if params.filter is not None:
+                print(params.filter)
+            if params.page > 1:
+                params.page * params.size
+            statement = text(f"select u.id as id, u.fio as fio, d.name as department, p.name as position,u.inner_phone as inner_phonefrom users as uleft join departments d on d.id = u.department_id left join position p on p.id = u.position_idleft join status_users su on su.id = u.status_id {where} order by {params.sort_field} {sort_d} limit {params.page} offset {params.size}")
+            print(statement)
+            # result['items'] = result['items'].order_by(sort).limit(params.size).offset(params.page).all()
+            return []
 
     def get_by_login(self, login: str) -> User:
         with self.session_factory() as session:
@@ -35,8 +47,11 @@ class UserRepository(SuperRepository):
                     values = user.__dict__[param]
                     current.__setattr__(param, values)
                 roles = session.query(RolesModel).filter(RolesModel.id.in_(user.roles_id)).all()
+                groups = session.query(GroupsModel).filter(GroupsModel.id.in_(user.group_id)).all()
                 current.roles.clear()
+                current.groups.clear()
                 [current.roles.append(r) for r in roles]
+                [current.groups.append(g) for g in groups]
                 session.add(current)
                 session.commit()
                 user.__delattr__("hashed_password")
@@ -51,7 +66,9 @@ class UserRepository(SuperRepository):
             with self.session_factory() as session:
                 user = user_model
                 roles = session.query(RolesModel).filter(RolesModel.id.in_(user.roles_id)).all()
+                groups = session.query(GroupsModel).filter(GroupsModel.id.in_(user.group_id)).all()
                 [user.roles.append(r) for r in roles]
+                [user.groups.append(g) for g in groups]
                 session.add(user)
                 session.commit()
                 session.flush()
