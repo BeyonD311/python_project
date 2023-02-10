@@ -21,7 +21,7 @@ class UserRepository(SuperRepository):
             if params.filter is not None:
                 params_w = []
                 if params.filter.fio != None:
-                    params_w.append(f"fio like '{params.filter.fio}'")
+                    params_w.append(f"fio ilike '%{params.filter.fio}%'")
                 if params.filter.status != None:
                     params_w.append(f"status_id = {params.filter.status}")
                 if params.filter.login != None:
