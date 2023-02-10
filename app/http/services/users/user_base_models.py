@@ -16,6 +16,9 @@ class UserResponse(BaseModel):
     inner_phone: int = None
     deparment: str = None
     position: str = None
+    status: str = None
+    status_id: int = None
+    status_at: int = None
 
 class UserRequest(BaseModel):
     id: int = None
@@ -34,6 +37,7 @@ class UserRequest(BaseModel):
     position_id: int
     group_id: list[int]
     roles_id: list[int]
+    skills_id: list[int] = None
     date_employment_at: datetime = None
     date_dismissal_at: datetime = None
 

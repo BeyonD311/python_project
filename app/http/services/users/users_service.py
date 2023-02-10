@@ -1,8 +1,7 @@
 import os
 from hashlib import sha256
-from app.database import UserModel, DepartmentsModel, UserRoles, UserRepository
+from app.database import UserModel, UserRepository, NotFoundError, SkillsRepository
 from app.http.services.users.user_base_models import UserResponse, ResponseList, UserRequest, UserParams
-from sqlalchemy.exc import IntegrityError
 
 
 class UserService:
@@ -13,24 +12,18 @@ class UserService:
         result = self._repository.get_all(params)
         users = []
         for user in result['items']:
-            user.deparment
-            position = None
-            
-            if user.position is not None:
-                position = user.position.name
-            else: 
-                position = None
-            if user.deparment is not None:
-                deparment = user.deparment.name
-            else:
-                deparment = None
-            
+            status_at = user[7]
+            if status_at is not None:
+                status_at = user[7].timestamp()
             user = UserResponse(
-                id = user.id, 
-                fio = user.fio,
-                inner_phone = user.inner_phone,
-                deparment = deparment,
-                position = position
+                id = user[0], 
+                fio = user[1],
+                inner_phone = user[4],
+                deparment = user[2],
+                position = user[3],
+                status=user[5],
+                status_id=user[6],
+                status_at=status_at
             )
             users.append(user)
         return ResponseList(pagination = result['pagination'], users = users)
@@ -38,9 +31,10 @@ class UserService:
     def get_user_by_id(self, user_id: int, show_pass: bool = False):
         user = self._repository.get_by_id(user_id)
         user.deparment
-        user.roles
         user.position
-        user.group_user
+        user.groups
+        for role in user.roles:
+            print(role)
         if show_pass == False:
             user.__delattr__("password")
             user.__delattr__("hashed_password")
@@ -54,11 +48,24 @@ class UserService:
         return user_create
     
     def update_user(self, user: UserRequest) -> any:
+        if user.id == 0:
+            raise NotFoundError(user.id)
         return self._repository.update(self.__fill_fields(user))
 
     def delete_user_by_id(self, user_id: int) -> None:
+        if user_id == 0:
+            raise NotFoundError(user_id)
         return self._repository.delete_by_id(user_id)
     
+    def set_status(self, user_id: int, status_id: int):
+        self._repository.set_status(user_id=user_id, status_id=status_id)
+
+    def add_skill(self, text: str):
+        return self._repository.add_skill(text)
+
+    def find_skill(self, text: str):
+        return self.find_skill(text)
+
     def __save_file(self, image) -> str:
         chuck_size = 4000
         file_name = image.filename.replace(" ", "_")
@@ -87,5 +94,14 @@ class UserService:
         user_create.hashed_password = sha256(user.password.encode()).hexdigest()
         return user_create
 
+class SkillService:
+    def __init__(self, skill_repository: SkillsRepository) -> None:
+        self._repository: SkillsRepository = skill_repository
+    
+    def add(self, text: str):
+        return self._repository.add_skill(text)
+    
+    def find(self, text:str):
+        return self._repository.find_skill(text)
 
-__all__ = ('UserService')
+__all__ = ('UserService', 'SkillsRepository')

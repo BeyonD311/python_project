@@ -28,6 +28,10 @@ class Container(containers.DeclarativeContainer):
         DatabaseCustom.UserRepository,
         session_factory=db.provided.session,
     ) 
+    skills_repository = providers.Factory(
+        DatabaseCustom.SkillsRepository,
+        session_factory=db.provided.session,
+    ) 
     roles_permission = providers.Factory(
         DatabaseCustom.RolesPermissionRepository,
         session_factory=db.provided.session
@@ -39,6 +43,10 @@ class Container(containers.DeclarativeContainer):
     user_service = providers.Factory(
         services.UserService, 
         user_repository = user_repository
+    )
+    skill_service = providers.Factory(
+        services.SkillService, 
+        skill_repository = skills_repository
     )
     dependencies_repository = providers.Factory(
         DatabaseCustom.DeparmentsRepository,
@@ -52,6 +60,11 @@ class Container(containers.DeclarativeContainer):
         DatabaseCustom.GroupsRepository,
         session_factory=db.provided.session,
     )
+    groups_service = providers.Factory(
+        services.GroupsService,
+        goups_repository=groups_repository
+    )
+
     roles_repository = providers.Factory(
         DatabaseCustom.RolesRepository,
         session_factory=db.provided.session,
@@ -59,4 +72,13 @@ class Container(containers.DeclarativeContainer):
     roles_service = providers.Factory(
         services.RolesServices,
         roles_repository=roles_repository
+    )
+    department_repository = providers.Factory(
+        DatabaseCustom.DeparmentsRepository,
+        session_factory=db.provided.session,
+    )
+
+    department_service = providers.Factory(
+        services.DepartmentsService,
+        repository=department_repository
     )

@@ -11,7 +11,7 @@ class RolesModel(Base):
     is_active = Column(Boolean, default=True)
     users = relationship("UserModel", secondary="user_roles", back_populates = "roles")
     permissions = relationship("PermissionsAccessModel", secondary="roles_permission", back_populates = "roles")
-    permission_model = relationship("RolesPermission")
+    permission_model = relationship("RolesPermission", cascade="save-update, merge," "delete, delete-orphan")
     def __repr__(self) -> str:
         return f"<Roles(id={self.id}, " \
             f"name={self.name}, " \

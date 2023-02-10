@@ -8,6 +8,8 @@ from .roles import RolesModel
 from .roles_permission import RolesPermission
 from .permissions import PermissionsAccessModel
 from .status import StatusModel
+from .skills import SkillsModel
+from .user_skills import UserSkillsModel
 __all__ = [
     'UserModel', 
     'DepartmentsModel', 
@@ -18,5 +20,7 @@ __all__ = [
     'RolesModel',
     'RolesPermission',
     'PermissionsAccessModel',
-    'StatusModel'
+    'StatusModel',
+    'SkillsModel',
+    'UserSkillsModel'
 ]
