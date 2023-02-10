@@ -3,6 +3,7 @@ import jwt
 import typing
 from hashlib import sha256
 from fastapi import APIRouter, Depends, status, Response, Request
+from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
 from app.http.services import UserLoginParams, UserService, JwtManagement, RolesPermission, TokenInBlackList, TokenNotFound
 from app.database import NotFoundError
@@ -13,6 +14,7 @@ route = APIRouter(
     tags=['auth'],
 )
 
+security = HTTPBearer()
 
 def get_token(request: Request) -> str:
     access_token = request.headers.get('authorization')
@@ -29,7 +31,9 @@ async def logout(
     request: Request,
     response: Response,
     user_servive: UserService = Depends(Provide[Container.user_service]),
-    jwt_m: JwtManagement = Depends(Provide[Container.jwt])):
+    jwt_m: JwtManagement = Depends(Provide[Container.jwt]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    
     try:
         access_token = get_token(request)
         decode = token_decode(access_token)
@@ -71,7 +75,8 @@ async def refresh(
     request: Request,
     response: Response,
     user_servive: UserService = Depends(Provide[Container.user_service]),
-    jwt_m: JwtManagement = Depends(Provide[Container.jwt])):
+    jwt_m: JwtManagement = Depends(Provide[Container.jwt]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
         access_token = get_token(request)
         decode = token_decode(access_token)
