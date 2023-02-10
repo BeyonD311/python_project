@@ -17,8 +17,8 @@ class UserRepository(SuperRepository):
             where = ""
             if params.filter is not None:
                 print(params.filter)
-            if params.page > 1:
-                params.page * params.size
+            if params.page > 0:
+                params.page *= params.size
             statement = text(f"select u.id as id, u.fio as fio, d.name as department, p.name as position,u.inner_phone as inner_phonefrom users as uleft join departments d on d.id = u.department_id left join position p on p.id = u.position_idleft join status_users su on su.id = u.status_id {where} order by {params.sort_field} {sort_d} limit {params.page} offset {params.size}")
             print(statement)
             # result['items'] = result['items'].order_by(sort).limit(params.size).offset(params.page).all()
