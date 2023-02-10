@@ -1,19 +1,15 @@
 from dotenv import load_dotenv, find_dotenv
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from dependency_injector.wiring import register_loader_containers
 from starlette.middleware.cors import CORSMiddleware
 from app.http.middleware.auth_middleware import Auth
+
 find_dotenv()
 load_dotenv()   
 
-def create_app():
+def create_container():
     from app.kernel import Container
-    container = Container()
-    db = container.db()
-    db.create_database()
-    app = FastAPI(debug=True)
-    app.container = container
-    return app, container
+    return Container()
 
 def import_modules_controller(container):
     import pkgutil
@@ -26,7 +22,12 @@ def import_modules_controller(container):
             routes[nameSplit[0]] = module.__dict__['route']
     return routes
 
-app, container = create_app()
+
+container = create_container()
+db = container.db()
+db.create_database()
+app = FastAPI(debug=True)
+app.container = container
 
 app.add_middleware(
     CORSMiddleware,

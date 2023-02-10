@@ -1,2 +1,6 @@
 db:
   uri: "postgresql+psycopg2://${DB_NAME}:${DB_PASS}@db/${DB_USER}"
+redis:
+  uri: "123"
+jwt:
+  secret: "${SECRET_KEY}"
