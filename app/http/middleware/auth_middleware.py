@@ -27,9 +27,9 @@ class Auth(BaseHTTPMiddleware):
                 return await call_next(request)
             user = get_user(decode_jwt['azp'])
             method = request.method.lower()
-            roles = {r.id:r for r in user.roles}
-            if 1 in roles:
+            if str(request.get("path")) == "/users/status" or str(request.get("path")) == "/users/current":
                 return await call_next(request)
+            roles = {r.id:r for r in user.roles}
             for role in roles:
                 role = roles[role]
                 modules = {m.module_id: parse_access(m.method_access) for m in role.permission_model}

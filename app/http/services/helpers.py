@@ -1,15 +1,17 @@
 from pydantic import BaseModel
 
-class Access(BaseModel):
+class BaseAccess(BaseModel):
     """ 
         По типу
         CRUD
         0000 
     """
-    create: bool
-    read: bool
-    update: bool
-    delete: bool
+    create: bool = False
+    read: bool = False
+    update: bool = False
+    delete: bool = False
+
+class Access(BaseAccess):
     map: dict
 
     def __str__(self):
