@@ -68,6 +68,11 @@ async def logout(
         return {
             "massage": "Pleace auth"
         }
+    except jwt.exceptions.ExpiredSignatureError as e:
+        response.status_code = status.HTTP_409_CONFLICT
+        return {
+            "massage": "Signature has expired"
+        }
 
 @route.get("/refresh")
 @inject
@@ -107,6 +112,11 @@ async def refresh(
         response.status_code = status.HTTP_401_UNAUTHORIZED
         return {
             "massage": "Pleace auth"
+        }
+    except jwt.exceptions.ExpiredSignatureError as e:
+        response.status_code = status.HTTP_409_CONFLICT
+        return {
+            "massage": "Signature has expired"
         }
     
 @route.post("/login")

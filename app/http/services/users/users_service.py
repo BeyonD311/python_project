@@ -57,6 +57,9 @@ class UserService:
             raise NotFoundError(user_id)
         return self._repository.delete_by_id(user_id)
     
+    def get_all_status_users(self):
+        return self._repository.get_all_status()
+
     def set_status(self, user_id: int, status_id: int):
         self._repository.set_status(user_id=user_id, status_id=status_id)
 

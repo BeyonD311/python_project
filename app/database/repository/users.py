@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from .super import SuperRepository, NotFoundError
-from app.database import UserModel as User, RolesModel, GroupsModel, SkillsModel
+from app.database import UserModel as User, RolesModel, GroupsModel, SkillsModel, StatusModel
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import text
@@ -79,6 +79,10 @@ class UserRepository(SuperRepository):
         except IntegrityError as e:
             os.remove(user_model.photo_path)
             return False, e
+
+    def get_all_status(self):
+        with self.session_factory() as session:
+            return session.query(StatusModel).all()
 
     def set_status(self, user_id, status_id):
         with self.session_factory() as session:

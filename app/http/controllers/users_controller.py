@@ -97,6 +97,15 @@ async def get_users(
             "message": str(e)
         }
 
+@route.get("/status_all")
+@inject
+async def current_user(
+    response: Response, 
+    request: Request, 
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    return user_service.get_all_status_users()
+
 @route.get("/current")
 @inject
 async def current_user(
