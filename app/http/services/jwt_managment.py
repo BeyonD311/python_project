@@ -9,7 +9,7 @@ from app.database import UserModel
 from app.http.services import RolesPermission
 
 class Jwt:
-    def __init__(self, redis: Redis, user: UserModel) -> None:
+    def __init__(self, redis: Redis, user: UserModel = None) -> None:
         self.redis = redis
         self.user = user
         self.timestamp = 0
@@ -53,6 +53,8 @@ class Jwt:
         await self.redis.set(f"users:black_list:{token}", "0")
 
     async def check_black_list(self, token: str):
+        print("--------------------------")
+        print(token)
         black_list = await self.redis.get(f"users:black_list:{token}")
         if black_list is not None:
             raise TokenInBlackList
@@ -86,7 +88,7 @@ class JwtManagement:
     def __init__(self, redis: Redis) -> None:
         self.redis = redis
     
-    async def generate(self, user: UserModel):
+    async def generate(self, user: UserModel = None):
         return Jwt(self.redis, user)
     
 class TokenNotFound(Exception):
