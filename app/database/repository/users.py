@@ -16,7 +16,7 @@ class UserRepository(SuperRepository):
             if params.sort_dir.lower() == "desc":
                 sort_d = params.sort_dir.lower()
             # result['items'] = session.execute(f"select usersid, ")
-            where = "where u.id != 0 "
+            where = "where u.id != 0 and is_active == true"
             query = session.query(self.base_model)
             if params.filter is not None:
                 params_w = []

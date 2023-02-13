@@ -19,7 +19,6 @@ class UserModel(Base):
     inner_phone = Column(Integer, nullable=True)
     is_active = Column(Boolean, default = True) 
     photo_path = Column(String, nullable=True)
-    department_id = Column(SMALLINT, ForeignKey('departments.id'))
     position_id = Column(SMALLINT, ForeignKey('position.id'))
     status_id = Column(Integer, ForeignKey('status_users.id'))
     date_employment_at = Column(TIMESTAMP)
@@ -29,11 +28,12 @@ class UserModel(Base):
     status_at = Column(TIMESTAMP,  nullable=True) 
     # Relationships 
     status = relationship("StatusModel")
-    deparment = relationship("DepartmentsModel") 
-    position = relationship("PositionModel")
+    position = relationship("PositionModel") 
     groups = relationship("GroupsModel", secondary='user_groups', back_populates="users")
     roles = relationship("RolesModel", secondary='user_roles', back_populates="users")
     skills = relationship("SkillsModel", secondary='user_skills', back_populates="users")
+    employee = relationship("EmployeesModel", back_populates="user")
+    deparments = relationship("DepartmentsModel", secondary="employees", back_populates="users")
     def __repr__(self): 
         return f"<User(id={self.id}" \
                f"email=\"{self.email}\"" \
@@ -46,8 +46,6 @@ class UserModel(Base):
                f"phone={self.phone}"\
                f"inner_phone={self.inner_phone}"\
                f"photo_path={self.photo_path}"\
-               f"deparment_id={self.department_id}"\
-               f"position_id={self.position_id}"\
                F"status_id={self.status_id}"\
                f"date_employment_at={self.date_employment_at}"\
                f"date_dismissal_at={self.date_dismissal_at}"\

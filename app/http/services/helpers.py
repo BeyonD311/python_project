@@ -1,4 +1,6 @@
 from pydantic import BaseModel
+from sqlalchemy import Column
+from sqlalchemy.orm import Session
 
 class BaseAccess(BaseModel):
     """ 

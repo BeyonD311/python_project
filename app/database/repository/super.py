@@ -28,8 +28,7 @@ class SuperRepository(ABC):
     def get_by_id(self, id: int):
         with self.session_factory() as session:
             user = session.query(self.base_model).filter(self.base_model.id == id).first()
-            if not user:
-                raise NotFoundError(id)
+            self._error_not_found(user,id)
             return user
 
     def delete_by_id(self, id: int) -> None:
@@ -50,6 +49,19 @@ class SuperRepository(ABC):
                 size=size
             )
         }
+    def soft_delete(self, id: int):
+        with self.session_factory() as session:
+            entity: self.base_model = session.query(self.base_model).filter(self.base_model.id == id).first()
+            if not entity:
+                raise NotFoundError(id)
+            entity.is_active = False
+            session.add(entity)
+            session.commit()
+    
+    def _error_not_found(self, entity, id):
+        if entity is None:
+            raise NotFoundError(id)
+
     @abstractmethod
     def add(self, arg):
         pass

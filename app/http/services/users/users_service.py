@@ -34,10 +34,11 @@ class UserService:
         user.position
         user.groups
         for role in user.roles:
-            print(role)
+            role
         if show_pass == False:
-            user.__delattr__("password")
-            user.__delattr__("hashed_password")
+            if "password" in user.__dict__:
+                user.__delattr__("password")
+                user.__delattr__("hashed_password")
         return self._repository.get_by_id(user_id)
 
     def find_user_by_login(self, login: str):
@@ -55,7 +56,7 @@ class UserService:
     def delete_user_by_id(self, user_id: int) -> None:
         if user_id == 0:
             raise NotFoundError(user_id)
-        return self._repository.delete_by_id(user_id)
+        return self._repository.soft_delete(user_id)
     
     def get_all_status_users(self):
         return self._repository.get_all_status()

@@ -6,7 +6,8 @@ class RolesRepository(SuperRepository):
     base_model = RolesModel
 
     def get_all(self):
-        return super().get_all()
+        with self.session_factory() as session:
+            return session.query(self.base_model).filter(self.base_model.is_active == True).all()
     def get_all_modules(self):
         with self.session_factory() as session:
             return session.query(PermissionsAccessModel).all()
