@@ -32,7 +32,7 @@ class UserModel(Base):
     groups = relationship("GroupsModel", secondary='user_groups', back_populates="users")
     roles = relationship("RolesModel", secondary='user_roles', back_populates="users")
     skills = relationship("SkillsModel", secondary='user_skills', back_populates="users")
-    employee = relationship("EmployeesModel", back_populates="user", uselist=False)
+    deparment = relationship("DepartmentsModel", secondary='employees', back_populates="users")
     def __repr__(self): 
         return f"<User(id={self.id}" \
                f"email=\"{self.email}\"" \

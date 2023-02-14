@@ -73,6 +73,8 @@ class UserRepository(SuperRepository):
                 current.group_id = user.group_id
                 if user.skills_id != []:
                     current.skills.clear()
+                if user.deparment_id != []:
+                    current.deparment.clear()
                 current.roles.clear()
                 current.groups.clear()
                 self.item_add_or_update(current, session)
@@ -102,35 +104,24 @@ class UserRepository(SuperRepository):
                 user.__delattr__("hashed_password")
                 user.__delattr__("password")
                 return user
-        except IntegrityError as e:
+        except IntegrityError as e: 
             if user_model.photo_path is not None:
                 os.remove(user_model.photo_path)
             return False, e
     def item_add_or_update(self, user: User, session):
         roles = session.query(RolesModel).filter(RolesModel.id.in_(user.roles_id)).all()
         groups = session.query(GroupsModel).filter(GroupsModel.id.in_(user.group_id)).all()
+        if user.deparment_id:
+            departments = session.query(DepartmentsModel).filter(DepartmentsModel.id.in_(user.deparment_id)).all()
+            print(user.deparment_id)
+            [user.deparment.append(d) for d in departments]
         if user.skills_id != []:
             skills = session.query(SkillsModel).filter(GroupsModel.id.in_(user.skills_id)).all()
             [user.skills.append(s) for s in skills]
         [user.roles.append(r) for r in roles]
         [user.groups.append(g) for g in groups]
         session.add(user)
-        department = session.query(DepartmentsModel).filter(DepartmentsModel.id == user.deparment_id).first()
         session.commit()
-        if department == None:
-            raise NotFoundError(f"{user.deparment_id} deparment not found")
-        if user.employee != None:
-            employee = session.query(EmployeesModel).filter(EmployeesModel.id == user.employee.id).first()
-            employee.department_id = user.deparment_id
-        else:
-            employee = EmployeesModel(
-                user_id = user.id,
-                department_id = department.id,
-                name = user.fio
-            )
-        session.add(employee)
-        session.commit()
-        user.department = department.name
         return user
 class UserNotFoundError(NotFoundError):
     entity_name: str = "User"

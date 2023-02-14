@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from fastapi import UploadFile,File,Body,Form
+from pydantic import BaseModel, Field
+from fastapi import UploadFile
 from typing import List
 from datetime import datetime
 from app.http.services.dto import BaseDTO
@@ -33,7 +33,7 @@ class UserRequest(BaseModel):
     phone: str = None
     inner_phone: int = None
     image: UploadFile = None
-    deparment_id: int
+    deparment_id: list[int] = []
     position_id: int
     group_id: list[int]
     roles_id: list[int]

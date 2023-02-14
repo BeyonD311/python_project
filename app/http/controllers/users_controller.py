@@ -168,8 +168,8 @@ async def add_user(
     patronymic: str = Body(default=None),
     login: str = Body(),
     is_operator: bool = Body(default=False),
-    deparment_id: int = Body(),
-    position_id: int = Body(),
+    deparment_id: List[str] = Body(default=None),
+    position_id: int = Body(), 
     group_id: List[str] = Body(),
     roles_id: List[str] = Body(),
     skills_id: List[str] = Body(default=None),
@@ -200,7 +200,10 @@ async def add_user(
         skills_id = skills_id[0].split(",")
     else:
         skills_id = []
-
+    if len(deparment_id) > 0 and deparment_id[0] != '':
+        deparment_id = deparment_id[0].split(",")
+    else:
+        deparment_id = []
     user_request = UserRequest(
         email=email,
         password = password,
@@ -269,7 +272,7 @@ async def update_user(
     patronymic: str = Body(default=None),
     login: str = Body(),
     is_operator: bool = Body(default=False),
-    deparment_id: List[int] = Body(default=None),
+    deparment_id: List[str] = Body(default=None),
     position_id: int = Body(),
     group_id: List[str] = Body(),
     roles_id: List[str] = Body(),
@@ -297,8 +300,14 @@ async def update_user(
         group_id = group_id[0].split(",")
     if len(roles_id) > 0:
         roles_id = roles_id[0].split(",")
-    if len(skills_id) > 0:
+    if len(skills_id) > 0 and skills_id[0] != '':
         skills_id = skills_id[0].split(",")
+    else:
+        skills_id = []
+    if len(deparment_id) > 0 and deparment_id[0] != '':
+        deparment_id = deparment_id[0].split(",")
+    else:
+        deparment_id = []
     user_request = UserRequest(
         id=id,
         email=email,
@@ -333,9 +342,6 @@ async def update_user(
         return {
             "message": str(e)
         }
-    
-
-
 
 
 @route.delete("/{id}")
