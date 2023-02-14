@@ -14,7 +14,7 @@ class DepartmentsModel(Base):
     created_at = Column(TIMESTAMP,server_default=func.now())
     updated_at = Column(TIMESTAMP,server_default=func.now(),onupdate=func.now())
 
-    users = relationship("UserModel", secondary="employees", back_populates="deparments")
+    employees = relationship("EmployeesModel", back_populates="department")
     def __repr__(self) -> str:
         return f"<Departments(id={self.id}, " \
             f"name={self.name})>"

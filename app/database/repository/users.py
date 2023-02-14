@@ -1,8 +1,13 @@
 import os
 from datetime import datetime
 from .super import SuperRepository, NotFoundError
-from app.database import UserModel as User, RolesModel, GroupsModel, SkillsModel, StatusModel
-
+from app.database import UserModel as User
+from app.database import RolesModel
+from app.database import GroupsModel
+from app.database import SkillsModel
+from app.database import StatusModel
+from app.database import DepartmentsModel
+from app.database import EmployeesModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import text
 
@@ -16,7 +21,7 @@ class UserRepository(SuperRepository):
             if params.sort_dir.lower() == "desc":
                 sort_d = params.sort_dir.lower()
             # result['items'] = session.execute(f"select usersid, ")
-            where = "where u.id != 0 and is_active == true"
+            where = "where u.id != 0 and u.is_active = true"
             query = session.query(self.base_model)
             if params.filter is not None:
                 params_w = []
@@ -31,7 +36,8 @@ class UserRepository(SuperRepository):
                 params.page = (params.size * params.page)
             sql = f"select u.id as id, u.fio as fio, d.name as department, p.name as position,u.inner_phone as inner_phone, "\
                     f"su.name as status, su.id as status_id, u.status_at as status_at from users as u "\
-                    f"left join departments d on d.id = u.department_id "\
+                    f"left join employees e on e.user_id = u.id "\
+                    f"left join departments d on d.id = e.department_id "\
                     f"left join status_users su on su.id = u.status_id "\
                     f"left join position p on p.id = u.position_id "\
                     f"{where} order by {params.sort_field} {sort_d} limit {params.size} offset {params.page}"
@@ -62,20 +68,15 @@ class UserRepository(SuperRepository):
                         continue
                     values = user.__dict__[param]
                     current.__setattr__(param, values)
-                roles = session.query(RolesModel).filter(RolesModel.id.in_(user.roles_id)).all()
-                groups = session.query(GroupsModel).filter(GroupsModel.id.in_(user.group_id)).all()
-                skills = session.query(SkillsModel).filter(SkillsModel.id.in_(user.skills_id)).all()
+                current.skills_id = user.skills_id
+                current.roles_id = user.roles_id
+                current.group_id = user.group_id
+                if user.skills_id != []:
+                    current.skills.clear()
                 current.roles.clear()
                 current.groups.clear()
-                current.skills.clear()
-                [current.roles.append(r) for r in roles]
-                [current.groups.append(g) for g in groups]
-                [current.skills.append(s) for s in skills]
-                session.add(current)
-                session.commit()
-                user.__delattr__("hashed_password")
-                user.__delattr__("password")
-                return user
+                self.item_add_or_update(current, session)
+                return current
         except IntegrityError as e:
             os.remove(user_model.photo_path)
             return False, e
@@ -97,15 +98,7 @@ class UserRepository(SuperRepository):
         try:
             with self.session_factory() as session:
                 user = user_model
-                roles = session.query(RolesModel).filter(RolesModel.id.in_(user.roles_id)).all()
-                groups = session.query(GroupsModel).filter(GroupsModel.id.in_(user.group_id)).all()
-                skills = session.query(SkillsModel).filter(GroupsModel.id.in_(user.skills_id)).all()
-                [user.roles.append(r) for r in roles]
-                [user.groups.append(g) for g in groups]
-                [user.skills.append(s) for s in skills]
-                session.add(user)
-                session.commit()
-                session.flush()
+                self.item_add_or_update(user, session)
                 user.__delattr__("hashed_password")
                 user.__delattr__("password")
                 return user
@@ -113,5 +106,31 @@ class UserRepository(SuperRepository):
             if user_model.photo_path is not None:
                 os.remove(user_model.photo_path)
             return False, e
+    def item_add_or_update(self, user: User, session):
+        roles = session.query(RolesModel).filter(RolesModel.id.in_(user.roles_id)).all()
+        groups = session.query(GroupsModel).filter(GroupsModel.id.in_(user.group_id)).all()
+        if user.skills_id != []:
+            skills = session.query(SkillsModel).filter(GroupsModel.id.in_(user.skills_id)).all()
+            [user.skills.append(s) for s in skills]
+        [user.roles.append(r) for r in roles]
+        [user.groups.append(g) for g in groups]
+        session.add(user)
+        department = session.query(DepartmentsModel).filter(DepartmentsModel.id == user.deparment_id).first()
+        session.commit()
+        if department == None:
+            raise NotFoundError(f"{user.deparment_id} deparment not found")
+        if user.employee != None:
+            employee = session.query(EmployeesModel).filter(EmployeesModel.id == user.employee.id).first()
+            employee.department_id = user.deparment_id
+        else:
+            employee = EmployeesModel(
+                user_id = user.id,
+                department_id = department.id,
+                name = user.fio
+            )
+        session.add(employee)
+        session.commit()
+        user.department = department.name
+        return user
 class UserNotFoundError(NotFoundError):
     entity_name: str = "User"

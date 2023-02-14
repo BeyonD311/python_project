@@ -82,3 +82,13 @@ class Container(containers.DeclarativeContainer):
         services.DepartmentsService,
         repository=department_repository
     )
+
+    employees_repository = providers.Factory(
+        DatabaseCustom.EmployeesRepository,
+        session_factory=db.provided.session,
+    )
+
+    employees_service = providers.Factory(
+        services.EmployeesService,
+        employees_repository = employees_repository
+    )

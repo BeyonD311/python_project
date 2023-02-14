@@ -5,7 +5,7 @@ from hashlib import sha256
 from fastapi import APIRouter, Depends, status, Response, Request
 from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
-from app.http.services import UserLoginParams, UserService, JwtManagement, RolesPermission, TokenInBlackList, TokenNotFound
+from app.http.services import UserLoginParams, UserService, JwtManagement, TokenInBlackList, TokenNotFound
 from app.database import NotFoundError
 from app.kernel import Container
 

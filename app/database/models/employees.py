@@ -1,6 +1,7 @@
 from app.kernel.database import Base
+from typing import List
 from sqlalchemy import Column, String, ForeignKey, BIGINT, INTEGER, Boolean
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped
 
 
 class EmployeesModel(Base):
@@ -15,10 +16,12 @@ class EmployeesModel(Base):
 
     #relationship
 
-    user = relationship("UserModel", back_populates="employee")
-
+    user = relationship("UserModel", uselist=False, back_populates="employee")
+    department = relationship("DepartmentsModel", back_populates="employees")
+    
     def __repr__(self) -> str:
         return  f"<Employees("\
+                f"id={self.id}"\
                 f"name={self.name}"\
                 f"department_id={self.department_id}"\
                 f"user_id={self.user_id}"\

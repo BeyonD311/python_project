@@ -37,7 +37,7 @@ class UserRequest(BaseModel):
     position_id: int
     group_id: list[int]
     roles_id: list[int]
-    skills_id: list[int] = None
+    skills_id: list[int] = []
     date_employment_at: datetime = None
     date_dismissal_at: datetime = None
 

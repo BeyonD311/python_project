@@ -1,6 +1,6 @@
+from fastapi import status
 from pydantic import BaseModel
-from sqlalchemy import Column
-from sqlalchemy.orm import Session
+
 
 class BaseAccess(BaseModel):
     """ 
@@ -41,3 +41,26 @@ def parse_access(str_model: str) -> Access:
             "delete": modules[3]
         }
     )
+
+def default_error(error: Exception):
+    from app.http.services import TokenInBlackList, TokenNotFound
+    from app.database import NotFoundError
+    from jwt.exceptions import InvalidSignatureError, ExpiredSignatureError
+
+    if isinstance(error, InvalidSignatureError):
+        return status.HTTP_409_CONFLICT, message(error)
+    if isinstance(error, NotFoundError):
+        return status.HTTP_404_NOT_FOUND, message("user not found")
+    if isinstance(error, TokenInBlackList):
+        return status.HTTP_400_BAD_REQUEST, message(error)
+    if isinstance(error, TokenNotFound):
+        return status.HTTP_401_UNAUTHORIZED, message("Pleace auth")
+    if isinstance(error, ExpiredSignatureError):
+        return status.HTTP_409_CONFLICT, message("Signature has expired")
+    
+    raise error
+
+def message(message):
+    return {
+        "message": str(message)
+    }

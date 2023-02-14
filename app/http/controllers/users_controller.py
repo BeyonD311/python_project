@@ -196,8 +196,10 @@ async def add_user(
         group_id = group_id[0].split(",")
     if len(roles_id) > 0:
         roles_id = roles_id[0].split(",")
-    if len(skills_id) > 0:
+    if len(skills_id) > 0 and skills_id[0] != '':
         skills_id = skills_id[0].split(",")
+    else:
+        skills_id = []
 
     user_request = UserRequest(
         email=email,
@@ -219,13 +221,19 @@ async def add_user(
         date_dismissal_at = date_dismissal_at,
         image = image,
     )
-    user = user_service.create_user(user_request)
-    if type(user) == tuple:
-        response.status_code = status.HTTP_400_BAD_REQUEST
+    try:
+        user = user_service.create_user(user_request)
+        if type(user) == tuple:
+            response.status_code = status.HTTP_400_BAD_REQUEST
+            return {
+                "message": "Bad request"
+            }
+        return user
+    except NotFoundError as e:
+        response.status_code = status.HTTP_404_NOT_FOUND
         return {
-            "message": "Bad request"
+            "message": str(e)
         }
-    return user
 
 
 @route.patch("/status")
@@ -261,7 +269,7 @@ async def update_user(
     patronymic: str = Body(default=None),
     login: str = Body(),
     is_operator: bool = Body(default=False),
-    deparment_id: int = Body(),
+    deparment_id: List[int] = Body(default=None),
     position_id: int = Body(),
     group_id: List[str] = Body(),
     roles_id: List[str] = Body(),
@@ -312,13 +320,20 @@ async def update_user(
         date_dismissal_at = date_dismissal_at,
         image = image,
     )
-    user = user_service.update_user(user_request)
-    if type(user) == tuple:
-        response.status_code = status.HTTP_400_BAD_REQUEST
+    try:
+        user = user_service.update_user(user_request)
+        if type(user) == tuple:
+            response.status_code = status.HTTP_400_BAD_REQUEST
+            return {
+                "message": "Bad request"
+            }
+        return user
+    except NotFoundError as e:
+        response.status_code = status.HTTP_404_NOT_FOUND
         return {
-            "message": "Bad request"
+            "message": str(e)
         }
-    return user
+    
 
 
 
