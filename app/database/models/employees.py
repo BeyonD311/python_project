@@ -18,7 +18,7 @@ class EmployeesModel(Base):
 
     # user = relationship("UserModel", uselist=False, back_populates="employee")
     department = relationship("DepartmentsModel", back_populates="employees")
-    
+    user = relationship("UserModel")
     def __repr__(self) -> str:
         return  f"<Employees("\
                 f"id={self.id}"\

@@ -29,10 +29,10 @@ class UserModel(Base):
     # Relationships 
     status = relationship("StatusModel")
     position = relationship("PositionModel") 
-    groups = relationship("GroupsModel", secondary='user_groups', back_populates="users")
-    roles = relationship("RolesModel", secondary='user_roles', back_populates="users")
-    skills = relationship("SkillsModel", secondary='user_skills', back_populates="users")
-    deparment = relationship("DepartmentsModel", secondary='employees', back_populates="users")
+    groups = relationship("GroupsModel", secondary='user_groups', back_populates="users", cascade="save-update, delete")
+    roles = relationship("RolesModel", secondary='user_roles', back_populates="users", cascade="save-update, delete")
+    skills = relationship("SkillsModel", secondary='user_skills', back_populates="users", cascade="save-update, delete")
+    deparment = relationship("DepartmentsModel", secondary='employees', back_populates="users", cascade="save-update, merge, delete")
     def __repr__(self): 
         return f"<User(id={self.id}" \
                f"email=\"{self.email}\"" \
