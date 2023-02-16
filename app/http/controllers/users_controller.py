@@ -140,13 +140,7 @@ async def get_user_id(
         
         if id == 0:
             raise NotFoundError(id)
-        user = user_service.get_user_by_id(id)
-        user.deparment
-        user.roles
-        user.position
-        user.groups
-        for role in user.roles:
-            role.permissions
+        user = user_service.get_user_by_id(id, True)
         return user
     except Exception as e:
         print(e)

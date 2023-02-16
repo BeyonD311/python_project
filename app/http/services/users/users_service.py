@@ -28,7 +28,7 @@ class UserService:
             users.append(user)
         return ResponseList(pagination = result['pagination'], users = users)
 
-    def get_user_by_id(self, user_id: int, show_pass: bool = False):
+    def get_user_by_id(self, user_id: int, show_pass: bool = False, show_hash: bool = False):
         user = self._repository.get_by_id(user_id)
         user.deparment
         user.position
@@ -36,15 +36,17 @@ class UserService:
         for skill in user.skills:
             skill
         for role in user.roles:
-            role
-        if show_pass == False:
-            if "password" in user.__dict__:
-                user.__delattr__("password")
+            role.permissions
+        if show_hash == False:
+            if "hashed_password" in user.__dict__:
                 user.__delattr__("hashed_password")
+        if "password" in user.__dict__:
+            if show_pass == False:
+                user.__delattr__("password")
         return self._repository.get_by_id(user_id)
 
     def find_user_by_login(self, login: str):
-        return self._repository.get_by_login(login)
+        return self._repository.get_by_login(login) 
 
     def create_user(self, user: UserRequest) -> any:
         user_create = self._repository.add(self.__fill_fields(user))
