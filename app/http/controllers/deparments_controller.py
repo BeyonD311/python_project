@@ -13,15 +13,14 @@ route = APIRouter(
 
 security = HTTPBearer()
 
-@route.get("/{id}")
+@route.get("/")
 @inject
 def get_deparments(
-    id: int,
     response: Response,
     deparment_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
-        return deparment_service.get_by_id(id)
+        return deparment_service.get_all()
     except NotFoundError as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {

@@ -9,7 +9,11 @@ class DeparmentsRepository(SuperRepository):
     base_model = DepartmentsModel
 
     def get_all(self) -> Iterator[DepartmentsModel]:
-        return super().get_all()
+        with self.session_factory() as session:
+            query = session.query(self.base_model).filter(self.base_model.is_active == True).order_by(self.base_model.id.asc()).all()
+            if query is None:
+                return []
+            return query
     def get_by_id(self, department_id: int) -> DepartmentsModel:
         return super().get_by_id(department_id)
     def add(self, params):
@@ -19,12 +23,13 @@ class DeparmentsRepository(SuperRepository):
             if params.source_department == 0:
                 params.source_department = None
             else:
-                self.find_deprment_by_id(params.source_department, session=session)
+                parent = self.find_deprment_by_id(params.source_department, session=session)
+                parent.is_parent = True
+                session.add(parent)
             department = DepartmentsModel(
                 name = params.name,
                 parent_department_id = params.source_department
             )
-
             session.add(department)
             session.commit()
 
@@ -43,14 +48,30 @@ class DeparmentsRepository(SuperRepository):
 
     def update(self, id, params):
         with self.session_factory() as session:
-            self.find_deprment_by_id(id, session=session)
+            current = self.find_deprment_by_id(id, session=session)
             if params.source_department == 0:
                 params.source_department = None
             else:
-                self.find_deprment_by_id(params.source_department, session=session)
+                if current.parent_department_id != params.source_department:
+                    new_parent = self.find_deprment_by_id(params.source_department, session=session)
+                    new_parent.is_parent = True
+                    session.add(new_parent)
+                    if current.parent_department_id is not None:
+                        old_parent = self.find_deprment_by_id(current.parent_department_id, session)
+                        childs = session.query(self.base_model).filter(self.base_model.parent_department_id == current.parent_department_id).all()
+                        count = 0
+                        for child in childs:
+                            if child.id != id:
+                                count += 1
+                        if count == 0:
+                            old_parent.is_parent = False
+                            session.add(old_parent)
+            current.name = params.name
+            current.parent_department_id = params.source_department
             self.__deparment_clear_employee(id, session=session)
             self.__add_employee(params=params, session=session,id=id)
             session.commit()
+            return current
 
     def get_users(self, params, session):
         if params.deputy_head_id != None:
@@ -75,7 +96,7 @@ class DeparmentsRepository(SuperRepository):
                 result[employee.user_id] = employee
         return result
 
-    def find_deprment_by_id(self, id, session):
+    def find_deprment_by_id(self, id, session) -> DepartmentsModel:
         query = session.query(self.base_model).filter(self.base_model.id == id).first()
         if query is None:
             raise NotFoundError("department exists")

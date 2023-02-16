@@ -1,6 +1,6 @@
-from app.database import DeparmentsRepository
+from app.database import DeparmentsRepository, DepartmentsModel
 from pydantic import BaseModel
-from typing import List
+from typing import List, Iterator
 
 class DepartmentParams(BaseModel):
     name: str
@@ -8,15 +8,11 @@ class DepartmentParams(BaseModel):
     director_user_id: int
     deputy_head_id: List[int] = None
 
-class Child(BaseModel):
-    name:str
-    id: int
-    users: List[any]
-
 class Node(BaseModel):
     name:str
     id: int
-    child: List[Child]
+    child: List = []
+    employees: List = []
 
 class DeparmentResponse(BaseModel):
     nodes: Node
@@ -27,8 +23,20 @@ class DepartmentsService:
         self._repository: DeparmentsRepository = repository
 
     def get_all(self):
-        
-        return []
+        items = self._repository.get_all()
+        res = []
+        for item in items:
+            if item.parent_department_id != None:
+                continue
+            node = Node(
+                    name=item.name,
+                    id=item.id,
+                    employees=item.employees
+                )
+            if item.is_parent:
+                self.find_child(items, node)
+            res.append(node)
+        return res
     
     def get_by_id(self, id):
         return self._repository.get_by_id()
@@ -41,7 +49,23 @@ class DepartmentsService:
     def delete(self, id):
         self._repository.delete_by_id(id)
 
-    def create_struct(self, level_deph: int = 0):
-
-        
-    
+    def find_child(self, items: List[DepartmentsModel], parent: Node):
+        item: DepartmentsModel
+        child = []
+        for i, item  in enumerate(items):
+            if parent.id == item.parent_department_id:
+                if item.is_parent:
+                    node = Node( 
+                        name=item.name,
+                        id=item.id,
+                        employees=item.employees
+                    )
+                    parent.child.append(self.find_child(items ,node))
+                else:
+                    parent.child.append(Node(
+                        name=item.name,
+                        id=item.id,
+                        employees=item.employees,
+                        child=child
+                    ))
+        return parent
