@@ -33,6 +33,8 @@ class UserService:
         user.deparment
         user.position
         user.groups
+        for skill in user.skills:
+            skill
         for role in user.roles:
             role
         if show_pass == False:

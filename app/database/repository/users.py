@@ -34,13 +34,18 @@ class UserRepository(SuperRepository):
                 where = "where u.id != 0 and "+" and ".join(params_w)
             if params.page > 0:
                 params.page = (params.size * params.page)
-            sql = f"select u.id as id, u.fio as fio, d.name as department, p.name as position,u.inner_phone as inner_phone, "\
+            sql = f"with dep as ( select e.user_id as user_id, string_agg(d.name, ' , ') as department from departments d "\
+                    f" join employees e on e.department_id = d.id group by e.user_id order by e.user_id "\
+                    f" ) "\
+                    f"select u.id as id, u.fio as fio, dep.department as department, p.name as position,u.inner_phone as inner_phone, "\
                     f"su.name as status, su.id as status_id, u.status_at as status_at from users as u "\
-                    f"left join employees e on e.user_id = u.id "\
-                    f"left join departments d on d.id = e.department_id "\
                     f"left join status_users su on su.id = u.status_id "\
                     f"left join position p on p.id = u.position_id "\
+                    f"left join dep on dep.user_id = u.id "\
                     f"{where} order by {params.sort_field} {sort_d} limit {params.size} offset {params.page}"
+            print("-------------------")
+            print(sql)
+            print("-------------------")
             statement = text(sql)
             query = session.execute(statement)
             result['items'] = query.all()

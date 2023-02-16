@@ -21,8 +21,10 @@ class DepartmentsService:
 
     def __init__(self, repository: DeparmentsRepository) -> None:
         self._repository: DeparmentsRepository = repository
-
     def get_all(self):
+        return self._repository.get_all()
+
+    def get_struct(self):
         items = self._repository.get_all()
         res = []
         for item in items:
@@ -39,7 +41,7 @@ class DepartmentsService:
         return res
     
     def get_by_id(self, id):
-        return self._repository.get_by_id()
+        return self._repository.get_by_id(id)
 
     def add(self, params: DepartmentParams):
         return self._repository.add(params)
@@ -52,7 +54,7 @@ class DepartmentsService:
     def find_child(self, items: List[DepartmentsModel], parent: Node):
         item: DepartmentsModel
         child = []
-        for i, item  in enumerate(items):
+        for item  in items:
             if parent.id == item.parent_department_id:
                 if item.is_parent:
                     node = Node( 
