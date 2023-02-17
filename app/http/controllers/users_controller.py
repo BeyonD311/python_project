@@ -1,6 +1,7 @@
 import re
 import jwt
 import os
+import copy
 from fastapi import Depends, APIRouter, Response, status, UploadFile, Body, File, Request
 from typing import List
 from datetime import datetime
@@ -118,6 +119,7 @@ async def current_user(
     current = user_service.get_user_by_id(decode['azp'], True)
     for role in current.roles:
         role.permissions
+    current = copy.copy(current)
     current.password = re.sub(r'.*', "*", current.password)
     if "hashed_password" in current.__dict__:
         current.__delattr__("hashed_password")
