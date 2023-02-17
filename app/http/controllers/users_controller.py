@@ -119,13 +119,24 @@ async def current_user(
     current = user_service.get_user_by_id(decode['azp'], True)
     for role in current.roles:
         role.permissions
+    current.password = re.sub(r'.*', "*", current.password)
     if "hashed_password" in current.__dict__:
         current.__delattr__("hashed_password")
-        current.__delattr__("password")
         current.__delattr__("created_at")
         current.__delattr__("updated_at")
     return current
-        
+
+@route.get("/get_pass")
+@inject
+async def current_user(
+    response: Response, 
+    request: Request, 
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    token = request.headers.get('authorization').replace("Bearer ", "")
+    decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
+    current = user_service.get_user_by_id(decode['azp'], True)
+    return current.password
 
 @route.get("/{id}")
 @inject

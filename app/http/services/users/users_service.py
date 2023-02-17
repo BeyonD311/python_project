@@ -77,7 +77,7 @@ class UserService:
     def __save_file(self, image) -> str:
         chuck_size = 4000
         file_name = image.filename.replace(" ", "_")
-        output_file = f"/app/images/user_image/{file_name}"
+        output_file = f"/images/user_image/{file_name}"
         if os.path.isfile(output_file):
             os.remove(output_file)
         file = open(output_file, "wb+")
