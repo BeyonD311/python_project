@@ -116,16 +116,10 @@ async def current_user(
     """ Получение текущего пользователя """
     token = request.headers.get('authorization').replace("Bearer ", "")
     decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
-    current = user_service.get_user_by_id(decode['azp'], True)
+    current = user_service.get_user_by_id(decode['azp'])
     for role in current.roles:
         role.permissions
-    current = copy.copy(current)
-    current.password = re.sub(r'.*', "*", current.password)
-    if "hashed_password" in current.__dict__:
-        current.__delattr__("hashed_password")
-        current.__delattr__("created_at")
-        current.__delattr__("updated_at")
-    return current
+    return copy(current)
 
 @route.get("/get_pass")
 @inject
@@ -147,13 +141,12 @@ async def get_user_id(
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
+    
     try:
-        print(id)
-        
         if id == 0:
             raise NotFoundError(id)
-        user = user_service.get_user_by_id(id, True)
-        return user
+        user = user_service.get_user_by_id(id)
+        return copy(user)
     except Exception as e:
         print(e)
         response.status_code = status.HTTP_404_NOT_FOUND
@@ -363,5 +356,19 @@ def user_delete(id: int, response: Response, user_service: UserService = Depends
 
 def check_file(image):
     return bool(image) and image.content_type.find("image") == -1
+
+def copy(user, show_pass: False = False) -> dict:
+    res = {}
+
+    for p in user.__dict__:
+        if p == "_sa_instance_state":
+            continue
+        if p == "hashed_password":
+            continue
+        if show_pass == False and p == "password":
+            res[p] = re.sub(r'.*', "*", user.__dict__[p])
+        else:
+            res[p] = user.__dict__[p]
     
+    return res
     

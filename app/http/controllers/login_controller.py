@@ -136,9 +136,11 @@ async def login(
         }
     print("--------------------------------------")
     print(password)
-    print(user.hashed_password)
+    print(user.password)
     print(user)
     print("--------------------------------------")
+    if user.hashed_password is None:
+        user.hashed_password = sha256(user.password.encode()).hexdigest()
     if password != user.hashed_password:
         response.status_code = status.HTTP_401_UNAUTHORIZED
         return {

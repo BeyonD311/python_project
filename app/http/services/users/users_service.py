@@ -1,4 +1,6 @@
 import os
+import copy
+import re
 from hashlib import sha256
 from app.database import UserModel, UserRepository, NotFoundError, SkillsRepository
 from app.http.services.users.user_base_models import UserResponse, ResponseList, UserRequest, UserParams
@@ -28,7 +30,7 @@ class UserService:
             users.append(user)
         return ResponseList(pagination = result['pagination'], users = users)
 
-    def get_user_by_id(self, user_id: int, show_pass: bool = False, show_hash: bool = False):
+    def get_user_by_id(self, user_id: int):
         user = self._repository.get_by_id(user_id)
         user.deparment
         user.position
@@ -37,13 +39,7 @@ class UserService:
             skill
         for role in user.roles:
             role.permissions
-        if show_hash == False:
-            if "hashed_password" in user.__dict__:
-                user.__delattr__("hashed_password")
-        if "password" in user.__dict__:
-            if show_pass == False:
-                user.__delattr__("password")
-        return self._repository.get_by_id(user_id)
+        return user
 
     def find_user_by_login(self, login: str):
         return self._repository.get_by_login(login) 

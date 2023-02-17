@@ -13,7 +13,7 @@ user_path_exception = ("/users/status", "/users/current")
 
 @inject
 def get_user(id, user = Depends(Provide[Container.user_service])):
-    return user.get_user_by_id(id, True, True)
+    return user.get_user_by_id(id)
 
 @inject
 async def redis(jwt_m: JwtManagement = Depends(Provide[Container.jwt])):
