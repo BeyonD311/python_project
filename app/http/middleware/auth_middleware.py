@@ -7,6 +7,9 @@ from app.kernel.container import Container
 from app.http.services.helpers import parse_access
 from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
 
+path_exception = ("auth", "docs", "openapi.json", "images")
+
+user_path_exception = ("/users/status", "/users/current")
 
 @inject
 def get_user(id, user = Depends(Provide[Container.user_service])):
@@ -19,7 +22,7 @@ async def redis(jwt_m: JwtManagement = Depends(Provide[Container.jwt])):
 class Auth(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         path = str(request.get("path")).split("/")
-        if "auth" == path[1] or "docs" == path[1] or "openapi.json" == path[1]:
+        if  path[1] in path_exception:
             return await call_next(request)
         token = request.headers.get('authorization')
         if token is None:
@@ -36,7 +39,7 @@ class Auth(BaseHTTPMiddleware):
                 return await call_next(request)
             user = get_user(decode_jwt['azp'])
             method = request.method.lower()
-            if str(request.get("path")) == "/users/status" or str(request.get("path")) == "/users/current":
+            if str(request.get("path")) in user_path_exception:
                 return await call_next(request)
             roles = {r.id:r for r in user.roles}
             for role in roles:

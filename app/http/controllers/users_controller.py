@@ -10,7 +10,6 @@ from app.http.services import UserService, UserRequest, UsersFilter, UserParams,
 from app.database import NotFoundError
 from fastapi.security import HTTPBearer
 from sqlalchemy.exc import IntegrityError
-from app.http.services.helpers import parse_access
 
 security = HTTPBearer()
 
