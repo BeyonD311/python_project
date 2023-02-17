@@ -10,7 +10,7 @@ from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
 
 @inject
 def get_user(id, user = Depends(Provide[Container.user_service])):
-    return user.get_user_by_id(id, True)
+    return user.get_user_by_id(id, True, True)
 
 @inject
 async def redis(jwt_m: JwtManagement = Depends(Provide[Container.jwt])):
@@ -45,9 +45,6 @@ class Auth(BaseHTTPMiddleware):
                 permissions = {p.module_name: modules[p.id] for p in role.permissions}
                 if path[1] in permissions:
                     map_access = permissions[path[1]].map
-                    print("------------------")
-                    print(map_access[method])
-                    print("------------------")
                     if method in map_access and map_access[method]:
                         return await call_next(request)
             return responses.JSONResponse(content= {
@@ -55,7 +52,7 @@ class Auth(BaseHTTPMiddleware):
             },status_code=status.HTTP_423_LOCKED)
         except jwt.exceptions.ExpiredSignatureError as e:
             return responses.JSONResponse(content= {
-                "messgae": str(e)
+                "messgae": str(e) 
             },status_code=status.HTTP_401_UNAUTHORIZED)
         except TokenInBlackList as e:
             return responses.JSONResponse(content= {

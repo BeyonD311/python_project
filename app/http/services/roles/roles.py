@@ -5,6 +5,32 @@ from app.http.services.roles.roles_base_model import Create, Update
 class RolesServices():
     def __init__(self, roles_repository: RolesRepository) -> None:
         self._repository = roles_repository
+    
+    def get_by_id(self, id: int):
+        role = self._repository.get_by_id(id)
+        role_res = {
+                "id": role.id,
+                "name": role.name,
+                "access": []
+            }
+        modules = {r.id:r for r in role.permissions}
+        for access in role.permission_model:
+            if access.module_id in modules:
+                parse = parse_access(access.method_access)
+                module = {
+                    "id": modules[access.module_id].id,
+                    "module_name": modules[access.module_id].module_name,
+                    "name": modules[access.module_id].name,
+                    "access": {
+                        "create": parse.create,
+                        "read": parse.read,
+                        "update": parse.update,
+                        "delete": parse.delete
+                    }
+                }
+                role_res['access'].append(module)
+        return role_res
+
     def get_all(self):
         roles = self._repository.get_all()
         result = []
@@ -15,7 +41,6 @@ class RolesServices():
                 "access": []
             }
             modules = {r.id:r for r in role.permissions}
-            res = []
             for access in role.permission_model:
                 if access.module_id in modules:
                     parse = parse_access(access.method_access)

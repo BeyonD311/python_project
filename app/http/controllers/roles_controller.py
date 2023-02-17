@@ -32,6 +32,15 @@ async def get_modules(
     ):
     return roles_model.get_modules()
 
+@route.get("/{id}")
+@inject
+async def get_role(
+    id: int,
+    roles_model: RolesServices = Depends(Provide[Container.roles_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
+    ):
+    return roles_model.get_by_id(id)
+
 @route.post("/")
 @inject
 async def create_role(
