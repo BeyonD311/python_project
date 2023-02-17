@@ -37,7 +37,7 @@ async def logout(
     try:
         access_token = get_token(request)
         decode = token_decode(access_token)
-        user = user_servive.get_user_by_id(decode['azp'], True)
+        user = user_servive.get_user_by_id(decode['azp'])
         jwt_gen = await jwt_m.generate(user)
         async with jwt_gen as j:
             tokens = await j.get_tokens() 
@@ -85,7 +85,7 @@ async def refresh(
     try:
         access_token = get_token(request)
         decode = token_decode(access_token)
-        user = user_servive.get_user_by_id(decode['azp'], True, True)
+        user = user_servive.get_user_by_id(decode['azp'])
         jwt_gen = await jwt_m.generate(user)
         async with jwt_gen as j:
             await j.get_tokens()

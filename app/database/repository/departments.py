@@ -18,8 +18,19 @@ class DeparmentsRepository(SuperRepository):
     
     def get_struct(self):
         with self.session_factory() as session:
-            query = session.query(self.base_model).filter(self.base_model.is_active == True).order_by(self.base_model.id.asc()).all()
-            print(query)
+            # query = session.query(self.base_model).filter(self.base_model.is_active == True).order_by(self.base_model.id.asc()).all()
+            result = {}
+            query = session.query(self.base_model, EmployeesModel.name)
+            # query = query.join(EmployeesModel, EmployeesModel.department_id == self.base_model.id).join(UserModel, UserModel.id == EmployeesModel.user_id)
+            # query = query.filter(EmployeesModel.name.ilike('%id18%'))
+
+            """ print("query staruct-----------------------")
+            print()
+            print("query staruct-----------------------") """
+            for i in query.all():
+                print("query staruct-----------------------")
+                print(i)
+                print("query staruct-----------------------")
 
     def get_by_id(self, department_id: int) -> DepartmentsModel:
         return super().get_by_id(department_id)

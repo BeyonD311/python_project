@@ -20,6 +20,7 @@ def get_deparments(
     deparment_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
+        deparment_service.new_struct()
         return deparment_service.get_all()
     except NotFoundError as e:
         response.status_code = status.HTTP_400_BAD_REQUEST

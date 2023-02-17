@@ -24,6 +24,10 @@ class DepartmentsService:
     def get_all(self):
         return self._repository.get_all()
 
+    def new_struct(self):
+        return self._repository.get_struct()
+
+
     def get_struct(self):
         items = self._repository.get_all()
         res = []
