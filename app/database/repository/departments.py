@@ -1,5 +1,6 @@
 from .super import SuperRepository, NotFoundError
 from app.database.models import DepartmentsModel, UserModel, EmployeesModel
+from sqlalchemy import select
 from typing import Iterator
 
 # class User
@@ -14,6 +15,12 @@ class DeparmentsRepository(SuperRepository):
             if query is None:
                 return []
             return query
+    
+    def get_struct(self):
+        with self.session_factory() as session:
+            query = session.query(self.base_model).filter(self.base_model.is_active == True).order_by(self.base_model.id.asc()).all()
+            print(query)
+
     def get_by_id(self, department_id: int) -> DepartmentsModel:
         return super().get_by_id(department_id)
     def add(self, params):

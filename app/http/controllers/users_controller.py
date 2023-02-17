@@ -106,6 +106,13 @@ async def current_user(
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     return user_service.get_all_status_users()
 
+@route.get("/position")
+@inject
+async def user_position(
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    return user_service.get_user_position()
+
 @route.get("/current")
 @inject
 async def current_user(

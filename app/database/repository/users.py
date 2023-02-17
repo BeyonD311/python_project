@@ -7,6 +7,7 @@ from app.database import GroupsModel
 from app.database import SkillsModel
 from app.database import StatusModel
 from app.database import DepartmentsModel
+from app.database import PositionModel
 from app.database import EmployeesModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import text
@@ -57,6 +58,13 @@ class UserRepository(SuperRepository):
             if user is None:
                 raise UserNotFoundError(login)
             return user
+
+    def get_users_position(self):
+        with self.session_factory() as session:
+            query = session.query(PositionModel).all()
+            if query is None:
+                query = []
+            return query
 
     def get_by_id(self, user_id: int) -> User:
         return super().get_by_id(user_id)

@@ -30,6 +30,9 @@ class UserService:
             users.append(user)
         return ResponseList(pagination = result['pagination'], users = users)
 
+    def get_user_position(self):
+        return self._repository.get_users_position()
+
     def get_user_by_id(self, user_id: int):
         user = self._repository.get_by_id(user_id)
         user.deparment
