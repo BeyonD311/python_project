@@ -1,6 +1,7 @@
-from app.database import DeparmentsRepository, DepartmentsModel
+from app.database import DeparmentsRepository, DepartmentsModel, EmployeesModel
 from pydantic import BaseModel
 from typing import List, Iterator
+from app.http.services.employees.employees_service import EmployeeResponse
 
 class DepartmentParams(BaseModel):
     name: str
@@ -12,7 +13,6 @@ class Node(BaseModel):
     name:str
     id: int
     child: List = []
-    employees: List = []
 
 class DeparmentResponse(BaseModel):
     nodes: Node
@@ -24,26 +24,51 @@ class DepartmentsService:
     def get_all(self):
         return self._repository.get_all()
 
-    def new_struct(self):
-        return self._repository.get_struct()
+    """ Получение структуры с фильтрами """
+    def __check_filter(self, filter: set):
+        flag = False
+        for param in filter:
+            v = filter[param]
+            if v != None:
+                flag = True
+                break
+        if flag == False:
+            filter = None
+        return filter
 
 
-    def get_struct(self):
-        items = self._repository.get_all()
+    def get_struct(self, filter: dict):
+        # items = self._repository.get_all()
+        items = self._repository.get_struct(self.__check_filter(filter))
         res = []
         for item in items:
-            if item.parent_department_id != None:
+            if item.parent_department_id != None: 
                 continue
             node = Node(
                     name=item.name,
-                    id=item.id,
-                    employees=item.employees
+                    id=item.id
                 )
             if item.is_parent:
                 self.find_child(items, node)
             res.append(node)
         return res
-    
+
+    def get_users_deprtment(self, filter: dict, page:int, size: int):
+        filter = self.__check_filter(filter)
+        result = self._repository.get_user_deparments(filter=filter, limit=size, page=page)
+        users = []
+        employee: EmployeesModel
+        for employee in result['employees']:
+            users.append(EmployeeResponse(
+                id = employee.id,
+                fio = employee.name,
+                is_head_of_depatment=employee.head_of_depatment,
+                status=employee.user.status.name,
+                status_at=employee.user.status_at,
+                inner_phone=employee.user.inner_phone
+            ))
+        result['employees'] = users
+        return result
     def get_by_id(self, id):
         return self._repository.get_by_id(id)
 
@@ -63,15 +88,12 @@ class DepartmentsService:
                 if item.is_parent:
                     node = Node( 
                         name=item.name,
-                        id=item.id,
-                        employees=item.employees
+                        id=item.id
                     )
                     parent.child.append(self.find_child(items ,node))
                 else:
                     parent.child.append(Node(
                         name=item.name,
-                        id=item.id,
-                        employees=item.employees,
-                        child=child
+                        id=item.id
                     ))
         return parent

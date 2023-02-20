@@ -1,5 +1,6 @@
 from fastapi import status
 from pydantic import BaseModel
+import re
 
 
 class BaseAccess(BaseModel):
@@ -64,3 +65,8 @@ def message(message):
     return {
         "message": str(message)
     }
+
+def parse_params_num(params: str) -> set:
+    reg = re.findall(r'[0-9]{1,}', params)
+    result = {*reg}
+    return result

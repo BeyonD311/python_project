@@ -119,7 +119,7 @@ class UserRepository(SuperRepository):
                 return user
         except IntegrityError as e: 
             if user_model.photo_path is not None:
-                os.remove(user_model.photo_path)
+                os.remove("/app/"+user_model.photo_path)
             return False, e
     def item_add_or_update(self, user: User, session):
         roles = session.query(RolesModel).filter(RolesModel.id.in_(user.roles_id)).all()

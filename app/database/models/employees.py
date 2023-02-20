@@ -19,6 +19,9 @@ class EmployeesModel(Base):
     # user = relationship("UserModel", uselist=False, back_populates="employee")
     department = relationship("DepartmentsModel", back_populates="employees")
     user = relationship("UserModel")
+    # field model
+    status = None
+    phone = None
     def __repr__(self) -> str:
         return  f"<Employees("\
                 f"id={self.id}"\
@@ -27,5 +30,7 @@ class EmployeesModel(Base):
                 f"user_id={self.user_id}"\
                 f"head_of_depatment={self.head_of_depatment}"\
                 f"deputy_head={self.deputy_head}"\
+                f"status = {self.status}"\
+                f"phone = {self.phone}"\
                 f")>"
     

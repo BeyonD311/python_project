@@ -1,1 +1,1 @@
-from .employees_service import Employee, EmployeesService
+from .employees_service import Employee, EmployeesService, EmployeeResponse

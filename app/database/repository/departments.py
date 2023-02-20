@@ -1,6 +1,7 @@
-from .super import SuperRepository, NotFoundError
+import math
+from .super import SuperRepository, NotFoundError, Pagination
 from app.database.models import DepartmentsModel, UserModel, EmployeesModel
-from sqlalchemy import select
+from sqlalchemy.orm import Query
 from typing import Iterator
 
 # class User
@@ -16,24 +17,81 @@ class DeparmentsRepository(SuperRepository):
                 return []
             return query
     
-    def get_struct(self):
+    def get_struct(self, filter = None):
         with self.session_factory() as session:
-            # query = session.query(self.base_model).filter(self.base_model.is_active == True).order_by(self.base_model.id.asc()).all()
-            result = {}
-            query = session.query(self.base_model, EmployeesModel.name)
-            # query = query.join(EmployeesModel, EmployeesModel.department_id == self.base_model.id).join(UserModel, UserModel.id == EmployeesModel.user_id)
-            # query = query.filter(EmployeesModel.name.ilike('%id18%'))
-
-            """ print("query staruct-----------------------")
-            print()
-            print("query staruct-----------------------") """
-            for i in query.all():
-                print("query staruct-----------------------")
-                print(i)
-                print("query staruct-----------------------")
-
+            query = session.query(self.base_model)
+            if filter is not None:
+                query = query.join(EmployeesModel, EmployeesModel.department_id == self.base_model.id)\
+                    .join(UserModel, UserModel.id == EmployeesModel.user_id)
+                query = self.filter_params(query, filter)
+                query = query.cte('cte', recursive=True)
+                parnets = session.query(self.base_model).join(query, query.c.parent_department_id == self.base_model.id)
+                recursive_q = query.union(parnets)
+                q = session.query(recursive_q).all()
+                items = {}
+                for item in q:
+                    deparment = DepartmentsModel(
+                        id = item[0],
+                        name = item[1],
+                        parent_department_id = item[2],
+                        is_parent = item[4]
+                    )
+                    items[item[0]] = deparment
+                new_items = []
+                for item in items:
+                    new_items.append(items[item])
+                items = new_items
+                del new_items
+            else:
+                items = query.filter(self.base_model.is_active == True).order_by(self.base_model.id.asc()).all()
+            return items
     def get_by_id(self, department_id: int) -> DepartmentsModel:
         return super().get_by_id(department_id)
+
+    def filter_params(self, query, filter) -> Query:
+        if filter['fio'] != None:  
+            fio = filter['fio']
+            query = query.filter(EmployeesModel.name.ilike(f'%{fio}%'))
+        if len(filter['deparment']) != 0:
+            query = query.filter(EmployeesModel.department_id.in_(filter['deparment']))
+        if len(filter['position']) != 0:
+            query = query.filter(UserModel.position_id.in_(filter['position']))
+        if len(filter['status']) != 0:
+            query = query.filter(UserModel.status_id.in_(filter['status']))
+        if filter['phone'] != None:
+            phone = filter['phone']
+            query = query.filter(UserModel.inner_phone.ilike(f'%{phone}%'))
+        return query
+
+    def get_user_deparments(self, filter, limit: int, page: int):
+        with self.session_factory() as session:
+            offset = 0
+            if page <= 1:
+                page = 0
+            if  page > 0:
+                offset = (limit * page)
+            employees = session.query(EmployeesModel).join(UserModel, UserModel.id == EmployeesModel.user_id)
+            employees = self.filter_params(employees, filter).order_by(EmployeesModel.id.asc()).limit(limit).offset(offset).all()
+            pagination = self.get_pagination(filter=filter, session=session, size=limit, page=page)
+            pagination['employees'] = employees
+            return pagination
+    
+    def get_pagination(self, filter, session, size: int, page: int):
+        count_items = session.query(EmployeesModel)
+        count_items = self.filter_params(count_items, filter).count()
+        total_page = math.floor(count_items / size)
+        return {
+            "pagination": Pagination(
+                total_page = total_page,
+                total_count = count_items,
+                page=page + 1,
+                size=size
+            )
+        }
+            
+
+
+
     def add(self, params):
         with self.session_factory() as session:
             self.find_depratment_by_name(params.name, session)

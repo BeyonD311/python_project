@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, status, Response, Request
 from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
+from app.http.services.helpers import parse_params_num
 from app.database import NotFoundError
 from app.kernel import Container
 from app.http.services.departments import DepartmentsService, DepartmentParams
@@ -17,11 +18,25 @@ security = HTTPBearer()
 @inject
 def get_deparments(
     response: Response,
+    fio: str = None,
+    deparment: str = "",
+    position: str = "",
+    status: str = "",
+    phone: str = None,
     deparment_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
-        deparment_service.new_struct()
-        return deparment_service.get_all()
+        deparment = parse_params_num(deparment)
+        position = parse_params_num(position)
+        status = parse_params_num(status)
+        filter_params = {
+            "fio": fio,
+            "deparment": deparment,
+            "position": position,
+            "status": status,
+            "phone": phone
+        }
+        return deparment_service.get_struct(filter_params)
     except NotFoundError as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {
