@@ -79,7 +79,7 @@ class UserService:
         output_file = f"/images/user_image/{file_name}"
         if os.path.isfile(output_file):
             os.remove(output_file)
-        file = open(output_file, "wb+")
+        file = open(f'/app/{output_file}', "wb+")
         data = image.file.read(chuck_size)
         while(data != b''):
             file.write(data)
