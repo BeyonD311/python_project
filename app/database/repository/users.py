@@ -8,7 +8,7 @@ from app.database import SkillsModel
 from app.database import StatusModel
 from app.database import DepartmentsModel
 from app.database import PositionModel
-from app.database import EmployeesModel
+from app.database import PermissionsAccessModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import text
 
@@ -21,8 +21,7 @@ class UserRepository(SuperRepository):
             sort_d = "asc"
             if params.sort_dir.lower() == "desc":
                 sort_d = params.sort_dir.lower()
-            # result['items'] = session.execute(f"select usersid, ")
-            where = "where u.id != 0 and u.is_active = true"
+            where = "where u.id != 0"
             query = session.query(self.base_model)
             if params.filter is not None:
                 params_w = []
@@ -44,9 +43,6 @@ class UserRepository(SuperRepository):
                     f"left join position p on p.id = u.position_id "\
                     f"left join dep on dep.user_id = u.id "\
                     f"{where} order by {params.sort_field} {sort_d} limit {params.size} offset {params.page}"
-            print("-------------------")
-            print(sql)
-            print("-------------------")
             statement = text(sql)
             query = session.execute(statement)
             result['items'] = query.all()
@@ -126,7 +122,6 @@ class UserRepository(SuperRepository):
         groups = session.query(GroupsModel).filter(GroupsModel.id.in_(user.group_id)).all()
         if user.deparment_id:
             departments = session.query(DepartmentsModel).filter(DepartmentsModel.id.in_(user.deparment_id)).all()
-            print(user.deparment_id)
             [user.deparment.append(d) for d in departments]
         if user.skills_id != []:
             skills = session.query(SkillsModel).filter(GroupsModel.id.in_(user.skills_id)).all()
@@ -136,5 +131,25 @@ class UserRepository(SuperRepository):
         session.add(user)
         session.commit()
         return user
+    
+    def soft_delete(self, id: int, delete_time = None):
+        with self.session_factory() as session:
+            user = self.get_by_id(id)
+            if delete_time is None:
+                user.date_dismissal_at = datetime.now()
+            else:
+                user.date_dismissal_at = delete_time
+            user.is_active = False
+            session.add(user)
+            session.commit()       
+
+    def user_restore(self, id):
+        with self.session_factory() as session:
+            user = self.get_by_id(id)
+            user.date_dismissal_at = None
+            user.is_active = True
+            session.add(user)
+            session.commit()       
+
 class UserNotFoundError(NotFoundError):
     entity_name: str = "User"

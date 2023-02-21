@@ -32,7 +32,7 @@ class UserRequest(BaseModel):
     is_operator: bool
     phone: str = None
     inner_phone: int = None
-    image: UploadFile = None
+    image: str = None
     deparment_id: list[int] = []
     position_id: int
     group_id: list[int]

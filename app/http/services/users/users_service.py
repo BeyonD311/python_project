@@ -1,7 +1,7 @@
 import os
-import copy
-import re
+import datetime
 from hashlib import sha256
+from fastapi import status
 from app.database import UserModel, UserRepository, NotFoundError, SkillsRepository
 from app.http.services.users.user_base_models import UserResponse, ResponseList, UserRequest, UserParams
 
@@ -66,13 +66,9 @@ class UserService:
 
     def set_status(self, user_id: int, status_id: int):
         self._repository.set_status(user_id=user_id, status_id=status_id)
-
-    def add_skill(self, text: str):
-        return self._repository.add_skill(text)
-
-    def find_skill(self, text: str):
-        return self.find_skill(text)
-
+    
+    def dismiss(self, id: int, date_dismissal_at: datetime.datetime = None):
+        self._repository.soft_delete(id, date_dismissal_at)
     def __save_file(self, image) -> str:
         chuck_size = 4000
         file_name = image.filename.replace(" ", "_")

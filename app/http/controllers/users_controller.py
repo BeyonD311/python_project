@@ -180,7 +180,6 @@ async def add_user(
     roles_id: List[str] = Body(),
     skills_id: List[str] = Body(default=None),
     date_employment_at: datetime = Body(default=datetime.now()),
-    date_dismissal_at: datetime|str = Body(default=None),
     phone: str = Body(default=None),
     inner_phone: int|str = Body(default=None),
     image: UploadFile = File(default=None),
@@ -284,7 +283,6 @@ async def update_user(
     roles_id: List[str] = Body(),
     skills_id: List[str] = Body(default=None),
     date_employment_at: datetime = Body(default=datetime.now()),
-    date_dismissal_at: datetime|str = Body(default=None),
     phone: str = Body(default=None),
     inner_phone: int|str = Body(default=None),
     image: UploadFile|bytes = File(default=None),
@@ -355,6 +353,25 @@ async def update_user(
 def user_delete(id: int, response: Response, user_service: UserService = Depends(Provide[Container.user_service]),HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
         return user_service.delete_user_by_id(id)
+    except NotFoundError as e:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {
+            "message": str(e)
+        }
+@route.delete("/dismiss/{id}")
+@inject
+def user_dismiss(
+        id: int, 
+        response: Response, 
+        date_dismissal_at: datetime|str = Body(default=None),
+
+        user_service: UserService = Depends(Provide[Container.user_service]),
+        HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    try:
+        user_service.dismiss(id, date_dismissal_at)
+        return {
+            "message": "Employee dismiss"
+        }
     except NotFoundError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
         return {

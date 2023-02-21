@@ -45,9 +45,10 @@ class DeparmentsRepository(SuperRepository):
             else:
                 items = query.filter(self.base_model.is_active == True).order_by(self.base_model.id.asc()).all()
             return items
+        
     def get_by_id(self, department_id: int) -> DepartmentsModel:
         return super().get_by_id(department_id)
-
+    # Параметры фильтра
     def filter_params(self, query, filter) -> Query:
         if filter['fio'] != None:  
             fio = filter['fio']
@@ -89,9 +90,6 @@ class DeparmentsRepository(SuperRepository):
             )
         }
             
-
-
-
     def add(self, params):
         with self.session_factory() as session:
             self.find_depratment_by_name(params.name, session)
@@ -121,7 +119,6 @@ class DeparmentsRepository(SuperRepository):
                 
             return department
             
-
     def update(self, id, params):
         with self.session_factory() as session:
             current = self.find_deprment_by_id(id, session=session)

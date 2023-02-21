@@ -14,6 +14,37 @@ route = APIRouter(
 
 security = HTTPBearer()
 
+@route.get("/depatments")
+@inject
+def get_employees(
+    response: Response,
+    fio: str = None,
+    deparment: str = "",
+    position: int = "",
+    status: int = "",
+    phone: str = None,
+    page: int = 1,
+    limit: int = 10,
+    deparment_service: DepartmentsService = Depends(Provide[Container.department_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    try:
+        deparment = parse_params_num(deparment)
+        position = parse_params_num(position)
+        status = parse_params_num(status)
+        filter_params = {
+            "fio": fio,
+            "deparment": deparment,
+            "position": position,
+            "status": status,
+            "phone": phone
+        }
+        return deparment_service.get_struct(filter_params, page, limit)
+    except NotFoundError as e:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {
+            "message": str(e)
+        }
+
 @route.get("/")
 @inject
 def get_employees(
