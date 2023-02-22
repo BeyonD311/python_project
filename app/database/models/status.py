@@ -6,5 +6,6 @@ class StatusModel(Base):
 
     id = Column(SMALLINT, primary_key=True, autoincrement='ignore_fk')
     name = Column(String)
+    color = Column(String, default=None)
             
 __all__ = ('StatusModel')

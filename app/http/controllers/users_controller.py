@@ -100,8 +100,6 @@ async def get_users(
 @route.get("/status_all")
 @inject
 async def current_user(
-    response: Response, 
-    request: Request, 
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     return user_service.get_all_status_users()
@@ -161,7 +159,6 @@ async def get_user_id(
             "status": "fail",
             "message": "Not found user"
         }
-
 
 @route.post("/")
 @inject
@@ -243,7 +240,6 @@ async def add_user(
             "message": str(e)
         }
 
-
 @route.patch("/status")
 @inject
 async def update_status(
@@ -264,6 +260,17 @@ async def update_status(
         return {
             "message": "Not found status"
         }
+
+@route.patch("/update_password/{id}")
+@inject
+async def update_password(
+    id: int,
+    password: str,
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)):
+
+   return user_service.reset_password(id, password)
+
 
 @route.put("/{id}")
 @inject
@@ -346,8 +353,7 @@ async def update_user(
         return {
             "message": str(e)
         }
-
-
+    
 @route.delete("/{id}")
 @inject
 def user_delete(id: int, response: Response, user_service: UserService = Depends(Provide[Container.user_service]),HTTPBearerSecurity: HTTPBearer = Depends(security)):
@@ -358,6 +364,7 @@ def user_delete(id: int, response: Response, user_service: UserService = Depends
         return {
             "message": str(e)
         }
+    
 @route.delete("/dismiss/{id}")
 @inject
 def user_dismiss(

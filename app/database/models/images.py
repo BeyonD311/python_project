@@ -1,5 +1,6 @@
-from sqlalchemy import Column, BIGINT, String
+from sqlalchemy import String, BIGINT, Column
 from app.kernel.database import Base
+
 
 class ImagesModel(Base):
 
@@ -9,4 +10,4 @@ class ImagesModel(Base):
     path = Column(String)
 
     def __repr__(self) -> str:
-        return f"Image<(id={self.id}, path={self.path})>"
+        return f"<Image(id={self.id}, path={self.path})>"

@@ -1,7 +1,6 @@
 import os
 import datetime
 from hashlib import sha256
-from fastapi import status
 from app.database import UserModel, UserRepository, NotFoundError, SkillsRepository
 from app.http.services.users.user_base_models import UserResponse, ResponseList, UserRequest, UserParams
 
@@ -69,6 +68,20 @@ class UserService:
     
     def dismiss(self, id: int, date_dismissal_at: datetime.datetime = None):
         self._repository.soft_delete(id, date_dismissal_at)
+    
+    def reset_password(self, id: int, password: str):
+        params = {
+            "id": id,
+            "password": password,
+            "hashed_password": sha256(password.encode()).hexdigest()
+        }
+        self._repository.update_password(params=params)
+
+        return {
+            "message": "Password is update"
+        }
+
+
     def __save_file(self, image) -> str:
         chuck_size = 4000
         file_name = image.filename.replace(" ", "_")
