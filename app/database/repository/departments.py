@@ -1,6 +1,6 @@
 import math
 from .super import SuperRepository, NotFoundError, Pagination
-from app.database.models import DepartmentsModel, UserModel, EmployeesModel
+from app.database.models import DepartmentsModel, UserModel
 from sqlalchemy.orm import Query
 from typing import Iterator
 
@@ -21,8 +21,7 @@ class DeparmentsRepository(SuperRepository):
         with self.session_factory() as session:
             query = session.query(self.base_model)
             if filter is not None:
-                query = query.join(EmployeesModel, EmployeesModel.department_id == self.base_model.id)\
-                    .join(UserModel, UserModel.id == EmployeesModel.user_id)
+                query = query.join(UserModel, UserModel.department_id == self.base_model.id)
                 query = self.filter_params(query, filter)
                 query = query.cte('cte', recursive=True)
                 parnets = session.query(self.base_model).join(query, query.c.parent_department_id == self.base_model.id)
@@ -52,9 +51,9 @@ class DeparmentsRepository(SuperRepository):
     def filter_params(self, query, filter) -> Query:
         if filter['fio'] != None:  
             fio = filter['fio']
-            query = query.filter(EmployeesModel.name.ilike(f'%{fio}%'))
+            query = query.filter(UserModel.fio.ilike(f'%{fio}%'))
         if len(filter['deparment']) != 0:
-            query = query.filter(EmployeesModel.department_id.in_(filter['deparment']))
+            query = query.filter(UserModel.department_id.in_(filter['deparment']))
         if len(filter['position']) != 0:
             query = query.filter(UserModel.position_id.in_(filter['position']))
         if len(filter['status']) != 0:
@@ -71,14 +70,14 @@ class DeparmentsRepository(SuperRepository):
                 page = 0
             if  page > 0:
                 offset = (limit * page)
-            employees = session.query(EmployeesModel).join(UserModel, UserModel.id == EmployeesModel.user_id)
-            employees = self.filter_params(employees, filter).order_by(EmployeesModel.id.asc()).limit(limit).offset(offset).all()
+            employees = session.query(UserModel)
+            employees = self.filter_params(employees, filter).order_by(UserModel.id.asc()).limit(limit).offset(offset).all()
             pagination = self.get_pagination(filter=filter, session=session, size=limit, page=page)
             pagination['employees'] = employees
             return pagination
     
     def get_pagination(self, filter, session, size: int, page: int):
-        count_items = session.query(EmployeesModel)
+        count_items = session.query(UserModel)
         count_items = self.filter_params(count_items, filter).count()
         total_page = math.floor(count_items / size)
         return {
@@ -111,7 +110,8 @@ class DeparmentsRepository(SuperRepository):
                 raise NotFoundError("Not create")
             
             try:
-                self.__add_employee(params=params, session=session, id=department.id)
+                # self.__add_employee(params=params, session=session, id=department.id)
+                ...
             except Exception:
                 session.delete(department)
             finally:
@@ -141,8 +141,8 @@ class DeparmentsRepository(SuperRepository):
                             session.add(old_parent)
             current.name = params.name
             current.parent_department_id = params.source_department
-            self.__deparment_clear_employee(id, session=session)
-            self.__add_employee(params=params, session=session,id=id)
+            """ self.__deparment_clear_employee(id, session=session)
+            self.__add_employee(params=params, session=session,id=id) """
             session.commit()
             return current
 
@@ -164,7 +164,7 @@ class DeparmentsRepository(SuperRepository):
 
     def find_employee(self, deparment_id: int, session):
         result = {}
-        query = session.query(EmployeesModel).filter(EmployeesModel.id != 0).filter(EmployeesModel.department_id == deparment_id).all()
+        query = session.query(UserModel).filter(UserModel.id != 0).filter(UserModel.department_id == deparment_id).all()
         for employee in query:
                 result[employee.user_id] = employee
         return result
@@ -174,45 +174,3 @@ class DeparmentsRepository(SuperRepository):
         if query is None:
             raise NotFoundError("department exists")
         return query
-    def __create_employee(self, params):
-        return EmployeesModel( 
-            name = params['name'],
-            department_id = params['department_id'],
-            user_id = params['user_id'],
-            head_of_depatment = params['head_of_depatment'],
-            deputy_head = params['deputy_head']
-        )
-
-    def __deparment_clear_employee(self, depatment_id, session):
-        employees = self.find_employee(depatment_id, session)
-        for employe in employees:
-            employe = employees[employe]
-            session.delete(employe)
-        session.commit()
-
-    def __add_employee(self, params, session, id):
-        users_find = self.get_users(params=params, session=session)
-
-        if params.director_user_id not in users_find:
-            raise NotFoundError("director_user_id not found")
-
-        employee_head: UserModel = users_find[params.director_user_id]
-        session.add(self.__create_employee({
-            "name": employee_head.fio,
-            "department_id": id,
-            "user_id" : params.director_user_id,
-            "head_of_depatment" :True,
-            "deputy_head":False
-        }))
-        del users_find[params.director_user_id]
-        for user in users_find:
-            value = users_find[user]
-            employee = self.__create_employee({
-                "name": value.fio,
-                "department_id": id,
-                "user_id" : user,
-                "head_of_depatment" :False,
-                "deputy_head":True
-            })
-            session.add(employee)
-        

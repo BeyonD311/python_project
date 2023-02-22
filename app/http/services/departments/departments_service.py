@@ -1,7 +1,14 @@
-from app.database import DeparmentsRepository, DepartmentsModel, EmployeesModel
+from app.database import DeparmentsRepository, DepartmentsModel
 from pydantic import BaseModel
 from typing import List, Iterator
-from app.http.services.employees.employees_service import EmployeeResponse
+
+class EmployeeResponse(BaseModel):
+    id: int
+    fio: str
+    is_head_of_depatment: bool
+    status:str
+    status_at: str
+    inner_phone: str
 
 class DepartmentParams(BaseModel):
     name: str
@@ -57,7 +64,7 @@ class DepartmentsService:
         filter = self.__check_filter(filter)
         result = self._repository.get_user_deparments(filter=filter, limit=size, page=page)
         users = []
-        employee: EmployeesModel
+        employee
         for employee in result['employees']:
             users.append(EmployeeResponse(
                 id = employee.id,

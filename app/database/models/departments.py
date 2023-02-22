@@ -14,12 +14,7 @@ class DepartmentsModel(Base):
     is_parent = Column(Boolean, default=False)
     created_at = Column(TIMESTAMP,server_default=func.now())
     updated_at = Column(TIMESTAMP,server_default=func.now(),onupdate=func.now())
-    struct = Column(JSON, nullable=True)
-    struct_employess = Column(JSON, nullable=True)
-    created_at = Column(TIMESTAMP,server_default=func.now())
-    updated_at = Column(TIMESTAMP,server_default=func.now(),onupdate=func.now())
-    users = relationship("UserModel", secondary='employees', back_populates="deparment")
-    employees = relationship("EmployeesModel", back_populates="department", cascade="delete")
+    users = relationship("UserModel", back_populates="deparment")
     def __repr__(self) -> str:
         return f"<Departments(id={self.id}, " \
             f"parent_department_id={self.parent_department_id}"\

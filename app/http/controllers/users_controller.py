@@ -183,11 +183,6 @@ async def add_user(
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
-    if check_file(image):
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return {
-            "message": "not an image uploaded"
-        } 
     if bool(image) == False:
         image = None
     if bool(inner_phone) == False:
@@ -292,15 +287,10 @@ async def update_user(
     date_employment_at: datetime = Body(default=datetime.now()),
     phone: str = Body(default=None),
     inner_phone: int|str = Body(default=None),
-    image: UploadFile|bytes = File(default=None),
+    image_id: int = Body(),
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
-    if check_file(image):
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return {
-            "message": "not an image uploaded"
-        } 
     if bool(image) == False:
         image = None
     if bool(inner_phone) == False:
@@ -384,9 +374,6 @@ def user_dismiss(
         return {
             "message": str(e)
         }
-
-def check_file(image):
-    return bool(image) and image.content_type.find("image") == -1
 
 def copy(user, show_pass: False = False) -> dict:
     res = {}
