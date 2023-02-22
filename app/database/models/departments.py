@@ -1,6 +1,6 @@
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from sqlalchemy import String, INTEGER, Column, Boolean, TIMESTAMP
+from sqlalchemy import String, INTEGER, Column, Boolean, TIMESTAMP, JSON
 from app.kernel.database import Base
 
 class DepartmentsModel(Base):
@@ -12,6 +12,10 @@ class DepartmentsModel(Base):
     parent_department_id = Column(INTEGER, nullable=True)
     is_active = Column(Boolean, default=True)
     is_parent = Column(Boolean, default=False)
+    created_at = Column(TIMESTAMP,server_default=func.now())
+    updated_at = Column(TIMESTAMP,server_default=func.now(),onupdate=func.now())
+    struct = Column(JSON, nullable=True)
+    struct_employess = Column(JSON, nullable=True)
     created_at = Column(TIMESTAMP,server_default=func.now())
     updated_at = Column(TIMESTAMP,server_default=func.now(),onupdate=func.now())
     users = relationship("UserModel", secondary='employees', back_populates="deparment")

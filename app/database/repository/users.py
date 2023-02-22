@@ -8,7 +8,6 @@ from app.database import SkillsModel
 from app.database import StatusModel
 from app.database import DepartmentsModel
 from app.database import PositionModel
-from app.database import PermissionsAccessModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import text
 
@@ -132,6 +131,15 @@ class UserRepository(SuperRepository):
         session.commit()
         return user
     
+    def update_password(self, params: dict):
+        with self.session_factory() as session:
+            user: User = session.query(self.base_model).filter(self.base_model.id == params['id']).first()
+            user.password = params['password']
+            user.hashed_password = params['hashed_password']
+            session.add(user)
+            session.commit()
+        return True
+
     def soft_delete(self, id: int, delete_time = None):
         with self.session_factory() as session:
             user = self.get_by_id(id)
