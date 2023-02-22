@@ -1,4 +1,4 @@
 __pycache__
 database_pg
 app/body_users.json
-database
+/database

@@ -33,6 +33,7 @@ class UserModel(Base):
     roles = relationship("RolesModel", secondary='user_roles', back_populates="users", cascade="save-update, delete")
     skills = relationship("SkillsModel", secondary='user_skills', back_populates="users", cascade="save-update, delete")
     deparment = relationship("DepartmentsModel", secondary='employees', back_populates="users", cascade="save-update, merge, delete")
+    image = relationship("ImagesModel")
     def __repr__(self): 
         return f"<User(id={self.id}" \
                f"email=\"{self.email}\"" \

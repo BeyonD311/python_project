@@ -12,6 +12,7 @@ from .skills import SkillsModel
 from .user_skills import UserSkillsModel
 from .employees import EmployeesModel
 from .images import ImagesModel
+
 __all__ = [
     'UserModel', 
     'DepartmentsModel', 
