@@ -12,7 +12,7 @@ path_exception = ("auth", "docs", "openapi.json", "images")
 user_path_exception = ("/users/status", "/users/current")
 
 @inject
-def get_user(id, user = Depends(Provide[Container.user_service])):
+def get_user(id, user = Depends(Provide[Container.user_repository])):
     return user.get_user_by_id(id)
 
 @inject

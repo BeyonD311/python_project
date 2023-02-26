@@ -9,55 +9,67 @@ class UserLoginParams(BaseModel):
     login: str
     password: str
 
+class UserStatus(BaseModel):
+    status: str = None
+    status_id: int = None
+    status_at: int = None
+    color: str = None
+
 """ Поля пользователя """
-class UserResponse(BaseModel):
+class UsersResponse(BaseModel):
     id: int = None
     fio: str = None
     inner_phone: int = None
     deparment: str = None
     position: str = None
-    status: str = None
-    status_id: int = None
-    status_at: int = None
+    status: UserStatus = None
+
+
+class UserDetailResponse(BaseModel):
+    id: int
+    email: str
+    name: str
+    last_name: str
+    patronymic: str
+    login: str
+    fio: str
+    inner_phone: int = None
+    phone: str = None
+    deparment: str = None
+    position: dict = None
+    groups: list = None
+    skills: list = None
+    roles: list = None
+    status: UserStatus = None
+    password: str
+    photo_path: str = None
+    is_operator: bool
+    date_employment_at: datetime
+    date_dismissal_at: datetime = None
+    head_of_depatment: bool
+    deputy_head: bool
 
 class UserRequest(BaseModel):
-    id: int = None
     email: str = None
     password: str = None
     name: str
     last_name: str
     patronymic: str = None
-    fio: str
     login: str
     is_operator: bool
     phone: str = None
     inner_phone: int = None
-    image: str = None
-    deparment_id: list[int] = []
+    image_id: int = None
+    department_id: int = None
     position_id: int
     group_id: list[int]
     roles_id: list[int]
     skills_id: list[int] = []
     date_employment_at: datetime = None
-    date_dismissal_at: datetime = None
-
-
-class ResponseUser(BaseDTO):
-    id: int = None
-    email: str = None
-    name: str = None
-    last_name: str = None
-    patronymic: str = None
-    phone: str = None
-    inner_phone: int = None
-    is_active: bool = True
-    photo_path: str = None
-    deparment: str = None
-    position: str = None
 
 class ResponseList(BaseModel):
     pagination: Pagination
-    users: list[UserResponse]
+    users: list[UsersResponse]
 
 class UsersFilter(BaseModel):
     fio: str = None

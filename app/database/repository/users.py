@@ -6,10 +6,11 @@ from app.database import RolesModel
 from app.database import GroupsModel
 from app.database import SkillsModel
 from app.database import StatusModel
-from app.database import DepartmentsModel
 from app.database import PositionModel
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import text
+
+
 
 class UserRepository(SuperRepository): 
     base_model = User
@@ -64,32 +65,25 @@ class UserRepository(SuperRepository):
     def get_by_id(self, user_id: int) -> User:
         return super().get_by_id(user_id)
 
-    def update(self, user_model: User):
-        try:
-            with self.session_factory() as session:
-                user = user_model
-                current = session.query(self.base_model).filter(self.base_model.id == user.id).first()
-                if current is None:
-                    raise IntegrityError("Пользователь не найден", "Пользователь не найден", "Пользователь не найден")
-                for param in user.__dict__:
-                    if param == '_sa_instance_state' or param == 'id' or param == 'roles_id':
-                        continue
-                    values = user.__dict__[param]
-                    current.__setattr__(param, values)
-                current.skills_id = user.skills_id
-                current.roles_id = user.roles_id
-                current.group_id = user.group_id
-                if user.skills_id != []:
-                    current.skills.clear()
-                if user.deparment_id != []:
-                    current.deparment.clear()
-                current.roles.clear()
-                current.groups.clear()
-                self.item_add_or_update(current, session)
-                return current
-        except IntegrityError as e:
-            os.remove(user_model.photo_path)
-            return False, e
+    def update(self, id, user_model: User):
+        with self.session_factory() as session:
+            user = user_model
+            current = session.query(self.base_model).filter(self.base_model.id == id).first()
+            if current is None:
+                raise IntegrityError("Пользователь не найден", "Пользователь не найден", "Пользователь не найден")
+            for param in user.__dict__:
+                if param == '_sa_instance_state' or param == 'id' or param == 'roles_id':
+                    continue
+                values = user.__dict__[param]
+                current.__setattr__(param, values)
+            current.skills_id = user.skills_id
+            current.roles_id = user.roles_id
+            current.group_id = user.group_id
+            if user.skills_id != []:
+                current.skills.clear()
+            current.roles.clear()
+            current.groups.clear()
+            return self.item_add_or_update(current, session)
 
     def get_all_status(self):
         with self.session_factory() as session:
@@ -109,19 +103,15 @@ class UserRepository(SuperRepository):
             with self.session_factory() as session:
                 user = user_model
                 self.item_add_or_update(user, session)
-                user.__delattr__("hashed_password")
-                user.__delattr__("password")
                 return user
         except IntegrityError as e: 
-            if user_model.photo_path is not None:
-                os.remove("/app/"+user_model.photo_path)
-            return False, e
+            raise(e)
     def item_add_or_update(self, user: User, session):
+        print("---------------------------")
+        print(user.roles_id)
+        print("---------------------------")
         roles = session.query(RolesModel).filter(RolesModel.id.in_(user.roles_id)).all()
         groups = session.query(GroupsModel).filter(GroupsModel.id.in_(user.group_id)).all()
-        if user.deparment_id:
-            departments = session.query(DepartmentsModel).filter(DepartmentsModel.id.in_(user.deparment_id)).all()
-            [user.deparment.append(d) for d in departments]
         if user.skills_id != []:
             skills = session.query(SkillsModel).filter(GroupsModel.id.in_(user.skills_id)).all()
             [user.skills.append(s) for s in skills]
@@ -129,6 +119,7 @@ class UserRepository(SuperRepository):
         [user.groups.append(g) for g in groups]
         session.add(user)
         session.commit()
+
         return user
     
     def update_password(self, params: dict):

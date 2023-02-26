@@ -1,4 +1,12 @@
-from sqlalchemy import Column, String, Boolean, BIGINT, SMALLINT, Integer, TIMESTAMP, ForeignKey
+from sqlalchemy import Column
+from sqlalchemy import String
+from sqlalchemy import Boolean
+from sqlalchemy import BIGINT
+from sqlalchemy import SMALLINT
+from sqlalchemy import Integer
+from sqlalchemy import TIMESTAMP
+from sqlalchemy import ForeignKey
+from sqlalchemy import INTEGER
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.kernel.database import Base
@@ -18,9 +26,12 @@ class UserModel(Base):
     phone = Column(String(25), nullable=True)
     inner_phone = Column(Integer, nullable=True)
     is_active = Column(Boolean, default = True) 
-    photo_path = Column(String, nullable=True)
+    image_id = Column(BIGINT, ForeignKey('images.id', ondelete="SET NULL"))
     position_id = Column(SMALLINT, ForeignKey('position.id'))
     status_id = Column(Integer, ForeignKey('status_users.id'))
+    department_id = Column(INTEGER, ForeignKey("departments.id"))
+    head_of_depatment = Column(Boolean, default=False)
+    deputy_head = Column(Boolean, default=False)
     date_employment_at = Column(TIMESTAMP)
     date_dismissal_at = Column(TIMESTAMP, nullable=True) 
     created_at = Column(TIMESTAMP,server_default=func.now())
@@ -32,7 +43,7 @@ class UserModel(Base):
     groups = relationship("GroupsModel", secondary='user_groups', back_populates="users", cascade="save-update, delete")
     roles = relationship("RolesModel", secondary='user_roles', back_populates="users", cascade="save-update, delete")
     skills = relationship("SkillsModel", secondary='user_skills', back_populates="users", cascade="save-update, delete")
-    deparment = relationship("DepartmentsModel", secondary='employees', back_populates="users", cascade="save-update, merge, delete")
+    deparment = relationship("DepartmentsModel", back_populates="users", cascade="save-update")
     image = relationship("ImagesModel")
     def __repr__(self): 
         return f"<User(id={self.id}" \
@@ -45,7 +56,7 @@ class UserModel(Base):
                f"login={self.login}"\
                f"phone={self.phone}"\
                f"inner_phone={self.inner_phone}"\
-               f"photo_path={self.photo_path}"\
+               f"image_id={self.image_id}"\
                F"status_id={self.status_id}"\
                f"date_employment_at={self.date_employment_at}"\
                f"date_dismissal_at={self.date_dismissal_at}"\

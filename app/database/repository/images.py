@@ -5,16 +5,13 @@ class ImagesRepository(SuperRepository):
 
     base_model = ImagesModel
 
-    def add(self, path: str):
-        
+    def add(self, path: str) -> ImagesModel:
         with self.session_factory() as session:
-            image = session.query(self.base_model).filter(ImagesModel.path == path).first()
-            if image is None:
-                image = ImagesModel(
+            image = ImagesModel(
                     path=path
                 )
-                session.add(image)
-                session.commit()
-
+            session.add(image)
+            session.commit()
+            return image
     def update(self):
         pass

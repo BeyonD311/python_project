@@ -164,68 +164,10 @@ async def get_user_id(
 @inject
 async def add_user(
     response: Response,
-    email: str = Body(),
-    password: str = Body(),
-    name: str = Body(),
-    last_name: str = Body(),
-    patronymic: str = Body(default=None),
-    login: str = Body(),
-    is_operator: bool = Body(default=False),
-    deparment_id: List[str] = Body(default=None),
-    position_id: int = Body(), 
-    group_id: List[str] = Body(),
-    roles_id: List[str] = Body(),
-    skills_id: List[str] = Body(default=None),
-    date_employment_at: datetime = Body(default=datetime.now()),
-    phone: str = Body(default=None),
-    inner_phone: int|str = Body(default=None),
-    image: UploadFile = File(default=None),
+    user_request: UserRequest = Body(),
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
-    if check_file(image):
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return {
-            "message": "not an image uploaded"
-        } 
-    if bool(image) == False:
-        image = None
-    if bool(inner_phone) == False:
-        inner_phone = None
-    if bool(date_dismissal_at) == False:
-        date_dismissal_at = None
-    if len(group_id) > 0:
-        group_id = group_id[0].split(",")
-    if len(roles_id) > 0:
-        roles_id = roles_id[0].split(",")
-    if len(skills_id) > 0 and skills_id[0] != '':
-        skills_id = skills_id[0].split(",")
-    else:
-        skills_id = []
-    if len(deparment_id) > 0 and deparment_id[0] != '':
-        deparment_id = deparment_id[0].split(",")
-    else:
-        deparment_id = []
-    user_request = UserRequest(
-        email=email,
-        password = password,
-        login = login,
-        name = name,
-        last_name = last_name,
-        patronymic = patronymic,
-        fio=f"{name} {last_name} {patronymic}".strip(),
-        is_operator = is_operator,
-        deparment_id = deparment_id,
-        position_id = position_id,
-        group_id = group_id,
-        roles_id = roles_id,
-        skills_id= skills_id,
-        date_employment_at = date_employment_at,
-        phone = phone,
-        inner_phone = inner_phone,
-        date_dismissal_at = date_dismissal_at,
-        image = image,
-    )
     try:
         user = user_service.create_user(user_request)
         if type(user) == tuple:
@@ -238,6 +180,14 @@ async def add_user(
         response.status_code = status.HTTP_404_NOT_FOUND
         return {
             "message": str(e)
+        }
+    except IntegrityError as e:
+        errorInfo = e.orig.args
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        pattern = r'(DETAIL:(?:[^\\n]*))'
+        match = re.findall(pattern=pattern, string=errorInfo[0])
+        return {
+            "message": match[0]
         }
 
 @route.patch("/status")
@@ -277,76 +227,12 @@ async def update_password(
 async def update_user(
     id: int,
     response: Response,
-    email: str = Body(),
-    password: str = Body(),
-    name: str = Body(),
-    last_name: str = Body(),
-    patronymic: str = Body(default=None),
-    login: str = Body(),
-    is_operator: bool = Body(default=False),
-    deparment_id: List[str] = Body(default=None),
-    position_id: int = Body(),
-    group_id: List[str] = Body(),
-    roles_id: List[str] = Body(),
-    skills_id: List[str] = Body(default=None),
-    date_employment_at: datetime = Body(default=datetime.now()),
-    phone: str = Body(default=None),
-    inner_phone: int|str = Body(default=None),
-    image: UploadFile|bytes = File(default=None),
+    params: UserRequest = Body(),
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
-    if check_file(image):
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return {
-            "message": "not an image uploaded"
-        } 
-    if bool(image) == False:
-        image = None
-    if bool(inner_phone) == False:
-        inner_phone = None
-    if bool(date_dismissal_at) == False:
-        date_dismissal_at = None
-    if len(group_id) > 0:
-        group_id = group_id[0].split(",")
-    if len(roles_id) > 0:
-        roles_id = roles_id[0].split(",")
-    if len(skills_id) > 0 and skills_id[0] != '':
-        skills_id = skills_id[0].split(",")
-    else:
-        skills_id = []
-    if len(deparment_id) > 0 and deparment_id[0] != '':
-        deparment_id = deparment_id[0].split(",")
-    else:
-        deparment_id = []
-    user_request = UserRequest(
-        id=id,
-        email=email,
-        password = password,
-        login = login,
-        name = name,
-        last_name = last_name,
-        patronymic = patronymic,
-        fio=f"{name} {last_name} {patronymic}".strip(),
-        is_operator = is_operator,
-        deparment_id = deparment_id,
-        position_id = position_id,
-        group_id = group_id,
-        roles_id = roles_id,
-        skills_id= skills_id,
-        date_employment_at = date_employment_at,
-        phone = phone,
-        inner_phone = inner_phone,
-        date_dismissal_at = date_dismissal_at,
-        image = image,
-    )
     try:
-        user = user_service.update_user(user_request)
-        if type(user) == tuple:
-            response.status_code = status.HTTP_400_BAD_REQUEST
-            return {
-                "message": "Bad request"
-            }
+        user = user_service.update_user(id, params)
         return user
     except NotFoundError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
@@ -384,9 +270,6 @@ def user_dismiss(
         return {
             "message": str(e)
         }
-
-def check_file(image):
-    return bool(image) and image.content_type.find("image") == -1
 
 def copy(user, show_pass: False = False) -> dict:
     res = {}

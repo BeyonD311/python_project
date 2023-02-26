@@ -7,5 +7,8 @@ class StatusModel(Base):
     id = Column(SMALLINT, primary_key=True, autoincrement='ignore_fk')
     name = Column(String)
     color = Column(String, default=None)
-            
+    
+    def __repr__(self) -> str:
+        return f"<Status(id={self.id},name={self.name},color={self.color})>"
+
 __all__ = ('StatusModel')

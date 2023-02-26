@@ -2,8 +2,13 @@ import os
 import datetime
 from hashlib import sha256
 from app.database import UserModel, UserRepository, NotFoundError, SkillsRepository
-from app.http.services.users.user_base_models import UserResponse, ResponseList, UserRequest, UserParams
-
+from app.http.services.users.user_base_models import UsersResponse
+from app.http.services.users.user_base_models import ResponseList
+from app.http.services.users.user_base_models import UserRequest
+from app.http.services.users.user_base_models import UserParams
+from app.http.services.users.user_base_models import UserDetailResponse
+from app.http.services.users.user_base_models import UserStatus
+from sqlalchemy.exc import IntegrityError
 
 class UserService:
     def __init__(self, user_repository: UserRepository) -> None:
@@ -16,7 +21,7 @@ class UserService:
             status_at = user[7]
             if status_at is not None:
                 status_at = user[7].timestamp()
-            user = UserResponse(
+            user = UsersResponse(
                 id = user[0], 
                 fio = user[1],
                 inner_phone = user[4],
@@ -34,26 +39,54 @@ class UserService:
 
     def get_user_by_id(self, user_id: int):
         user = self._repository.get_by_id(user_id)
-        user.deparment
-        user.position
-        user.groups
-        for skill in user.skills:
-            skill
+        userDetail = UserDetailResponse(
+            id=user.id,
+            email=user.email,
+            login=user.login,
+            name=user.name,
+            last_name=user.last_name,
+            patronymic=user.patronymic,
+            fio=user.fio,
+            inner_phone=user.inner_phone,
+            password=user.password,
+            is_operator=user.is_operator,
+            date_employment_at=user.date_employment_at,
+            head_of_depatment=user.head_of_depatment,
+            deputy_head=user.deputy_head,
+            date_dismissal_at = user.date_dismissal_at,
+            phone=user.phone,
+        )
+        userDetail.groups = user.groups
+        userDetail.skills = user.skills
+        userDetail.position = user.position
+        status_user = user.status
+        userDetail.status = UserStatus(
+            status=status_user.name,
+            color=status_user.color,
+            status_id=status_user.id,
+            status_at=user.status_at
+        )
+        if user.image == None:
+            userDetail.photo_path = user.image
+        else:
+            userDetail.photo_path = user.image.path
         for role in user.roles:
             role.permissions
-        return user
+        userDetail.roles = user.roles
+        del status_user
+        del user
+        return userDetail
 
     def find_user_by_login(self, login: str):
         return self._repository.get_by_login(login) 
 
     def create_user(self, user: UserRequest) -> any:
-        user_create = self._repository.add(self.__fill_fields(user))
-        return user_create
+        return self._repository.add(self.__fill_fields(user))
     
-    def update_user(self, user: UserRequest) -> any:
-        if user.id == 0:
-            raise NotFoundError(user.id)
-        return self._repository.update(self.__fill_fields(user))
+    def update_user(self, id: int, user: UserRequest) -> any:
+        if id == 0:
+            raise NotFoundError(id)
+        return self._repository.update(id,self.__fill_fields(user)) 
 
     def delete_user_by_id(self, user_id: int) -> None:
         if user_id == 0:
@@ -81,32 +114,16 @@ class UserService:
             "message": "Password is update"
         }
 
-
-    def __save_file(self, image) -> str:
-        chuck_size = 4000
-        file_name = image.filename.replace(" ", "_")
-        output_file = f"/images/user_image/{file_name}"
-        if os.path.isfile(output_file):
-            os.remove(output_file)
-        file = open(f'/app/{output_file}', "wb+")
-        data = image.file.read(chuck_size)
-        while(data != b''):
-            file.write(data)
-            data = image.file.read(chuck_size)
-        image.close()
-        file.close()
-        return output_file
-    
     def __fill_fields(self, user: UserRequest):
         user_create = UserModel()
         user_fields = user.__dict__
-        if user.image is not None:
-            user_create.photo_path = self.__save_file(user.image)
-            
         for field in user_fields:
-            if field == "image":
+            if user_fields[field] == 0:
+                user_fields[field] = None
+            if field == "hashed_password":
                 continue
             user_create.__setattr__(field, user_fields[field])
+        user_create.fio = f"{user.last_name} {user.name} {user.patronymic}".strip()
         user_create.hashed_password = sha256(user.password.encode()).hexdigest()
         return user_create
 

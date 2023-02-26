@@ -10,7 +10,6 @@ from .permissions import PermissionsAccessModel
 from .status import StatusModel
 from .skills import SkillsModel
 from .user_skills import UserSkillsModel
-from .employees import EmployeesModel
 from .images import ImagesModel
 
 __all__ = [
@@ -26,6 +25,5 @@ __all__ = [
     'StatusModel',
     'SkillsModel',
     'UserSkillsModel',
-    'EmployeesModel',
     'ImagesModel'
 ]
