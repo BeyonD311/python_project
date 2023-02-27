@@ -17,21 +17,19 @@ class UserService:
     def get_all(self, params: UserParams) -> ResponseList:
         result = self._repository.get_all(params)
         users = []
-        for user in result['items']:
-            status_at = user[7]
-            if status_at is not None:
-                status_at = user[7].timestamp()
-            user = UsersResponse(
-                id = user[0], 
-                fio = user[1],
-                inner_phone = user[4],
-                deparment = user[2],
-                position = user[3],
-                status=user[5],
-                status_id=user[6],
-                status_at=status_at
-            )
-            users.append(user)
+        for user in result['users']:
+            users .append(UsersResponse(
+                id=user.id,
+                inner_phone=user.inner_phone,
+                position=user.position,
+                deparment=user.department,
+                status=UserStatus(
+                    status=user.status,
+                    status_id=user.status_id,
+                    status_at=user.status_at,
+                    color=user.status_color
+                )
+            ))
         return ResponseList(pagination = result['pagination'], users = users)
 
     def get_user_position(self):

@@ -6,7 +6,7 @@ from app.database import NotFoundError
 from app.kernel import Container
 from app.http.services.departments import DepartmentsService
 
-route = APIRouter(
+""" route = APIRouter(
     prefix="/employees",
     tags=['employees'],
     responses={404: {"description": "Not found"}} 
@@ -74,4 +74,4 @@ def get_employees(
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {
             "message": str(e)
-        }
+        } """

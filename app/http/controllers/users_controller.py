@@ -78,14 +78,19 @@ async def get_users(
         sort_dir=sort_dir
     )
     if filter is not None:
-        reg = r'([a-z]*)(=)([А-Яа-яa-zA-Z?\s\d]*)'
+        reg = r'([a-z]*)(=)([А-Яа-яa-zA-Z?\s\d\,]*)'
         user_filter = UsersFilter()
         result = re.findall(reg,filter) 
         flag = False
+        print("----------------------------")
         for r in result:
             if r[0] in user_filter.__dict__ and r[2] != "":
                 flag = True
-                user_filter.__setattr__(r[0], r[2])
+                param = r[2]
+                if r[0].lower() == "status":
+                    param = r[2].split(",")
+                user_filter.__setattr__(r[0], param)
+        print("----------------------------")
         if flag:
             params.filter = user_filter
     try: 

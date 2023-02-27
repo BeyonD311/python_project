@@ -1,7 +1,7 @@
 from contextlib import AbstractContextManager
 from typing import Callable
 from abc import ABC, abstractmethod
-from math import floor
+from math import floor, ceil
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import json
@@ -40,7 +40,7 @@ class SuperRepository(ABC):
             session.commit()
     def get_pagination(self, session: Session, page: int, size: int) -> dict[Pagination]:
         count_items = session.query(self.base_model).count()
-        total_page = floor(count_items / size)
+        total_page = ceil(count_items / size)
         return {
             "pagination": Pagination(
                 total_page = total_page,

@@ -74,7 +74,7 @@ class ResponseList(BaseModel):
 class UsersFilter(BaseModel):
     fio: str = None
     login: str = None
-    status: str = None
+    status: list[int] = None
 
 class UserParams(BaseModel):
     page: int
