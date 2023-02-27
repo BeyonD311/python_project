@@ -23,6 +23,7 @@ class UserService:
                 inner_phone=user.inner_phone,
                 position=user.position,
                 deparment=user.department,
+                fio=user.fio,
                 status=UserStatus(
                     status=user.status,
                     status_id=user.status_id,
