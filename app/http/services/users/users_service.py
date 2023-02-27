@@ -1,14 +1,15 @@
-import os
 import datetime
 from hashlib import sha256
-from app.database import UserModel, UserRepository, NotFoundError, SkillsRepository
+from app.database import UserModel
+from app.database import UserRepository
+from app.database import NotFoundError
+from app.database import SkillsRepository
 from app.http.services.users.user_base_models import UsersResponse
 from app.http.services.users.user_base_models import ResponseList
 from app.http.services.users.user_base_models import UserRequest
 from app.http.services.users.user_base_models import UserParams
 from app.http.services.users.user_base_models import UserDetailResponse
 from app.http.services.users.user_base_models import UserStatus
-from sqlalchemy.exc import IntegrityError
 
 class UserService:
     def __init__(self, user_repository: UserRepository) -> None:
@@ -24,6 +25,7 @@ class UserService:
                 position=user.position,
                 deparment=user.department,
                 fio=user.fio,
+                head_of_depatment=user.head_of_depatment,
                 status=UserStatus(
                     status=user.status,
                     status_id=user.status_id,

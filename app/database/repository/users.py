@@ -26,6 +26,7 @@ class UserRepository(SuperRepository):
                                   self.base_model.status_at,
                                   self.base_model.inner_phone,
                                   self.base_model.fio,
+                                  self.base_model.head_of_depatment,
                                   StatusModel.name.label("status"), StatusModel.color.label("status_color"),
                                   PositionModel.name.label("position"),
                                   DepartmentsModel.name.label("department")

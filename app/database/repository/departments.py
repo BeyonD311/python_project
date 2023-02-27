@@ -70,21 +70,22 @@ class DeparmentsRepository(SuperRepository):
                 page = 0
             if  page > 0:
                 offset = (limit * page)
-            employees = session.query(UserModel)
-            employees = self.filter_params(employees, filter).order_by(UserModel.id.asc()).limit(limit).offset(offset).all()
-            pagination = self.get_pagination(filter=filter, session=session, size=limit, page=page)
-            pagination['employees'] = employees
+            employees = session.query(UserModel).filter(UserModel.id != 0)
+            employees = self.filter_params(employees, filter).order_by(UserModel.id.asc())
+            if page == 0:
+                page = 1
+            pagination = self.get_pagination(query = employees, size=limit, page=page)
+            pagination['employees'] = employees.limit(limit).offset(offset).all()
             return pagination
     
-    def get_pagination(self, filter, session, size: int, page: int):
-        count_items = session.query(UserModel)
-        count_items = self.filter_params(count_items, filter).count()
-        total_page = math.floor(count_items / size)
+    def get_pagination(self, query, size: int, page: int):
+        count_items = query.count()
+        total_page = math.ceil(count_items / size)
         return {
             "pagination": Pagination(
                 total_page = total_page,
                 total_count = count_items,
-                page=page + 1,
+                page=page,
                 size=size
             )
         }

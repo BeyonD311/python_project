@@ -60,6 +60,8 @@ class UserModel(Base):
                F"status_id={self.status_id}"\
                f"date_employment_at={self.date_employment_at}"\
                f"date_dismissal_at={self.date_dismissal_at}"\
+               f"head_of_depatment={self.head_of_depatment}"\
+               f"deputy_head={self.deputy_head}"\
                f"created_at={self.created_at}"\
                f"updated_at={self.updated_at})>" 
 

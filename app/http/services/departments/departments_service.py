@@ -1,6 +1,9 @@
-from app.database import DeparmentsRepository, DepartmentsModel
+from app.database import DeparmentsRepository
+from app.database import DepartmentsModel
+from app.http.services.users import UserStatus
+from app.http.services.users import UsersResponse
 from pydantic import BaseModel
-from typing import List, Iterator
+from typing import List
 
 class EmployeeResponse(BaseModel):
     id: int
@@ -28,6 +31,7 @@ class DepartmentsService:
 
     def __init__(self, repository: DeparmentsRepository) -> None:
         self._repository: DeparmentsRepository = repository
+
     def get_all(self):
         return self._repository.get_all()
 
@@ -45,7 +49,6 @@ class DepartmentsService:
 
 
     def get_struct(self, filter: dict):
-        # items = self._repository.get_all()
         items = self._repository.get_struct(self.__check_filter(filter))
         res = []
         for item in items:
@@ -64,16 +67,21 @@ class DepartmentsService:
         filter = self.__check_filter(filter)
         result = self._repository.get_user_deparments(filter=filter, limit=size, page=page)
         users = []
-        employee
         for employee in result['employees']:
-            users.append(EmployeeResponse(
+            user = UsersResponse(
                 id = employee.id,
-                fio = employee.name,
-                is_head_of_depatment=employee.head_of_depatment,
-                status=employee.user.status.name,
-                status_at=employee.user.status_at,
-                inner_phone=employee.user.inner_phone
-            ))
+                fio = employee.fio,
+                head_of_depatment=employee.head_of_depatment,
+                inner_phone=employee.inner_phone
+            )
+            if employee.status != None:
+                user.status=UserStatus(
+                    status_id=employee.id,
+                    status_at=employee.status_at,
+                    color=employee.status.color,
+                    status=employee.status.name
+                )
+            users.append(user)
         result['employees'] = users
         return result
     def get_by_id(self, id):
@@ -89,7 +97,6 @@ class DepartmentsService:
 
     def find_child(self, items: List[DepartmentsModel], parent: Node):
         item: DepartmentsModel
-        child = []
         for item  in items:
             if parent.id == item.parent_department_id:
                 if item.is_parent:
