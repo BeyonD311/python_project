@@ -75,6 +75,9 @@ class UserService:
         del user
         return userDetail
 
+    def by_id(self, id):
+        return self._repository.get_by_id(id)
+
     def find_user_by_login(self, login: str):
         return self._repository.get_by_login(login) 
 

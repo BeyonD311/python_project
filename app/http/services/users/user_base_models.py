@@ -43,8 +43,8 @@ class UserDetailResponse(BaseModel):
     status: UserStatus = None
     password: str
     photo_path: str = None
-    is_operator: bool
-    date_employment_at: datetime
+    is_operator: bool = None
+    date_employment_at: datetime = None
     date_dismissal_at: datetime = None
     head_of_depatment: bool
     deputy_head: bool
