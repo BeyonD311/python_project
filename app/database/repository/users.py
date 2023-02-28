@@ -32,9 +32,9 @@ class UserRepository(SuperRepository):
                                   PositionModel.name.label("position"),
                                   DepartmentsModel.name.label("department")
                                   )\
-                    .join(StatusModel, StatusModel.id == self.base_model.status_id)\
-                    .join(PositionModel, PositionModel.id == self.base_model.position_id)\
-                    .join(DepartmentsModel, DepartmentsModel.id == self.base_model.department_id)\
+                    .join(StatusModel, StatusModel.id == self.base_model.status_id, isouter=True)\
+                    .join(PositionModel, PositionModel.id == self.base_model.position_id, isouter=True)\
+                    .join(DepartmentsModel, DepartmentsModel.id == self.base_model.department_id, isouter=True)\
                     .filter(self.base_model.id != 0)
             query = self.__filter(query, params=params)
             result = self.get_pagination(query, params.size, params.page)
