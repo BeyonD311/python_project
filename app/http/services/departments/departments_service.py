@@ -16,7 +16,7 @@ class EmployeeResponse(BaseModel):
 class DepartmentParams(BaseModel):
     name: str
     source_department: int = None
-    director_user_id: int
+    director_user_id: int = None
     deputy_head_id: List[int] = None
 
 class Node(BaseModel):

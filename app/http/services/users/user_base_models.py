@@ -23,7 +23,6 @@ class UsersResponse(BaseModel):
     deparment: str = None
     position: str = None
     status: UserStatus = None
-    head_of_depatment: bool = None
 
 
 class UserDetailResponse(BaseModel):

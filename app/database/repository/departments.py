@@ -1,10 +1,18 @@
 import math
+from pydantic import BaseModel
 from .super import SuperRepository, NotFoundError, Pagination
-from app.database.models import DepartmentsModel, UserModel
+from app.database.models import DepartmentsModel
+from app.database.models import UserModel
+from app.database.models import HeadOfDepatment
 from sqlalchemy.orm import Query
+from sqlalchemy.orm import Session
 from typing import Iterator
 
-# class User
+class Depratment(BaseModel):
+    id: int
+    name: str = None
+    parent_department_id: int = None
+    is_parent: bool
 
 class DeparmentsRepository(SuperRepository):
 
@@ -17,7 +25,7 @@ class DeparmentsRepository(SuperRepository):
                 return []
             return query
     
-    def get_struct(self, filter = None):
+    def get_struct(self, filter = None) -> Depratment:
         with self.session_factory() as session:
             query = session.query(self.base_model)
             if filter is not None:
@@ -29,7 +37,7 @@ class DeparmentsRepository(SuperRepository):
                 q = session.query(recursive_q).all()
                 items = {}
                 for item in q:
-                    deparment = DepartmentsModel(
+                    deparment = Depratment(
                         id = item[0],
                         name = item[1],
                         parent_department_id = item[2],
@@ -111,8 +119,7 @@ class DeparmentsRepository(SuperRepository):
                 raise NotFoundError("Not create")
             
             try:
-                # self.__add_employee(params=params, session=session, id=department.id)
-                ...
+                self.__add_employee(params=params, session=session, id=department.id)
             except Exception:
                 session.delete(department)
             finally:
@@ -142,8 +149,7 @@ class DeparmentsRepository(SuperRepository):
                             session.add(old_parent)
             current.name = params.name
             current.parent_department_id = params.source_department
-            """ self.__deparment_clear_employee(id, session=session)
-            self.__add_employee(params=params, session=session,id=id) """
+            self.__deparment_update_employee(id, session=session, params=params)
             session.commit()
             return current
 
@@ -175,3 +181,39 @@ class DeparmentsRepository(SuperRepository):
         if query is None:
             raise NotFoundError("department exists")
         return query
+    
+    def __add_employee(self, params, session: Session ,id: int):
+        if params.director_user_id is not None:
+            session.add(HeadOfDepatment(
+                    department_id=id,
+                    head_of_depatment_id=params.director_user_id
+                ))
+        for user_id in params.deputy_head_id:
+            session.add(HeadOfDepatment(
+                department_id=id,
+                deputy_head_id=user_id
+            ))
+    
+    def __deparment_update_employee(self, id, params, session: Session):
+        departments = session.query(HeadOfDepatment).filter(HeadOfDepatment.department_id == id).all()
+        head_employees_deprament = None
+        for department in departments:
+            if department.head_of_depatment_id != None:
+                head_employees_deprament = department
+            else:
+                session.delete(department)
+        del departments
+        if head_employees_deprament != None and params.director_user_id != None:
+            if params.director_user_id != head_employees_deprament.head_of_depatment_id:
+                head_employees_deprament.head_of_depatment_id = params.director_user_id
+                session.add(head_employees_deprament)
+        elif head_employees_deprament == None and params.director_user_id != None:
+            session.add(HeadOfDepatment(
+                    department_id=id,
+                    head_of_depatment_id=params.director_user_id
+                ))
+        for user_id in params.deputy_head_id:
+            session.add(HeadOfDepatment(
+                department_id=id,
+                deputy_head_id=user_id
+            ))

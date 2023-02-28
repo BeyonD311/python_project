@@ -12,6 +12,7 @@ from .skills import SkillsModel
 from .user_skills import UserSkillsModel
 from .images import ImagesModel
 from .status_history import StatusHistoryModel
+from .head_of_depatment import HeadOfDepatment
 
 __all__ = [
     'UserModel', 
@@ -27,5 +28,6 @@ __all__ = [
     'SkillsModel',
     'UserSkillsModel',
     'ImagesModel',
-    'StatusHistoryModel'
+    'StatusHistoryModel',
+    'HeadOfDepatment'
 ]

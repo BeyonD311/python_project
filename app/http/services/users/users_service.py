@@ -25,7 +25,6 @@ class UserService:
                 position=user.position,
                 deparment=user.department,
                 fio=user.fio,
-                head_of_depatment=user.head_of_depatment,
                 status=UserStatus(
                     status=user.status,
                     status_id=user.status_id,
