@@ -25,8 +25,7 @@ security = HTTPBearer()
 @route.get("/user_image/{filename}", include_in_schema=False)
 def get_file(
     filename: str,
-    response: Response,
-    HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    response: Response):
     path = f"images/user_image/{filename}"
     if os.path.exists(path) and os.path.isfile(path):
         return FileResponse(path)
