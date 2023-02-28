@@ -80,7 +80,21 @@ class UserRepository(SuperRepository):
                 current.skills.clear()
             current.roles.clear()
             current.groups.clear()
-            return self.item_add_or_update(current, session)
+
+            current = self.item_add_or_update(current, session)
+            current.skills
+            current.position
+            current.deparment
+            current.skills
+            current.status
+            current.image
+            for role in user.roles:
+                role.permissions
+            current.groups
+            for role in current.roles:
+                role.permissions
+            current.groups
+            return current
 
     def get_all_status(self):
         with self.session_factory() as session:
@@ -99,7 +113,15 @@ class UserRepository(SuperRepository):
         try:
             with self.session_factory() as session:
                 user = user_model
-                self.item_add_or_update(user, session)
+                user = self.item_add_or_update(user, session)
+                user.position
+                user.deparment
+                user.skills
+                user.status
+                user.image
+                for role in user.roles:
+                    role.permissions
+                user.groups
                 return user
         except IntegrityError as e: 
             raise(e)

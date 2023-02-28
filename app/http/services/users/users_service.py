@@ -40,41 +40,8 @@ class UserService:
 
     def get_user_by_id(self, user_id: int):
         user = self._repository.get_by_id(user_id)
-        userDetail = UserDetailResponse(
-            id=user.id,
-            email=user.email,
-            login=user.login,
-            name=user.name,
-            last_name=user.last_name,
-            patronymic=user.patronymic,
-            fio=user.fio,
-            inner_phone=user.inner_phone,
-            password=user.password,
-            is_operator=user.is_operator,
-            date_employment_at=user.date_employment_at,
-            head_of_depatment=user.head_of_depatment,
-            deputy_head=user.deputy_head,
-            date_dismissal_at = user.date_dismissal_at,
-            phone=user.phone,
-        )
-        userDetail.groups = user.groups
-        userDetail.skills = user.skills
-        userDetail.position = user.position
-        status_user = user.status
-        userDetail.status = UserStatus(
-            status=status_user.name,
-            color=status_user.color,
-            status_id=status_user.id,
-            status_at=user.status_at
-        )
-        if user.image == None:
-            userDetail.photo_path = user.image
-        else:
-            userDetail.photo_path = user.image.path
-        for role in user.roles:
-            role.permissions
-        userDetail.roles = user.roles
-        del status_user
+        userDetail = self.__user_response(user)
+        
         del user
         return userDetail
 
@@ -85,12 +52,14 @@ class UserService:
         return self._repository.get_by_login(login) 
 
     def create_user(self, user: UserRequest) -> any:
-        return self._repository.add(self.__fill_fields(user))
+        return self.__user_response(self._repository.add(self.__fill_fields(user)))
     
     def update_user(self, id: int, user: UserRequest) -> any:
         if id == 0:
             raise NotFoundError(id)
-        return self._repository.update(id,self.__fill_fields(user)) 
+        user = self._repository.update(id,self.__fill_fields(user))
+        
+        return self.__user_response(user)
 
     def delete_user_by_id(self, user_id: int) -> None:
         if user_id == 0:
@@ -130,6 +99,45 @@ class UserService:
         user_create.fio = f"{user.last_name} {user.name} {user.patronymic}".strip()
         user_create.hashed_password = sha256(user.password.encode()).hexdigest()
         return user_create
+
+    def __user_response(self, user: UserModel):
+        userDetail = UserDetailResponse(
+            id=user.id,
+            email=user.email,
+            login=user.login,
+            name=user.name,
+            last_name=user.last_name,
+            patronymic=user.patronymic,
+            fio=user.fio,
+            inner_phone=user.inner_phone,
+            password=user.password,
+            is_operator=user.is_operator,
+            date_employment_at=user.date_employment_at,
+            head_of_depatment=user.head_of_depatment,
+            deputy_head=user.deputy_head,
+            date_dismissal_at = user.date_dismissal_at,
+            phone=user.phone,
+        )
+        userDetail.groups = user.groups
+        userDetail.skills = user.skills
+        userDetail.position = user.position
+        status_user = user.status
+        if status_user != None:
+            userDetail.status = UserStatus(
+                status=status_user.name,
+                color=status_user.color,
+                status_id=status_user.id,
+                status_at=user.status_at
+            )
+        if user.image == None:
+            userDetail.photo_path = user.image
+        else:
+            userDetail.photo_path = user.image.path
+        for role in user.roles:
+            role.permissions
+        userDetail.roles = user.roles
+        del status_user
+        return userDetail
 
 class SkillService:
     def __init__(self, skill_repository: SkillsRepository) -> None:
