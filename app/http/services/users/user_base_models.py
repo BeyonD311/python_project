@@ -12,7 +12,7 @@ class UserLoginParams(BaseModel):
 class UserStatus(BaseModel):
     status: str = None
     status_id: int = None
-    status_at: int = None
+    status_at: datetime = None
     color: str = None
 
 """ Поля пользователя """
@@ -31,7 +31,7 @@ class UserDetailResponse(BaseModel):
     email: str
     name: str
     last_name: str
-    patronymic: str
+    patronymic: str = None
     login: str
     fio: str
     inner_phone: int = None

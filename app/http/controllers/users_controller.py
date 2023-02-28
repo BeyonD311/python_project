@@ -2,7 +2,7 @@ import re
 import jwt
 import os
 import copy
-from fastapi import Depends, APIRouter, Response, status, UploadFile, Body, File, Request
+from fastapi import Depends, APIRouter, Response, status, UploadFile, Body, Path, Request
 from typing import List
 from datetime import datetime
 from dependency_injector.wiring import inject, Provide
@@ -136,13 +136,25 @@ async def current_user(
 async def current_user(
     response: Response, 
     request: Request, 
+    user_id: int = None,
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
-    token = request.headers.get('authorization').replace("Bearer ", "")
-    decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
-    current = user_service.get_user_by_id(decode['azp'], True)
-    return current.password
-
+    try:
+        if user_id == 0:
+            response.status_code = status.HTTP_404_NOT_FOUND
+            return 
+        if user_id == None:
+            token = request.headers.get('authorization').replace("Bearer ", "")
+            decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
+            current = user_service.by_id(decode['azp'])
+        else:
+            current = user_service.by_id(user_id)
+        return current.password
+    except NotFoundError as e:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {
+            "message": str(e)
+        }
 @route.get("/{id}")
 @inject
 async def get_user_id(

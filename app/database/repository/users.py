@@ -7,6 +7,7 @@ from app.database import SkillsModel
 from app.database import StatusModel
 from app.database import PositionModel
 from app.database import DepartmentsModel
+from sqlalchemy import event
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query
 from math import ceil
@@ -191,3 +192,11 @@ class UserRepository(SuperRepository):
 
 class UserNotFoundError(NotFoundError):
     entity_name: str = "User"
+
+def after_update_handler(mapper, connection, target):
+    print("------------------")
+    print(mapper, target, connection)
+    print("------------------")
+
+#будем обновлять таблицу
+event.listen(UserRepository, 'after_update', after_update_handler)

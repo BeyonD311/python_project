@@ -16,7 +16,8 @@ class ImagesServices():
         file = self._repository.add(path)
         return ResponseUploadFile(
             message=f"file {image.filename} upload",
-            id=file.id
+            id=file.id,
+            path=file.path
         )
     
     def __save_file(self, image: UploadFile) -> str:
@@ -46,3 +47,4 @@ class BadFileException(Exception):
 class ResponseUploadFile(BaseModel):
     message: str
     id: int
+    path: str

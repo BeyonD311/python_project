@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer
+from sqlalchemy import Column, ForeignKey, Integer
 from app.kernel.database import Base
 
 class UserRoles(Base):
