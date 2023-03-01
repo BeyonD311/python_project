@@ -36,7 +36,7 @@ def get_deparments(
             "status": status,
             "phone": phone
         }
-        return deparment_service.get_struct(filter_params)
+        return deparment_service.get_employees(filter_params)
     except NotFoundError as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {

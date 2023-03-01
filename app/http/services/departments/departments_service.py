@@ -48,19 +48,16 @@ class DepartmentsService:
         return filter
 
 
-    def get_struct(self, filter: dict):
-        items = self._repository.get_struct(self.__check_filter(filter))
+    def get_employees(self, filter: dict):
+        items = self._repository.get_employees(self.__check_filter(filter))
         res = []
         for item in items:
+            item = items[item]
             if item.parent_department_id != None: 
                 continue
-            node = Node(
-                    name=item.name,
-                    id=item.id
-                )
             if item.is_parent:
-                self.find_child(items, node)
-            res.append(node)
+                self.find_child(items, item)
+            res.append(item)
         return res
 
     def get_users_deprtment(self, filter: dict, page:int, size: int):
@@ -95,19 +92,13 @@ class DepartmentsService:
     def delete(self, id):
         self._repository.delete_by_id(id)
 
-    def find_child(self, items: List[DepartmentsModel], parent: Node):
+    def find_child(self, items: List[DepartmentsModel], parent: DepartmentsModel):
         item: DepartmentsModel
         for item  in items:
+            item = items[item]
             if parent.id == item.parent_department_id:
                 if item.is_parent:
-                    node = Node( 
-                        name=item.name,
-                        id=item.id
-                    )
-                    parent.child.append(self.find_child(items ,node))
+                    parent.child.append(self.find_child(items ,item))
                 else:
-                    parent.child.append(Node(
-                        name=item.name,
-                        id=item.id
-                    ))
+                    parent.child.append(item)
         return parent

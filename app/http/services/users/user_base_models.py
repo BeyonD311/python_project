@@ -22,6 +22,7 @@ class UsersResponse(BaseModel):
     inner_phone: int = None
     deparment: str = None
     position: str = None
+    is_head_of_depatment: bool = False
     status: UserStatus = None
 
 

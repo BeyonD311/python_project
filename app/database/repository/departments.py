@@ -1,18 +1,37 @@
 import math
+from datetime import datetime
 from pydantic import BaseModel
 from .super import SuperRepository, NotFoundError, Pagination
 from app.database.models import DepartmentsModel
 from app.database.models import UserModel
 from app.database.models import HeadOfDepatment
+from app.database.models import PositionModel
+from app.database.models import StatusModel
 from sqlalchemy.orm import Query
 from sqlalchemy.orm import Session
 from typing import Iterator
+
+class UserStatus(BaseModel):
+    status: str = None
+    status_id: int = None
+    status_at: datetime = None
+    color: str = None
 
 class Depratment(BaseModel):
     id: int
     name: str = None
     parent_department_id: int = None
     is_parent: bool
+    employees: list = []
+    child: list = []
+
+class UsersResponse(BaseModel):
+    id: int = None
+    fio: str = None
+    inner_phone: str = None
+    position: str = None
+    is_head_of_depatment: bool = False
+    status: dict = None
 
 class DeparmentsRepository(SuperRepository):
 
@@ -25,33 +44,92 @@ class DeparmentsRepository(SuperRepository):
                 return []
             return query
     
-    def get_struct(self, filter = None) -> Depratment:
+    def get_employees(self, filter = None) -> Depratment:
         with self.session_factory() as session:
-            query = session.query(self.base_model)
-            if filter is not None:
-                query = query.join(UserModel, UserModel.department_id == self.base_model.id)
-                query = self.filter_params(query, filter)
-                query = query.cte('cte', recursive=True)
-                parnets = session.query(self.base_model).join(query, query.c.parent_department_id == self.base_model.id)
-                recursive_q = query.union(parnets)
-                q = session.query(recursive_q).all()
-                items = {}
-                for item in q:
-                    deparment = Depratment(
-                        id = item[0],
-                        name = item[1],
-                        parent_department_id = item[2],
-                        is_parent = item[4]
+            query = session.query(
+                self.base_model.id.label("department_id"),
+                self.base_model.name.label("department_name"),
+                self.base_model.parent_department_id.label("department_parent"),
+                self.base_model.is_parent.label("is_parent"),
+                UserModel.id.label("user_id"),
+                UserModel.fio.label("user_fio"),
+                UserModel.inner_phone.label("user_inner_phone"),
+                UserModel.status_at.label("status_at"),
+                HeadOfDepatment.head_of_depatment_id.label("head_of_depatment_id"),
+                StatusModel.color.label("status_color"),
+                StatusModel.name.label("status_name"),
+                StatusModel.id.label("status_id"),
+                PositionModel.name.label("position")
+                )\
+            .join(UserModel, UserModel.department_id == self.base_model.id, isouter=True)\
+            .join(HeadOfDepatment, HeadOfDepatment.head_of_depatment_id == UserModel.id, isouter=True)\
+            .join(StatusModel, StatusModel.id == UserModel.status_id, isouter=True)\
+            .join(PositionModel, PositionModel.id == UserModel.position_id, isouter=True)
+            query = self.filter_params(query=query, filter=filter)
+            result = {}
+            parents = []
+            for res in query.all():
+                if res[2] is not None:
+                    parents.append(res[2])
+                if res[0] not in result:
+                    result[res[0]] = Depratment(
+                        id = res[0],
+                        name = res[1],
+                        parent_department_id=res[2],
+                        is_parent=res[3]
                     )
-                    items[item[0]] = deparment
-                new_items = []
-                for item in items:
-                    new_items.append(items[item])
-                items = new_items
-                del new_items
-            else:
-                items = query.filter(self.base_model.is_active == True).order_by(self.base_model.id.asc()).all()
-            return items
+                if res[4] is not None:
+                    result[res[0]].employees.append(UsersResponse(
+                        id = res[4],
+                        fio = res[5],
+                        inner_phone = res[6],
+                        position = res[12],
+                        is_head_of_depatment=bool(res[8]),
+                        status={
+                            "id": res[11],
+                            "status": res[10],
+                            "status_id": res[7],
+                            "color": res[9]
+                        }
+                    ))
+            # Проверка фильтра
+            check_filter = False
+            for fields_filter in filter:
+                field = filter[fields_filter]
+                if type(field) is set:
+                    if len(field) > 0:
+                        check_filter = True
+                        break
+                elif type(field) is not set and field != None:
+                    check_filter = True
+                    break
+            if check_filter:
+                """ Получем родителей рекурсивно """
+                parents = set(parents)
+                query = session.query(
+                    self.base_model.id,
+                    self.base_model.name,
+                    self.base_model.parent_department_id,
+                    self.base_model.is_parent
+                ).filter(self.base_model.id.in_(parents)).cte('cte', recursive=True)
+                parents = session.query(
+                    self.base_model.id,
+                    self.base_model.name,
+                    self.base_model.parent_department_id,
+                    self.base_model.is_parent
+                ).join(query, query.c.parent_department_id == self.base_model.id)
+                recursive_q = query.union(parents)
+                query = session.query(recursive_q).all()
+                for res in query:
+                    if res[0] not in result:
+                        result[res[0]] = Depratment(
+                            id = res[0],
+                            name = res[1],
+                            parent_department_id=res[2],
+                            is_parent=res[3]
+                        )
+            print("-------------------------------")
+            return result
         
     def get_by_id(self, department_id: int) -> DepartmentsModel:
         return super().get_by_id(department_id)
