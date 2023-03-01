@@ -127,9 +127,7 @@ async def current_user(
     token = request.headers.get('authorization').replace("Bearer ", "")
     decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
     current = user_service.get_user_by_id(decode['azp'])
-    for role in current.roles:
-        role.permissions
-    return copy(current)
+    return current
 
 @route.get("/get_pass")
 @inject

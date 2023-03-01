@@ -1,4 +1,5 @@
 import datetime
+import re
 from hashlib import sha256
 from app.database import UserModel
 from app.database import UserRepository
@@ -40,7 +41,10 @@ class UserService:
     def get_user_by_id(self, user_id: int):
         user = self._repository.get_by_id(user_id)
         userDetail = self.__user_response(user)
-        
+        password = ""
+        for i in range(len(userDetail.password)):
+            password += "*"
+        userDetail.password = password
         del user
         return userDetail
 
