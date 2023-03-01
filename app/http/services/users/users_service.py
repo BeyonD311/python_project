@@ -120,6 +120,7 @@ class UserService:
             deputy_head=user.deputy_head,
             date_dismissal_at = user.date_dismissal_at,
             phone=user.phone,
+            image_id=user.image_id
         )
         userDetail.groups = user.groups
         userDetail.skills = user.skills

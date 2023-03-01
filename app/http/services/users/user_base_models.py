@@ -41,6 +41,7 @@ class UserDetailResponse(BaseModel):
     groups: list = None
     skills: list = None
     roles: list = None
+    image_id: int = None
     status: UserStatus = None
     password: str
     photo_path: str = None
