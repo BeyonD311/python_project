@@ -1,8 +1,5 @@
-from pydantic import BaseModel, Field
-from fastapi import UploadFile
-from typing import List
+from pydantic import BaseModel
 from datetime import datetime
-from app.http.services.dto import BaseDTO
 from app.database.repository.super import Pagination
 
 class UserLoginParams(BaseModel):
@@ -64,7 +61,7 @@ class UserRequest(BaseModel):
     inner_phone: int = None
     image_id: int = None
     department_id: int = None
-    personal_number: str = None
+    personal_number: str = None 
     position_id: int
     group_id: list[int]
     roles_id: list[int]
