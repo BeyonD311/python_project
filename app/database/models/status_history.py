@@ -10,7 +10,7 @@ class StatusHistoryModel(Base):
     status_id = Column(SMALLINT, ForeignKey("status_users.id", onupdate="CASCADE"))
     update_at = Column(TIMESTAMP)
     time_at = Column(TIME)
-    user = relationship("UserModel", back_populates="status_stats")
+    user = relationship("UserModel", back_populates="status_history")
     status = relationship("StatusModel")
     def __repr__(self) -> str:
         return f'UsersStatus<(id={self.id}, user_id={self.user_id}, status_id={self.status_id}, update_at={self.update_at})>'

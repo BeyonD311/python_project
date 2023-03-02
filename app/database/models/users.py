@@ -24,8 +24,9 @@ class UserModel(Base):
     login = Column(String, unique=True, nullable = False)
     is_operator = Column(Boolean, default = False)
     phone = Column(String(25), nullable=True)
-    inner_phone = Column(Integer, nullable=True)
+    inner_phone = Column(String, nullable=True)
     is_active = Column(Boolean, default = True) 
+    personal_number = Column(String, nullable=True)
     image_id = Column(BIGINT, ForeignKey('images.id', ondelete="SET NULL"))
     position_id = Column(SMALLINT, ForeignKey('position.id'))
     status_id = Column(Integer, ForeignKey('status_users.id'))
@@ -34,8 +35,8 @@ class UserModel(Base):
     deputy_head = Column(Boolean, default=False)
     date_employment_at = Column(TIMESTAMP)
     date_dismissal_at = Column(TIMESTAMP, nullable=True) 
-    created_at = Column(TIMESTAMP,server_default=func.now())
-    updated_at = Column(TIMESTAMP,server_default=func.now(),onupdate=func.now())
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
     status_at = Column(TIMESTAMP,  nullable=True) 
     # Relationships 
     status = relationship("StatusModel")
@@ -44,7 +45,7 @@ class UserModel(Base):
     roles = relationship("RolesModel", secondary='user_roles', back_populates="users", cascade="save-update, delete")
     skills = relationship("SkillsModel", secondary='user_skills', back_populates="users", cascade="save-update, delete")
     deparment = relationship("DepartmentsModel", back_populates="users", cascade="save-update")
-    status_stats = relationship("StatusHistoryModel", back_populates="user", cascade="save-update")
+    status_history = relationship("StatusHistoryModel", back_populates="users", cascade="all, delete", passive_deletes=True)  
     image = relationship("ImagesModel")
     def __repr__(self): 
         return f"<User(id={self.id}" \

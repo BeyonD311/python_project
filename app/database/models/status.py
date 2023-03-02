@@ -1,4 +1,10 @@
-from sqlalchemy import String, Column, SMALLINT
+from sqlalchemy import String
+from sqlalchemy import Column
+from sqlalchemy import SMALLINT
+from sqlalchemy import Boolean
+from sqlalchemy import BIGINT
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
 from app.kernel.database import Base
 
 class StatusModel(Base):
@@ -7,8 +13,14 @@ class StatusModel(Base):
     id = Column(SMALLINT, primary_key=True, autoincrement='ignore_fk')
     name = Column(String)
     color = Column(String, default=None)
-    
-    def __repr__(self) -> str:
-        return f"<Status(id={self.id},name={self.name},color={self.color})>"
+    is_active = Column(Boolean) 
 
-__all__ = ('StatusModel')
+    def __repr__(self) -> str:
+        return f"<Status("\
+        f"id={self.id},"\
+        f"name={self.name},"\
+        f"color={self.color}"\
+        f"is_active={self.is_active}"\
+        f")>"
+
+__all__ = ('StatusModel') 

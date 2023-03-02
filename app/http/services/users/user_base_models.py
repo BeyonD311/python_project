@@ -43,6 +43,7 @@ class UserDetailResponse(BaseModel):
     roles: list = None
     image_id: int = None
     status: UserStatus = None
+    personal_number: str = None
     password: str
     photo_path: str = None
     is_operator: bool = None
@@ -63,6 +64,7 @@ class UserRequest(BaseModel):
     inner_phone: int = None
     image_id: int = None
     department_id: int = None
+    personal_number: str = None
     position_id: int
     group_id: list[int]
     roles_id: list[int]
