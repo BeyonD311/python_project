@@ -26,7 +26,7 @@ class Container(containers.DeclarativeContainer):
     
     user_repository = providers.Factory(
         DatabaseCustom.UserRepository,
-        session_factory=db.provided.session,
+        session_factory=db.provided.session
     ) 
     skills_repository = providers.Factory(
         DatabaseCustom.SkillsRepository,

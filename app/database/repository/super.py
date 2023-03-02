@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from math import floor, ceil
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from aioredis import Redis
 import json
 
 class Pagination(BaseModel):
@@ -13,6 +14,10 @@ class Pagination(BaseModel):
     size: int
     def toJSON(self):
         return json.dumps(self.__dict__)
+    
+def RedisConnect() -> Redis:
+    from app.kernel.container import Container
+    return Container.redis_pool
 
 class SuperRepository(ABC):
     

@@ -1,5 +1,6 @@
+import json
 from datetime import datetime
-from .super import SuperRepository, NotFoundError, Pagination
+from .super import SuperRepository, NotFoundError, Pagination, RedisConnect
 from app.database import UserModel as User
 from app.database import RolesModel
 from app.database import GroupsModel
@@ -7,16 +8,27 @@ from app.database import SkillsModel
 from app.database import StatusModel
 from app.database import PositionModel
 from app.database import DepartmentsModel
+from app.database import StatusHistoryModel
 from sqlalchemy import event
+from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query
+from sqlalchemy.engine.base import Connection
 from math import ceil
+from contextlib import AbstractContextManager
+from sqlalchemy.orm import Session
+from typing import Callable
 
-
+event_type = None
 
 class UserRepository(SuperRepository): 
     base_model = User
     
+    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]) -> None:
+        global event_type
+        event_type = None
+        super().__init__(session_factory)
+
     def get_all(self, params) -> dict[User]:
         with self.session_factory() as session:
             offset = 0
@@ -63,6 +75,7 @@ class UserRepository(SuperRepository):
         return super().get_by_id(user_id)
 
     def update(self, id, user_model: User):
+        global event_type
         with self.session_factory() as session:
             user = user_model
             current = session.query(self.base_model).filter(self.base_model.id == id).first()
@@ -80,7 +93,7 @@ class UserRepository(SuperRepository):
                 current.skills.clear()
             current.roles.clear()
             current.groups.clear()
-
+            event_type = "update"
             current = self.item_add_or_update(current, session)
             current.skills
             current.position
@@ -94,26 +107,43 @@ class UserRepository(SuperRepository):
             for role in current.roles:
                 role.permissions
             current.groups
+            
             return current
 
     def get_all_status(self):
         with self.session_factory() as session:
             return session.query(StatusModel).all()
 
+
+
     def set_status(self, user_id, status_id):
+        global event_type
         with self.session_factory() as session:
             current = session.query(self.base_model).get(user_id)
             current.status_id = status_id
             current.status_at = datetime.now()
+            event_type="set_status"
             session.add(current)
             session.commit()
             return True
 
     def add(self, user_model: User) -> any:
+        global event_type
         try:
             with self.session_factory() as session:
+                status:StatusModel = session.query(StatusModel).filter(StatusModel.name.ilike("оффлайн")).first()
                 user = user_model
+                event_type = "add"
                 user = self.item_add_or_update(user, session)
+                if status != None:
+                    # Сохраняем текущий статус в редис для быстрого доступа
+                    user.status_id = status.id
+                    user.status_at = datetime.now()
+                    redis = RedisConnect()
+                    redis.set(f"status.user.{user.id}", json.dumps({
+                        "id": status.id,
+                        "time": user.status_at
+                    }))
                 user.position
                 user.deparment
                 user.skills
@@ -126,9 +156,6 @@ class UserRepository(SuperRepository):
         except IntegrityError as e: 
             raise(e)
     def item_add_or_update(self, user: User, session):
-        print("---------------------------")
-        print(user.roles_id)
-        print("---------------------------")
         roles = session.query(RolesModel).filter(RolesModel.id.in_(user.roles_id)).all()
         groups = session.query(GroupsModel).filter(GroupsModel.id.in_(user.group_id)).all()
         if user.skills_id != []:
@@ -215,10 +242,9 @@ class UserRepository(SuperRepository):
 class UserNotFoundError(NotFoundError):
     entity_name: str = "User"
 
-def after_update_handler(mapper, connection, target):
-    print("------------------")
-    print(mapper, target, connection)
-    print("------------------")
+@event.listens_for(User, 'after_update')
+def after_update_handler(mapper, connection: Connection, target):
+    pass
 
 #будем обновлять таблицу
-event.listen(UserRepository, 'after_update', after_update_handler)
+# event.listen(User, 'after_update', after_update_handler)

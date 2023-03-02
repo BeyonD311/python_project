@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, Response
+""" from fastapi import APIRouter, Depends, status, Response
 from app.http.services.helpers import parse_params_num
 from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
@@ -43,4 +43,4 @@ def get_employees(
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {
             "message": str(e)
-        }
+        } """
