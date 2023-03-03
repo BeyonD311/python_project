@@ -3,10 +3,8 @@ import os
 import json
 import asyncio
 from datetime import datetime
-from fastapi import Request
 from aioredis import Redis
 from app.database import UserModel
-from app.http.services import RolesPermission
 
 class Jwt:
     def __init__(self, redis: Redis, user: UserModel = None) -> None:

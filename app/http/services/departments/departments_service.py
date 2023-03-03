@@ -69,8 +69,12 @@ class DepartmentsService:
                 id = employee.id,
                 fio = employee.fio,
                 head_of_depatment=employee.head_of_depatment,
-                inner_phone=employee.inner_phone
+                inner_phone=employee.inner_phone,
             )
+            if employee.position != None:
+                user.position = employee.position.name
+            if employee.deparment != None:
+                user.deparment = employee.deparment.name
             if employee.status != None:
                 user.status=UserStatus(
                     status_id=employee.id,

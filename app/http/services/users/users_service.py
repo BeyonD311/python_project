@@ -1,10 +1,11 @@
 import datetime
-import re
+import json
 from hashlib import sha256
 from app.database import UserModel
 from app.database import UserRepository
 from app.database import NotFoundError
 from app.database import SkillsRepository
+from app.http.services.helpers import RedisInstance
 from app.http.services.users.user_base_models import UsersResponse
 from app.http.services.users.user_base_models import ResponseList
 from app.http.services.users.user_base_models import UserRequest
@@ -13,8 +14,9 @@ from app.http.services.users.user_base_models import UserDetailResponse
 from app.http.services.users.user_base_models import UserStatus
 
 class UserService:
-    def __init__(self, user_repository: UserRepository) -> None:
+    def __init__(self, user_repository: UserRepository, redis: RedisInstance) -> None:
         self._repository: UserRepository = user_repository
+        self._redis = redis
 
     def get_all(self, params: UserParams) -> ResponseList:
         result = self._repository.get_all(params)
@@ -54,14 +56,14 @@ class UserService:
     def find_user_by_login(self, login: str):
         return self._repository.get_by_login(login) 
 
-    def create_user(self, user: UserRequest) -> any:
-        return self.__user_response(self._repository.add(self.__fill_fields(user)))
+    def create_user(self, user: UserRequest) -> UserDetailResponse:
+        user:UserDetailResponse = self.__user_response(self._repository.add(self.__fill_fields(user)))
+        return user
     
     def update_user(self, id: int, user: UserRequest) -> any:
         if id == 0:
             raise NotFoundError(id)
         user = self._repository.update(id,self.__fill_fields(user))
-        
         return self.__user_response(user)
 
     def delete_user_by_id(self, user_id: int) -> None:
@@ -72,11 +74,17 @@ class UserService:
     def get_all_status_users(self):
         return self._repository.get_all_status()
 
-    def set_status(self, user_id: int, status_id: int):
-        self._repository.set_status(user_id=user_id, status_id=status_id)
-    
+    async def set_status(self, user_id: int, status_id: int):
+        status_params = self._repository.set_status(user_id=user_id, status_id=status_id)
+        await self.__set_status_redis(status_params)
+            
     def dismiss(self, id: int, date_dismissal_at: datetime.datetime = None):
-        self._repository.soft_delete(id, date_dismissal_at)
+        if date_dismissal_at == None:
+            date_dismissal_at = datetime.now()
+        self._repository.user_dismiss(id, date_dismissal_at)
+        return {
+            "message": f"User {id} dismiss : {date_dismissal_at}"
+        }
     
     def reset_password(self, id: int, password: str):
         params = {
@@ -89,6 +97,22 @@ class UserService:
         return {
             "message": "Password is update"
         }
+
+    async def get_users_status(self, users_id: list):
+        result = {}
+        for user_id in users_id:
+            status = await self._redis.redis.get(f"status.user.{user_id}")
+            if status is not None:
+                status = json.loads(status)
+                result[user_id] = UserStatus(
+                    user_id=user_id,
+                    status_id=status['status_id'],
+                    status_at=status['status_at'],
+                    color=status['color'],
+                    status=status['status']
+                )
+            result[user_id] = status
+        return result
 
     def __fill_fields(self, user: UserRequest):
         user_create = UserModel()
@@ -143,6 +167,11 @@ class UserService:
         del status_user
         return userDetail
 
+    async def __set_status_redis(self, status_info: dict):
+        id = status_info['id']
+        del status_info['id']
+        await self._redis.redis.set(f"status.user.{id}", json.dumps(status_info))
+            
 class SkillService:
     def __init__(self, skill_repository: SkillsRepository) -> None:
         self._repository: SkillsRepository = skill_repository

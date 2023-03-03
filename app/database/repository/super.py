@@ -1,7 +1,7 @@
 from contextlib import AbstractContextManager
 from typing import Callable
 from abc import ABC, abstractmethod
-from math import floor, ceil
+from math import ceil
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from aioredis import Redis

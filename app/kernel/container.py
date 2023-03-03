@@ -5,6 +5,7 @@ import app.database as DatabaseCustom
 import app.http.services as services
 from .redis import init_redis_pool
 from app.http.services import JwtManagement
+from app.http.services.helpers import RedisInstance
 
 
 class Container(containers.DeclarativeContainer):
@@ -23,11 +24,17 @@ class Container(containers.DeclarativeContainer):
         JwtManagement,
         redis_pool
     )
+
+    redis_instance = providers.Factory(
+        RedisInstance,
+        redis_pool
+    )
     
     user_repository = providers.Factory(
         DatabaseCustom.UserRepository,
-        session_factory=db.provided.session
+        session_factory=db.provided.session,
     ) 
+
     skills_repository = providers.Factory(
         DatabaseCustom.SkillsRepository,
         session_factory=db.provided.session,
@@ -42,7 +49,8 @@ class Container(containers.DeclarativeContainer):
     ) 
     user_service = providers.Factory(
         services.UserService, 
-        user_repository = user_repository
+        user_repository = user_repository,
+        redis = redis_instance,
     )
     skill_service = providers.Factory(
         services.SkillService, 

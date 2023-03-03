@@ -23,6 +23,7 @@ class UsersResponse(BaseModel):
     status: UserStatus = None
 
 
+
 class UserDetailResponse(BaseModel):
     id: int
     email: str

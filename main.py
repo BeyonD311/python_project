@@ -3,13 +3,19 @@ from fastapi import FastAPI
 from dependency_injector.wiring import register_loader_containers
 from starlette.middleware.cors import CORSMiddleware
 from app.http.middleware.auth_middleware import Auth
+import os
+
+
 
 find_dotenv()
 load_dotenv()   
 
+os.environ['TZ'] = os.getenv('TIME_ZONE')
+
 def create_container():
     from app.kernel import Container
-    return Container()
+    container = Container()
+    return container
 
 def import_modules_controller(container):
     import pkgutil

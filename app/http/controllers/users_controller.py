@@ -1,7 +1,7 @@
 import re
 import jwt
 import os
-import copy
+import asyncio
 from fastapi import Depends, APIRouter, Response, status, UploadFile, Body, Path, Request
 from typing import List
 from datetime import datetime
@@ -104,10 +104,25 @@ async def get_users(
 
 @route.get("/status_all")
 @inject
-async def current_user(
+async def get_all_status(
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     return user_service.get_all_status_users()
+
+@route.get("/status/")
+@inject
+async def current_user_status(
+    user_id: str,
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    """ 
+        long polling - для статусов \n
+        **user_id - принимает в себя id пользователей через запятую пример "1,2,3"
+    """
+    users: list = user_id.split(",")
+    statuses = await user_service.get_users_status(users_id=users)
+
+    return statuses
 
 @route.get("/position")
 @inject
@@ -142,12 +157,14 @@ async def current_user(
             response.status_code = status.HTTP_404_NOT_FOUND
             return 
         if user_id == None:
-            token = request.headers.get('authorization').replace("Bearer ", "")
-            decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
-            current = user_service.by_id(decode['azp'])
-        else:
-            current = user_service.by_id(user_id)
-        return current.password
+            user_id = decode['azp']
+        token = request.headers.get('authorization').replace("Bearer ", "")
+        decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
+        current = user_service.by_id(user_id)
+        return {
+            "id": user_id,
+            "password": current.password
+        }
     except NotFoundError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
         return {
@@ -165,8 +182,7 @@ async def get_user_id(
     try:
         if id == 0:
             raise NotFoundError(id)
-        user = user_service.get_user_by_id(id)
-        return copy(user)
+        return user_service.get_user_by_id(id)
     except Exception as e:
         print(e)
         response.status_code = status.HTTP_404_NOT_FOUND
@@ -190,6 +206,7 @@ async def add_user(
             return {
                 "message": "Bad request"
             }
+        await user_service.set_status(user.id,user.status.status_id)
         return user
     except NotFoundError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
@@ -211,12 +228,17 @@ async def update_status(
     status_id: int, 
     response: Response, 
     request: Request, 
+    user_id: int = None,
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    """ Если параметр '**user_id** == null' то будет изменен статус текущего пользователя """
     try:
-        token = request.headers.get('authorization').replace("Bearer ", "")
-        decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
-        user_service.set_status(decode['azp'],status_id=status_id)
+        if user_id == None:
+            token = request.headers.get('authorization').replace("Bearer ", "")
+            decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
+            user_id = decode['azp']
+        
+        await user_service.set_status(user_id,status_id=status_id)
         return {
             "message": "set status"
         }
@@ -236,6 +258,25 @@ async def update_password(
 
    return user_service.reset_password(id, password)
 
+@route.patch("/dismiss")
+@inject
+async def user_dismiss(
+        response: Response, 
+        id: int = Body(), 
+        date_dismissal_at: datetime = Body(default=None),
+        user_service: UserService = Depends(Provide[Container.user_service]),
+        HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    try:
+        """ 
+            **date_dismissal_at** - формат времени (yyyy-mm-dd hh:mm:dd)
+        """
+        
+        return user_service.dismiss(id, date_dismissal_at)
+    except NotFoundError as e:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {
+            "message": str(e)
+        }
 
 @route.put("/{id}")
 @inject
@@ -266,38 +307,5 @@ def user_delete(id: int, response: Response, user_service: UserService = Depends
             "message": str(e)
         }
     
-@route.delete("/dismiss/{id}")
-@inject
-def user_dismiss(
-        id: int, 
-        response: Response, 
-        date_dismissal_at: datetime|str = Body(default=None),
 
-        user_service: UserService = Depends(Provide[Container.user_service]),
-        HTTPBearerSecurity: HTTPBearer = Depends(security)):
-    try:
-        user_service.dismiss(id, date_dismissal_at)
-        return {
-            "message": "Employee dismiss"
-        }
-    except NotFoundError as e:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {
-            "message": str(e)
-        }
 
-def copy(user, show_pass: False = False) -> dict:
-    res = {}
-
-    for p in user.__dict__:
-        if p == "_sa_instance_state":
-            continue
-        if p == "hashed_password":
-            continue
-        if show_pass == False and p == "password":
-            res[p] = re.sub(r'.*', "*", user.__dict__[p])
-        else:
-            res[p] = user.__dict__[p]
-    
-    return res
-    

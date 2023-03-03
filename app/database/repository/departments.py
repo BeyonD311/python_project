@@ -155,6 +155,8 @@ class DeparmentsRepository(SuperRepository):
             if page <= 1:
                 page = 0
             if  page > 0:
+                if page > 1:
+                    page -= 1
                 offset = (limit * page)
             employees = session.query(UserModel).filter(UserModel.id != 0)
             employees = self.filter_params(employees, filter).order_by(UserModel.id.asc())

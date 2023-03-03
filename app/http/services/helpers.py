@@ -1,7 +1,17 @@
+import re
+from aioredis import Redis
 from fastapi import status
 from pydantic import BaseModel
-import re
 
+
+class RedisInstance():
+    def __init__(self, redis: Redis) -> None:
+        self.redis = redis
+    def __enter__(self):
+        return self.redis
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        print(exc_type, exc_value, exc_traceback)
+        del self
 
 class BaseAccess(BaseModel):
     """ 

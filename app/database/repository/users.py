@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from .super import SuperRepository, NotFoundError, Pagination, RedisConnect
+from .super import SuperRepository, NotFoundError, Pagination
 from app.database import UserModel as User
 from app.database import RolesModel
 from app.database import GroupsModel
@@ -8,9 +8,7 @@ from app.database import SkillsModel
 from app.database import StatusModel
 from app.database import PositionModel
 from app.database import DepartmentsModel
-from app.database import StatusHistoryModel
 from sqlalchemy import event
-from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query
 from sqlalchemy.engine.base import Connection
@@ -19,6 +17,12 @@ from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
 from typing import Callable
 
+
+""" 
+    События для управления статусами
+    0 - статус увольнения
+
+"""
 event_type = None
 
 class UserRepository(SuperRepository): 
@@ -75,7 +79,6 @@ class UserRepository(SuperRepository):
         return super().get_by_id(user_id)
 
     def update(self, id, user_model: User):
-        global event_type
         with self.session_factory() as session:
             user = user_model
             current = session.query(self.base_model).filter(self.base_model.id == id).first()
@@ -93,7 +96,6 @@ class UserRepository(SuperRepository):
                 current.skills.clear()
             current.roles.clear()
             current.groups.clear()
-            event_type = "update"
             current = self.item_add_or_update(current, session)
             current.skills
             current.position
@@ -114,7 +116,12 @@ class UserRepository(SuperRepository):
         with self.session_factory() as session:
             return session.query(StatusModel).all()
 
-
+    def get_users_by_id(self, users_id: list):
+        with self.session_factory() as session:
+            users = session.query(self.base_model).filter(self.base_model.id.in_(users_id)).all()
+            if len(users) < 1:
+                raise NotFoundError(f"Users not found {users_id}")
+            return users
 
     def set_status(self, user_id, status_id):
         global event_type
@@ -125,25 +132,24 @@ class UserRepository(SuperRepository):
             event_type="set_status"
             session.add(current)
             session.commit()
-            return True
+            return {
+                "id": current.id,
+                "status_id": current.status_id,
+                "status_at": str(current.status_at),
+                "color": current.status.color,
+                "status": current.status.name
+            }
 
     def add(self, user_model: User) -> any:
-        global event_type
         try:
             with self.session_factory() as session:
                 status:StatusModel = session.query(StatusModel).filter(StatusModel.name.ilike("оффлайн")).first()
                 user = user_model
-                event_type = "add"
                 user = self.item_add_or_update(user, session)
                 if status != None:
                     # Сохраняем текущий статус в редис для быстрого доступа
                     user.status_id = status.id
                     user.status_at = datetime.now()
-                    redis = RedisConnect()
-                    redis.set(f"status.user.{user.id}", json.dumps({
-                        "id": status.id,
-                        "time": user.status_at
-                    }))
                 user.position
                 user.deparment
                 user.skills
@@ -187,6 +193,20 @@ class UserRepository(SuperRepository):
             user.is_active = False
             session.add(user)
             session.commit()       
+    
+    def user_dismiss(self, user_id: int,  date_dismissal_at: datetime = None):
+        user = self.get_by_id(user_id)
+        global event_type
+        event_type = 0
+        with self.session_factory() as session:
+            status = session.query(StatusModel).filter(StatusModel.name.ilike('уволен')).first()
+            if status == None:
+                raise NotFoundError("Не найден статус увольнения")
+            user.date_dismissal_at = date_dismissal_at
+            user.status_at =  date_dismissal_at
+            user.status_id = status.id
+            session.add(user)
+            session.commit()
 
     def user_restore(self, id):
         with self.session_factory() as session:
@@ -238,13 +258,25 @@ class UserRepository(SuperRepository):
             )
         }
 
-
 class UserNotFoundError(NotFoundError):
     entity_name: str = "User"
 
+# Обновляем таблицу status_history после обновления статусов
 @event.listens_for(User, 'after_update')
 def after_update_handler(mapper, connection: Connection, target):
-    pass
-
-#будем обновлять таблицу
-# event.listen(User, 'after_update', after_update_handler)
+    if event_type != None:
+        print('-----------------------update')
+        print(event_type)
+        with connection.begin():
+            status_current = connection.execute(f"select update_at from status_history where user_id = {target.id} and is_active = true").first()
+            query_update = f"update status_history set is_active = false"
+            if status_current is not None:
+                date:datetime = status_current[0]
+                query_update += f", time_at = '{target.status_at - date}'"
+            query_update += f" where user_id = {target.id} and is_active = true"
+            connection.execute(query_update)
+            if event_type == 0:
+                target.status_at = None
+            connection.execute(f"insert into status_history (user_id,status_id,update_at,is_active) values ({target.id},{target.status_id},'{target.status_at}',true)")
+            
+        print('-----------------------update')
