@@ -12,6 +12,8 @@ from app.http.services.users.user_base_models import UserRequest
 from app.http.services.users.user_base_models import UserParams
 from app.http.services.users.user_base_models import UserDetailResponse
 from app.http.services.users.user_base_models import UserStatus
+from app.http.services.users.user_base_models import UserDepatment
+from app.http.services.users.user_base_models import UserPosition
 
 class UserService:
     def __init__(self, user_repository: UserRepository, redis: RedisInstance) -> None:
@@ -86,6 +88,12 @@ class UserService:
             "message": f"User {id} dismiss : {date_dismissal_at}"
         }
     
+    def recover(self, id: int):
+        self._repository.user_recover(id)
+        return {
+            "message": f"User {id} recover"
+        }
+    
     def reset_password(self, id: int, password: str):
         params = {
             "id": id,
@@ -140,8 +148,6 @@ class UserService:
             password=user.password,
             is_operator=user.is_operator,
             date_employment_at=user.date_employment_at,
-            head_of_depatment=user.head_of_depatment,
-            deputy_head=user.deputy_head,
             date_dismissal_at = user.date_dismissal_at,
             phone=user.phone,
             image_id=user.image_id
@@ -150,6 +156,13 @@ class UserService:
         userDetail.skills = user.skills
         userDetail.position = user.position
         status_user = user.status
+        if user.position != None:
+            userDetail.position = user.position
+        if user.deparment != None:
+            userDetail.deparment = {
+                "id":user.deparment.id,
+                "name":user.deparment.name
+            }
         if status_user != None:
             userDetail.status = UserStatus(
                 status=status_user.name,

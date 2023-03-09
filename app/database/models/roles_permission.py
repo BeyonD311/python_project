@@ -4,7 +4,7 @@ from app.kernel.database import Base
 class RolesPermission(Base):
 
     __tablename__ = "roles_permission"
-    id = Column('id', BigInteger, primary_key=True),
+    id = Column('id', BigInteger, primary_key=True)
     role_id = Column(ForeignKey("roles.id"), primary_key=True)
     module_id = Column(ForeignKey("permissions.id"), primary_key=True)
     is_active = Column(Boolean, default=True)

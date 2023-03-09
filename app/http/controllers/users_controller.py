@@ -278,6 +278,25 @@ async def user_dismiss(
             "message": str(e)
         }
 
+@route.patch("/recover")
+@inject
+async def user_dismiss(
+        response: Response, 
+        id: int = Body(), 
+        user_service: UserService = Depends(Provide[Container.user_service]),
+        HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    try:
+        """ 
+            **date_dismissal_at** - формат времени (yyyy-mm-dd hh:mm:dd)
+        """
+        
+        return user_service.recover(id)
+    except NotFoundError as e:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {
+            "message": str(e)
+        }
+
 @route.put("/{id}")
 @inject
 async def update_user(

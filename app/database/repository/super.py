@@ -43,14 +43,14 @@ class SuperRepository(ABC):
                 raise NotFoundError(id)
             session.delete(entity)
             session.commit()
-    def get_pagination(self, session: Session, page: int, size: int) -> dict[Pagination]:
-        count_items = session.query(self.base_model).count()
+    def get_pagination(self, query, size: int, page: int):
+        count_items = query.count()
         total_page = ceil(count_items / size)
         return {
             "pagination": Pagination(
                 total_page = total_page,
                 total_count = count_items,
-                page=page + 1,
+                page=page,
                 size=size
             )
         }

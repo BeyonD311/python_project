@@ -12,6 +12,14 @@ class UserStatus(BaseModel):
     status_at: datetime = None
     color: str = None
 
+class UserPosition(BaseModel):
+    id: int
+    name: str
+
+class UserDepatment(BaseModel):
+    id: int
+    name: str
+
 """ Поля пользователя """
 class UsersResponse(BaseModel):
     id: int = None
@@ -34,7 +42,7 @@ class UserDetailResponse(BaseModel):
     fio: str
     inner_phone: int = None
     phone: str = None
-    deparment: str = None
+    deparment: dict = None
     position: dict = None
     groups: list = None
     skills: list = None
@@ -47,8 +55,6 @@ class UserDetailResponse(BaseModel):
     is_operator: bool = None
     date_employment_at: datetime = None
     date_dismissal_at: datetime = None
-    head_of_depatment: bool
-    deputy_head: bool
 
 class UserRequest(BaseModel):
     email: str = None

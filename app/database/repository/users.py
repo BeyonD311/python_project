@@ -43,7 +43,6 @@ class UserRepository(SuperRepository):
                                   self.base_model.status_at,
                                   self.base_model.inner_phone,
                                   self.base_model.fio,
-                                  self.base_model.head_of_depatment,
                                   StatusModel.name.label("status"), StatusModel.color.label("status_color"),
                                   PositionModel.name.label("position"),
                                   DepartmentsModel.name.label("department")
@@ -165,13 +164,12 @@ class UserRepository(SuperRepository):
         roles = session.query(RolesModel).filter(RolesModel.id.in_(user.roles_id)).all()
         groups = session.query(GroupsModel).filter(GroupsModel.id.in_(user.group_id)).all()
         if user.skills_id != []:
-            skills = session.query(SkillsModel).filter(GroupsModel.id.in_(user.skills_id)).all()
+            skills = session.query(SkillsModel).filter(SkillsModel.id.in_(user.skills_id)).all() 
             [user.skills.append(s) for s in skills]
         [user.roles.append(r) for r in roles]
         [user.groups.append(g) for g in groups]
         session.add(user)
         session.commit()
-
         return user
     
     def update_password(self, params: dict):
@@ -208,6 +206,20 @@ class UserRepository(SuperRepository):
             session.add(user)
             session.commit()
 
+    def user_recover(self, user_id: int):
+            user = self.get_by_id(user_id)
+            global event_type
+            event_type = "recover"
+            with self.session_factory() as session:
+                status = session.query(StatusModel).filter(StatusModel.name.ilike('оффлайн')).first()
+                if status == None:
+                    raise NotFoundError("Не найден статус увольнения")
+                user.date_dismissal_at = None
+                user.status_at =  datetime.now()
+                user.status_id = status.id
+                session.add(user)
+                session.commit()
+
     def user_restore(self, id):
         with self.session_factory() as session:
             user = self.get_by_id(id)
@@ -243,20 +255,7 @@ class UserRepository(SuperRepository):
             field = field.desc()
         else:
             field = field.asc()
-        
         return field
-
-    def get_pagination(self, query, size, page):
-        count_items = query.count()
-        total_page = ceil(count_items / size)
-        return {
-            "pagination": Pagination(
-                total_page = total_page,
-                total_count = count_items,
-                page=page + 1,
-                size=size
-            )
-        }
 
 class UserNotFoundError(NotFoundError):
     entity_name: str = "User"
@@ -265,8 +264,6 @@ class UserNotFoundError(NotFoundError):
 @event.listens_for(User, 'after_update')
 def after_update_handler(mapper, connection: Connection, target):
     if event_type != None:
-        print('-----------------------update')
-        print(event_type)
         with connection.begin():
             status_current = connection.execute(f"select update_at from status_history where user_id = {target.id} and is_active = true").first()
             query_update = f"update status_history set is_active = false"
@@ -278,5 +275,3 @@ def after_update_handler(mapper, connection: Connection, target):
             if event_type == 0:
                 target.status_at = None
             connection.execute(f"insert into status_history (user_id,status_id,update_at,is_active) values ({target.id},{target.status_id},'{target.status_at}',true)")
-            
-        print('-----------------------update')

@@ -27,12 +27,10 @@ class UserModel(Base):
     inner_phone = Column(String, nullable=True)
     is_active = Column(Boolean, default = True) 
     personal_number = Column(String, nullable=True)
-    image_id = Column(BIGINT, ForeignKey('images.id', ondelete="SET NULL"))
-    position_id = Column(SMALLINT, ForeignKey('position.id'))
-    status_id = Column(Integer, ForeignKey('status_users.id'))
-    department_id = Column(INTEGER, ForeignKey("departments.id"))
-    head_of_depatment = Column(Boolean, default=False)
-    deputy_head = Column(Boolean, default=False)
+    image_id = Column(BIGINT, ForeignKey('images.id', onupdate="CASCADE", ondelete="SET NULL"))
+    position_id = Column(SMALLINT, ForeignKey('position.id', onupdate="CASCADE", ondelete="SET NULL"))
+    status_id = Column(Integer, ForeignKey('status_users.id', onupdate="CASCADE", ondelete="SET NULL"))
+    department_id = Column(INTEGER, ForeignKey("departments.id", onupdate="CASCADE", ondelete="SET NULL"))
     date_employment_at = Column(TIMESTAMP)
     date_dismissal_at = Column(TIMESTAMP, nullable=True) 
     created_at = Column(TIMESTAMP, server_default=func.now())
@@ -62,8 +60,6 @@ class UserModel(Base):
                F"status_id={self.status_id}"\
                f"date_employment_at={self.date_employment_at}"\
                f"date_dismissal_at={self.date_dismissal_at}"\
-               f"head_of_depatment={self.head_of_depatment}"\
-               f"deputy_head={self.deputy_head}"\
                f"created_at={self.created_at}"\
                f"updated_at={self.updated_at})>" 
 

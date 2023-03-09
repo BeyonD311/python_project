@@ -9,6 +9,8 @@ from app.database.models import PositionModel
 from app.database.models import StatusModel
 from sqlalchemy.orm import Query
 from sqlalchemy.orm import Session
+from sqlalchemy import or_, func
+from sqlalchemy.orm import ColumnProperty
 from typing import Iterator
 
 class UserStatus(BaseModel):
@@ -22,7 +24,7 @@ class Depratment(BaseModel):
     name: str = None
     parent_department_id: int = None
     is_parent: bool
-    employees: list = []
+    employees: list = {}
     child: list = []
 
 class UsersResponse(BaseModel):
@@ -68,6 +70,7 @@ class DeparmentsRepository(SuperRepository):
             query = self.filter_params(query=query, filter=filter)
             result = {}
             parents = []
+            query = session.execute(self.__query_employees(filter))
             for res in query.all():
                 if res[2] is not None:
                     parents.append(res[2])
@@ -79,19 +82,20 @@ class DeparmentsRepository(SuperRepository):
                         is_parent=res[3]
                     )
                 if res[4] is not None:
-                    result[res[0]].employees.append(UsersResponse(
-                        id = res[4],
-                        fio = res[5],
-                        inner_phone = res[6],
-                        position = res[12],
-                        is_head_of_depatment=bool(res[8]),
-                        status={
-                            "id": res[11],
-                            "status": res[10],
-                            "status_id": res[7],
-                            "color": res[9]
-                        }
-                    ))
+                    if res[4] is not result[res[0]].employees:
+                        result[res[0]].employees[res[4]] = UsersResponse(
+                            id = res[4],
+                            fio = res[5],
+                            inner_phone = res[6],
+                            position = res[12],
+                            is_head_of_depatment=bool(res[8]),
+                            status={
+                                "id": res[11],
+                                "status": res[10],
+                                "status_id": res[7],
+                                "color": res[9]
+                            }
+                        )
             # Проверка фильтра
             check_filter = False
             for fields_filter in filter:
@@ -128,26 +132,56 @@ class DeparmentsRepository(SuperRepository):
                             parent_department_id=res[2],
                             is_parent=res[3]
                         )
-            print("-------------------------------")
             return result
         
     def get_by_id(self, department_id: int) -> DepartmentsModel:
         return super().get_by_id(department_id)
     # Параметры фильтра
     def filter_params(self, query, filter) -> Query:
+        filter_res = " and "
+        params = []
         if filter['fio'] != None:  
             fio = filter['fio']
+            params.append(f"users.fio ilike '%{fio}%'")
             query = query.filter(UserModel.fio.ilike(f'%{fio}%'))
         if len(filter['deparment']) != 0:
-            query = query.filter(UserModel.department_id.in_(filter['deparment']))
+            deparment = ','.join(filter['deparment'])
+            params.append(f"departments.id in ({deparment})")
+            query = query.filter(self.base_model.id.in_(filter['deparment']))
         if len(filter['position']) != 0:
+            position = ','.join(filter['position'])
+            params.append(f"users.position_id in ({position})")
             query = query.filter(UserModel.position_id.in_(filter['position']))
         if len(filter['status']) != 0:
+            status = ','.join(filter['status'])
+            params.append(f"users.status_id in ({status})")
             query = query.filter(UserModel.status_id.in_(filter['status']))
         if filter['phone'] != None:
             phone = filter['phone']
+            params.append(f"users.inner_phone ilike '%{phone}%'")
             query = query.filter(UserModel.inner_phone.ilike(f'%{phone}%'))
         return query
+
+    def __filter_params(self, filter):
+        params = []
+        if filter['fio'] != None:  
+            fio = filter['fio']
+            params.append(f"users.fio ilike '%{fio}%'")
+        if len(filter['deparment']) != 0:
+            deparment = ','.join(filter['deparment'])
+            params.append(f"departments.id in ({deparment})")
+        if len(filter['position']) != 0:
+            position = ','.join(filter['position'])
+            params.append(f"users.position_id in ({position})")
+        if len(filter['status']) != 0:
+            status = ','.join(filter['status'])
+            params.append(f"users.status_id in ({status})")
+        if filter['phone'] != None:
+            phone = filter['phone']
+            params.append(f"users.phone ilike '%{phone}%'")
+        if len(params) > 0:
+            return "where " + " and ".join(params)
+        return ""
 
     def get_user_deparments(self, filter, limit: int, page: int):
         with self.session_factory() as session:
@@ -297,3 +331,42 @@ class DeparmentsRepository(SuperRepository):
                 department_id=id,
                 deputy_head_id=user_id
             ))
+
+    def __query_employees(self, filter):
+        query1 = self.__query_select_fields(False) + " " + self.__query_join(True) + " " + self.__filter_params(filter)
+        query2 = self.__query_select_fields(True) + " " + self.__query_join() + " " + self.__filter_params(filter)
+        return f"select * from ({query1} union {query2}) templ where 1=1 "
+        
+
+    def __query_select_fields(self, fake = False):
+        fields = ""
+        if fake == False:
+            fields = f" head_of_depatments.head_of_depatment_id AS head_of_depatment_id,"
+        else:
+            fields = f"int'0' AS head_of_depatment_id,"
+        select = f"select departments.id AS department_id,"\
+                f"departments.name AS department_name,"\
+                f"departments.parent_department_id AS department_parent,"\
+                f"departments.is_parent AS is_parent,"\
+                f"users.id AS user_id,"\
+                f"users.fio AS user_fio,"\
+                f"users.inner_phone AS user_inner_phone,"\
+                f"users.status_at AS status_at,"\
+                f"{fields}"\
+                f"status_users.color AS status_color,"\
+                f"status_users.name AS status_name,"\
+                f"status_users.id AS status_id,"\
+                f"position.name AS position from departments"
+        return select
+
+    def __query_join(self, head = False):
+        if head:
+            head = f"LEFT OUTER JOIN head_of_depatments ON head_of_depatments.department_id = departments.id "\
+                   f"JOIN users ON users.id = head_of_depatments.head_of_depatment_id or users.id = head_of_depatments.deputy_head_id "
+        else:
+            head = f"JOIN users ON users.department_id = departments.id"
+        
+        join = f"{head} "\
+               f"LEFT OUTER JOIN status_users ON status_users.id = users.status_id "\
+               f"LEFT OUTER JOIN position ON position.id = users.position_id "
+        return join
