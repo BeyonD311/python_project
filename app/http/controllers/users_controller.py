@@ -2,8 +2,7 @@ import re
 import jwt
 import os
 import asyncio
-from fastapi import Depends, APIRouter, Response, status, UploadFile, Body, Path, Request
-from typing import List
+from fastapi import Depends, APIRouter, Response, status, Body, Request
 from datetime import datetime
 from dependency_injector.wiring import inject, Provide
 from app.kernel.container import Container
@@ -82,7 +81,6 @@ async def get_users(
         user_filter = UsersFilter()
         result = re.findall(reg,filter) 
         flag = False
-        print("----------------------------")
         for r in result:
             if r[0] in user_filter.__dict__ and r[2] != "":
                 flag = True
@@ -90,7 +88,6 @@ async def get_users(
                 if r[0].lower() == "status":
                     param = r[2].split(",")
                 user_filter.__setattr__(r[0], param)
-        print("----------------------------")
         if flag:
             params.filter = user_filter
     try: 
@@ -134,7 +131,6 @@ async def user_position(
 @route.get("/current")
 @inject
 async def current_user(
-    response: Response, 
     request: Request, 
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):

@@ -13,28 +13,23 @@ class Container(containers.DeclarativeContainer):
     config = providers.Configuration(yaml_files=[Path('config.yml')])
     db = providers.Singleton(Database, db_url=config.db.uri) 
     # Service Provider
-
     redis_pool = providers.Resource(
         init_redis_pool,
         host="redis:6379",
         password=""
     )
-
     jwt = providers.Factory(
         JwtManagement,
         redis_pool
     )
-
     redis_instance = providers.Factory(
         RedisInstance,
         redis_pool
     )
-    
     user_repository = providers.Factory(
         DatabaseCustom.UserRepository,
         session_factory=db.provided.session,
     ) 
-
     skills_repository = providers.Factory(
         DatabaseCustom.SkillsRepository,
         session_factory=db.provided.session,
@@ -72,7 +67,6 @@ class Container(containers.DeclarativeContainer):
         services.GroupsService,
         goups_repository=groups_repository
     )
-
     roles_repository = providers.Factory(
         DatabaseCustom.RolesRepository,
         session_factory=db.provided.session,
@@ -85,17 +79,14 @@ class Container(containers.DeclarativeContainer):
         DatabaseCustom.DeparmentsRepository,
         session_factory=db.provided.session,
     )
-
     department_service = providers.Factory(
         services.DepartmentsService,
         repository=department_repository
     )
-
     image_repository = providers.Factory(
         DatabaseCustom.ImagesRepository,
         session_factory=db.provided.session
     )
-
     image_services = providers.Factory(
         services.ImagesServices,
         image_repository=image_repository
