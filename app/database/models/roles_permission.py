@@ -5,8 +5,8 @@ class RolesPermission(Base):
 
     __tablename__ = "roles_permission"
     id = Column('id', BigInteger, primary_key=True)
-    role_id = Column(ForeignKey("roles.id"), primary_key=True)
-    module_id = Column(ForeignKey("permissions.id"), primary_key=True)
+    role_id = Column(ForeignKey("roles.id", ondelete="CASCADE", onupdate="CASCADE"))
+    module_id = Column(ForeignKey("permissions.id", ondelete="CASCADE", onupdate="CASCADE")) 
     is_active = Column(Boolean, default=True)
     is_available = Column(Boolean, default=True)
     method_access = Column(String(10), default='0000')
@@ -18,5 +18,5 @@ class RolesPermission(Base):
             f"is_active={self.is_active}"\
             f"is_available={self.is_available}"\
             f"method_access={self.method_access}"\
-            ")>"
+            ")>" 
             

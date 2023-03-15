@@ -266,8 +266,9 @@ async def user_dismiss(
         """ 
             **date_dismissal_at** - формат времени (yyyy-mm-dd hh:mm:dd)
         """
-        
-        return user_service.dismiss(id, date_dismissal_at)
+        res = user_service.dismiss(id, date_dismissal_at)
+        await user_service.set_status(id,status_id=4)
+        return res
     except NotFoundError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
         return {
@@ -282,7 +283,9 @@ async def user_dismiss(
         user_service: UserService = Depends(Provide[Container.user_service]),
         HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
-        return user_service.recover(id)
+        Res = user_service.recover(id)
+        await user_service.set_status(id,status_id=1)
+        return Res
     except NotFoundError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
         return {
@@ -309,9 +312,12 @@ async def update_user(
     
 @route.delete("/{id}")
 @inject
-def user_delete(id: int, response: Response, user_service: UserService = Depends(Provide[Container.user_service]),HTTPBearerSecurity: HTTPBearer = Depends(security)):
+async def user_delete(id: int, response: Response, user_service: UserService = Depends(Provide[Container.user_service]),HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
-        return user_service.delete_user_by_id(id)
+        user_service.delete_user_by_id(id)
+        return {
+            "message": f"User is delete {id}"
+        }
     except NotFoundError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
         return {

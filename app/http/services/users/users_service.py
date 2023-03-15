@@ -183,6 +183,9 @@ class UserService:
     async def __set_status_redis(self, status_info: dict):
         id = status_info['id']
         del status_info['id']
+        print("-----------------status_info")
+        print(status_info)
+        print("-----------------status_info")
         await self._redis.redis.set(f"status.user.{id}", json.dumps(status_info))
             
 class SkillService:
@@ -195,4 +198,4 @@ class SkillService:
     def find(self, text:str):
         return self._repository.find_skill(text)
 
-__all__ = ('UserService', 'SkillsRepository')
+__all__ = ('UserService', 'SkillsRepository') 

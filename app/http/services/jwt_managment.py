@@ -31,8 +31,9 @@ class Jwt:
         roles_result = {}
         for role in self.user.roles:
             roles_result[role.id] = {}
-            for access in role.permission_model:
-                roles_result[role.id][access.module_id] = access.method_access
+            print(role.permission_model)
+            # for access in role.permission_model:
+            #     roles_result[role.id][access.module_id] = access.method_access
         access_token = jwt.encode(
             payload={
                 "azp": self.user.id,

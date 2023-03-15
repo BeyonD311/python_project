@@ -63,6 +63,10 @@ class UserRepository(SuperRepository):
     def get_by_login(self, login: str) -> User:
         with self.session_factory() as session:
             user = session.query(self.base_model).filter(self.base_model.login == login).first()
+            print("-------------------------------")
+            print(user)
+            print("-------------------------------")
+
             if user is None:
                 raise UserNotFoundError(login)
             return user
@@ -267,11 +271,13 @@ def after_update_handler(mapper, connection: Connection, target):
         with connection.begin():
             status_current = connection.execute(f"select update_at from status_history where user_id = {target.id} and is_active = true").first()
             query_update = f"update status_history set is_active = false"
+            if target.status_at == None:
+                target.status_at = datetime.now()
             if status_current is not None:
                 date:datetime = status_current[0]
                 query_update += f", time_at = '{target.status_at - date}'"
             query_update += f" where user_id = {target.id} and is_active = true"
             connection.execute(query_update)
-            if event_type == 0:
-                target.status_at = None
+            # if event_type == 0:
+            #     target.status_at = None
             connection.execute(f"insert into status_history (user_id,status_id,update_at,is_active) values ({target.id},{target.status_id},'{target.status_at}',true)")
