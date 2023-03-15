@@ -28,6 +28,7 @@ class UsersResponse(BaseModel):
     deparment: str = None
     position: str = None
     is_head_of_depatment: bool = False
+    employment_status: bool
     status: UserStatus = None
 
 
@@ -55,6 +56,7 @@ class UserDetailResponse(BaseModel):
     is_operator: bool = None
     date_employment_at: datetime = None
     date_dismissal_at: datetime = None
+    employment_status: bool
 
 class UserRequest(BaseModel):
     email: str = None

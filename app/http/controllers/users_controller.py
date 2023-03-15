@@ -1,7 +1,6 @@
 import re
 import jwt
 import os
-import asyncio
 from fastapi import Depends, APIRouter, Response, status, Body, Request
 from datetime import datetime
 from dependency_injector.wiring import inject, Provide
@@ -266,7 +265,6 @@ async def user_dismiss(
         """ 
             **date_dismissal_at** - формат времени (yyyy-mm-dd hh:mm:dd)
         """
-        
         return user_service.dismiss(id, date_dismissal_at)
     except NotFoundError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
