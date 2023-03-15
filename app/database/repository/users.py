@@ -1,6 +1,5 @@
-import json
-from datetime import datetime
-from .super import SuperRepository, NotFoundError, Pagination
+from datetime import datetime, timedelta
+from .super import SuperRepository, NotFoundError
 from app.database import UserModel as User
 from app.database import RolesModel
 from app.database import GroupsModel
@@ -45,7 +44,8 @@ class UserRepository(SuperRepository):
                                   self.base_model.fio,
                                   StatusModel.name.label("status"), StatusModel.color.label("status_color"),
                                   PositionModel.name.label("position"),
-                                  DepartmentsModel.name.label("department")
+                                  DepartmentsModel.name.label("department"),
+                                  self.base_model.employment_status
                                   )\
                     .join(StatusModel, StatusModel.id == self.base_model.status_id, isouter=True)\
                     .join(PositionModel, PositionModel.id == self.base_model.position_id, isouter=True)\
@@ -266,18 +266,33 @@ class UserNotFoundError(NotFoundError):
 
 # Обновляем таблицу status_history после обновления статусов
 @event.listens_for(User, 'after_update')
-def after_update_handler(mapper, connection: Connection, target):
+def after_update_handler(mapper, connection: Connection, target: User):
+    
+    def update(time_at = None):
+        query_update = f"update status_history set is_active = false"
+        if time_at is not None:
+            query_update += f", time_at = '{time_at}'"
+        query_update += f" where user_id = {target.id} and is_active = true"
+        connection.execute(query_update)
+    def add(user_id, status_id, update_at):
+        connection.execute(f"insert into status_history (user_id,status_id,update_at,is_active) values ({user_id},{status_id},'{update_at}',true)")
+
     if event_type != None:
         with connection.begin():
-            status_current = connection.execute(f"select update_at from status_history where user_id = {target.id} and is_active = true").first()
-            query_update = f"update status_history set is_active = false"
-            if target.status_at == None:
-                target.status_at = datetime.now()
+            status_current = connection.execute(f"select update_at, status_id, user_id from status_history where user_id = {target.id} and is_active = true").first()
+            target.status_at = datetime.now()
+            time_at = None
             if status_current is not None:
                 date:datetime = status_current[0]
-                query_update += f", time_at = '{target.status_at - date}'"
-            query_update += f" where user_id = {target.id} and is_active = true"
-            connection.execute(query_update)
-            # if event_type == 0:
-            #     target.status_at = None
-            connection.execute(f"insert into status_history (user_id,status_id,update_at,is_active) values ({target.id},{target.status_id},'{target.status_at}',true)")
+                td: timedelta = target.status_at - date
+                if td.days > 0:
+                    DAY = timedelta(1)
+                    for i in range(td.days):
+                        update("23:59:59")
+                        date += DAY
+                        add(status_current[2],status_current[1], date)
+                    time_at = str(td).split(",")[1]
+                else:
+                    time_at = str(td)
+                update(time_at)
+            add(target.id, target.status_id, target.status_at)

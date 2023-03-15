@@ -96,41 +96,30 @@ class DeparmentsRepository(SuperRepository):
                                 "color": res[9]
                             }
                         )
-            # Проверка фильтра
-            check_filter = False
-            for fields_filter in filter:
-                field = filter[fields_filter]
-                if type(field) is set:
-                    if len(field) > 0:
-                        check_filter = True
-                        break
-                elif type(field) is not set and field != None:
-                    check_filter = True
-                    break
-            if check_filter:
-                """ Получем родителей рекурсивно """
-                parents = set(parents)
-                query = session.query(
-                    self.base_model.id,
-                    self.base_model.name,
-                    self.base_model.parent_department_id,
-                    self.base_model.is_parent
-                ).filter(self.base_model.id.in_(parents)).cte('cte', recursive=True)
-                parents = session.query(
-                    self.base_model.id,
-                    self.base_model.name,
-                    self.base_model.parent_department_id,
-                    self.base_model.is_parent
-                ).join(query, query.c.parent_department_id == self.base_model.id)
-                recursive_q = query.union(parents)
-                query = session.query(recursive_q).all()
-                for res in query:
-                    if res[0] not in result:
-                        result[res[0]] = Depratment(
-                            id = res[0],
-                            name = res[1],
-                            parent_department_id=res[2],
-                            is_parent=res[3]
+            #TODO возможно понадобиться для работы если нет то удалить
+            """ Получем родителей рекурсивно """
+            parents = set(parents)
+            query = session.query(
+                self.base_model.id,
+                self.base_model.name,
+                self.base_model.parent_department_id,
+                self.base_model.is_parent
+            ).filter(self.base_model.id.in_(parents)).cte('cte', recursive=True)
+            parents = session.query(
+                self.base_model.id,
+                self.base_model.name,
+                self.base_model.parent_department_id,
+                self.base_model.is_parent
+            ).join(query, query.c.parent_department_id == self.base_model.id)
+            recursive_q = query.union(parents)
+            query = session.query(recursive_q).all()
+            for res in query:
+                if res[0] not in result:
+                    result[res[0]] = Depratment(
+                        id = res[0],
+                        name = res[1],
+                        parent_department_id=res[2],
+                        is_parent=res[3]
                         )
             return result
         
@@ -335,7 +324,8 @@ class DeparmentsRepository(SuperRepository):
     def __query_employees(self, filter):
         query1 = self.__query_select_fields(False) + " " + self.__query_join(True) + " " + self.__filter_params(filter)
         query2 = self.__query_select_fields(True) + " " + self.__query_join() + " " + self.__filter_params(filter)
-        return f"select * from ({query1} union {query2}) templ where 1=1 "
+        return f"select templ.department_id, templ.department_name, templ.department_parent, templ.is_parent, templ.user_id, templ.user_fio, templ.user_inner_phone, templ.status_at, templ.head_of_depatment_id, templ.status_color, templ.status_name, templ.status_id, position"\
+                f"  from ({query1} union {query2}) templ where 1=1 "
         
 
     def __query_select_fields(self, fake = False):

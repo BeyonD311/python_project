@@ -36,6 +36,7 @@ class UserModel(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
     status_at = Column(TIMESTAMP,  nullable=True) 
+    employment_status = Column(Boolean, default=True)
     # Relationships 
     status = relationship("StatusModel")
     position = relationship("PositionModel") 
@@ -57,7 +58,8 @@ class UserModel(Base):
                f"phone={self.phone}"\
                f"inner_phone={self.inner_phone}"\
                f"image_id={self.image_id}"\
-               F"status_id={self.status_id}"\
+               f"status_id={self.status_id}"\
+               f"employment_status={self.employment_status}"\
                f"date_employment_at={self.date_employment_at}"\
                f"date_dismissal_at={self.date_dismissal_at}"\
                f"created_at={self.created_at}"\

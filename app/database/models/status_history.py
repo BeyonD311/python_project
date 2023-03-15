@@ -14,9 +14,9 @@ class StatusHistoryModel(Base):
     id = Column(BIGINT, primary_key=True) 
     user_id = Column(BIGINT, ForeignKey("users.id", onupdate="CASCADE", ondelete="CASCADE"))
     status_id = Column(SMALLINT, ForeignKey("status_users.id", onupdate="CASCADE", ondelete="SET NULL"))
-    update_at = Column(TIMESTAMP, nullable=True)
+    update_at = Column(TIMESTAMP)
     time_at = Column(TIME, nullable=True)
-    is_active = Column(Boolean, default=True) 
+    is_active = Column(Boolean, default=True)
     users = relationship("UserModel", back_populates="status_history", cascade="all, delete")
     status = relationship("StatusModel")
     def __repr__(self) -> str:

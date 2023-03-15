@@ -12,8 +12,6 @@ from app.http.services.users.user_base_models import UserRequest
 from app.http.services.users.user_base_models import UserParams
 from app.http.services.users.user_base_models import UserDetailResponse
 from app.http.services.users.user_base_models import UserStatus
-from app.http.services.users.user_base_models import UserDepatment
-from app.http.services.users.user_base_models import UserPosition
 
 class UserService:
     def __init__(self, user_repository: UserRepository, redis: RedisInstance) -> None:
@@ -30,6 +28,7 @@ class UserService:
                 position=user.position,
                 deparment=user.department,
                 fio=user.fio,
+                employment_status=user.employment_status,
                 status=UserStatus(
                     status=user.status,
                     status_id=user.status_id,
@@ -150,7 +149,8 @@ class UserService:
             date_employment_at=user.date_employment_at,
             date_dismissal_at = user.date_dismissal_at,
             phone=user.phone,
-            image_id=user.image_id
+            image_id=user.image_id,
+            employment_status=user.employment_status
         )
         userDetail.groups = user.groups
         userDetail.skills = user.skills
