@@ -22,7 +22,7 @@ class UserService:
         result = self._repository.get_all(params)
         users = []
         for user in result['users']:
-            users .append(UsersResponse(
+            users.append(UsersResponse(
                 id=user.id,
                 inner_phone=user.inner_phone,
                 position=user.position,
@@ -153,7 +153,10 @@ class UserService:
             employment_status=user.employment_status
         )
         userDetail.groups = user.groups
-        userDetail.skills = user.skills
+        if userDetail.is_operator:
+            userDetail.skills = user.skills
+        else:
+            userDetail.skills = []
         userDetail.position = user.position
         status_user = user.status
         if user.position != None:
