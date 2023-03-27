@@ -2,9 +2,15 @@ from dependency_injector import containers, providers
 from pathlib import Path
 from .database import Database
 import app.database as DatabaseCustom
-import app.http.services as services
+from app.http.services.users import UserService
+from app.http.services.users import SkillService
+from app.http.services.roles import RolesPermission
+from app.http.services.groups import GroupsService
+from app.http.services.roles import RolesServices
+from app.http.services.departments import DepartmentsService
+from app.http.services.images_service import ImagesServices
 from .redis import init_redis_pool
-from app.http.services import JwtManagement
+from app.http.services.jwt_managment import JwtManagement
 from app.http.services.helpers import RedisInstance
 
 
@@ -39,16 +45,16 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session
     )
     roles_permission_service = providers.Factory(
-        services.RolesPermission,
+        RolesPermission,
         roles_repository = roles_permission
     ) 
     user_service = providers.Factory(
-        services.UserService, 
+        UserService, 
         user_repository = user_repository,
         redis = redis_instance,
     )
     skill_service = providers.Factory(
-        services.SkillService, 
+        SkillService, 
         skill_repository = skills_repository
     )
     dependencies_repository = providers.Factory(
@@ -64,7 +70,7 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
     groups_service = providers.Factory(
-        services.GroupsService,
+        GroupsService,
         goups_repository=groups_repository
     )
     roles_repository = providers.Factory(
@@ -72,7 +78,7 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
     roles_service = providers.Factory(
-        services.RolesServices,
+        RolesServices,
         roles_repository=roles_repository
     )
     department_repository = providers.Factory(
@@ -80,7 +86,7 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session,
     )
     department_service = providers.Factory(
-        services.DepartmentsService,
+        DepartmentsService,
         repository=department_repository
     )
     image_repository = providers.Factory(
@@ -88,6 +94,6 @@ class Container(containers.DeclarativeContainer):
         session_factory=db.provided.session
     )
     image_services = providers.Factory(
-        services.ImagesServices,
+        ImagesServices,
         image_repository=image_repository
     )

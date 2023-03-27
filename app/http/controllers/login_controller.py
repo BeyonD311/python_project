@@ -5,7 +5,8 @@ from hashlib import sha256
 from fastapi import APIRouter, Depends, status, Response, Request
 from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
-from app.http.services import UserLoginParams, UserService, JwtManagement, TokenInBlackList, TokenNotFound
+from app.http.services.users import UserLoginParams, UserService
+from app.http.services.jwt_managment import JwtManagement, TokenInBlackList, TokenNotFound
 from app.database import NotFoundError
 from app.kernel import Container
 
@@ -134,11 +135,6 @@ async def login(
         return {
             "message": "Логин не верный" 
         }
-    print("--------------------------------------")
-    print(password)
-    print(user.password)
-    print(user)
-    print("--------------------------------------")
     if user.hashed_password is None:
         user.hashed_password = sha256(user.password.encode()).hexdigest()
     if password != user.hashed_password:

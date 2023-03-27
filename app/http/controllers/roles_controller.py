@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Response, status
 from dependency_injector.wiring import inject, Provide
 from app.kernel.container import Container
-from app.http.services import RolesServices, Create, Update
+from app.http.services.roles import RolesServices, Create, Update
 from app.database import NotFoundError
 from fastapi.security import HTTPBearer
 from sqlalchemy.exc import IntegrityError
@@ -22,7 +22,7 @@ async def get_roles(
     roles_model: RolesServices = Depends(Provide[Container.roles_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
-    return roles_model.get_all()
+    return roles_model.get()
 
 @route.get("/modules")
 @inject
@@ -39,7 +39,7 @@ async def get_role(
     roles_model: RolesServices = Depends(Provide[Container.roles_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
-    return roles_model.get_by_id(id)
+    return roles_model.get(id)[0]
 
 @route.post("/")
 @inject

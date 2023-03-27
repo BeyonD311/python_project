@@ -3,6 +3,7 @@ from aioredis import Redis
 from fastapi import status
 from pydantic import BaseModel
 
+__all__ = ["default_error", "message"]
 
 class RedisInstance():
     def __init__(self, redis: Redis) -> None:
@@ -11,7 +12,7 @@ class RedisInstance():
         return self.redis
     def __exit__(self, exc_type, exc_value, exc_traceback):
         print(exc_type, exc_value, exc_traceback)
-        del self
+        del self 
 
 class BaseAccess(BaseModel):
     """ 
