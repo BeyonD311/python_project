@@ -5,7 +5,13 @@ from fastapi import Depends, APIRouter, Response, status, Body, Request
 from datetime import datetime
 from dependency_injector.wiring import inject, Provide
 from app.kernel.container import Container
-from app.http.services import UserService, UserRequest, UsersFilter, UserParams, DepartmentsService, GroupsService, SkillService
+from app.http.services.users import UserService
+from app.http.services.users import UserRequest
+from app.http.services.users import UsersFilter
+from app.http.services.users import UserParams
+from app.http.services.departments import DepartmentsService
+from app.http.services.groups import GroupsService
+from app.http.services.users import SkillService
 from app.database import NotFoundError
 from fastapi.security import HTTPBearer
 from sqlalchemy.exc import IntegrityError
