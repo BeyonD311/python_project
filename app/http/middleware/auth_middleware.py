@@ -16,6 +16,10 @@ def get_user(id, user = Depends(Provide[Container.user_repository])):
     return user.get_by_id(id)
 
 @inject
+def get_user_permission(id, user = Depends(Provide[Container.user_repository])):
+    return user.get_user_permission(id)
+
+@inject
 async def redis(jwt_m: JwtManagement = Depends(Provide[Container.jwt])):
     return await jwt_m.generate()
 
@@ -41,19 +45,19 @@ class Auth(BaseHTTPMiddleware):
             method = request.method.lower()
             if str(request.get("path")) in user_path_exception:
                 return await call_next(request)
-            roles = {r.id:r for r in user.roles}
             access = Access(method=method)
-            for role in roles:
-                role = roles[role]
-                modules = {m.module_id: access.parse(m.method_access) for m in role.permission_model}
-                permissions:dict[str:Access] = {p.module_name: modules[p.id] for p in role.permissions}
-                if path[1] in permissions:
-                    map_access = permissions[path[1]].check_access_method()
-                    if map_access:
-                        modules = None
-                        request.for_user = permissions[path[1]].check_personal()
-                        permissions = None
-                        return await call_next(request)
+            permissions = {}
+            for module_name, value in get_user_permission(id=user.id).items():
+                permissions[module_name] = access.parse(value['method_access'])
+            if path[1] in permissions:
+                map_access = permissions[path[1]].check_access_method()
+                if map_access:
+                    request.state.for_user = {
+                        "status": permissions[path[1]].check_personal(),
+                        "user": user
+                    }
+                    permissions = None
+                    return await call_next(request)
             return responses.JSONResponse(content= {
                 "messgae": "the module is not available, for this role"
             },status_code=status.HTTP_423_LOCKED)

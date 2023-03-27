@@ -41,7 +41,7 @@ class Access():
         return self._base_access
     
     def check_personal(self) -> bool:
-        return self._base_access.current_user
+        return self._base_access.personal
     
     """ Парсинг  """
     def _parse_access(self,str_model: str) -> None:
