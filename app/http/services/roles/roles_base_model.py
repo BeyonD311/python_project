@@ -1,15 +1,10 @@
 from pydantic import BaseModel
 from typing import List
-
-class ParamsAccess(BaseModel):
-    create: bool
-    read: bool
-    update: bool
-    delete: bool
+from app.http.services.access import BaseAccess
 
 class Modules(BaseModel):
     id: int
-    access: ParamsAccess
+    access: BaseAccess
 
 class Create(BaseModel):
     name: str

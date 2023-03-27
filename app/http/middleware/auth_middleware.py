@@ -4,7 +4,7 @@ from dependency_injector.wiring import inject, Provide
 from fastapi import status, responses, Depends
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.kernel.container import Container
-from app.http.services.helpers import parse_access
+from app.http.services.access import Access
 from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
 
 path_exception = ("auth", "docs", "openapi.json", "images")
@@ -13,7 +13,7 @@ user_path_exception = ("/users/status", "/users/current")
 
 @inject
 def get_user(id, user = Depends(Provide[Container.user_repository])):
-    return user.get_user_by_id(id)
+    return user.get_by_id(id)
 
 @inject
 async def redis(jwt_m: JwtManagement = Depends(Provide[Container.jwt])):
@@ -42,13 +42,17 @@ class Auth(BaseHTTPMiddleware):
             if str(request.get("path")) in user_path_exception:
                 return await call_next(request)
             roles = {r.id:r for r in user.roles}
+            access = Access(method=method)
             for role in roles:
                 role = roles[role]
-                modules = {m.module_id: parse_access(m.method_access) for m in role.permission_model}
-                permissions = {p.module_name: modules[p.id] for p in role.permissions}
+                modules = {m.module_id: access.parse(m.method_access) for m in role.permission_model}
+                permissions:dict[str:Access] = {p.module_name: modules[p.id] for p in role.permissions}
                 if path[1] in permissions:
-                    map_access = permissions[path[1]].map
-                    if method in map_access and map_access[method]:
+                    map_access = permissions[path[1]].check_access_method()
+                    if map_access:
+                        modules = None
+                        request.for_user = permissions[path[1]].check_personal()
+                        permissions = None
                         return await call_next(request)
             return responses.JSONResponse(content= {
                 "messgae": "the module is not available, for this role"

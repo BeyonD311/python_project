@@ -11,7 +11,6 @@ from sqlalchemy import event
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query
 from sqlalchemy.engine.base import Connection
-from math import ceil
 from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
 from typing import Callable
@@ -104,7 +103,7 @@ class UserRepository(SuperRepository):
             current.position
             current.deparment
             current.skills
-            current.status
+            current.status 
             current.image
             for role in user.roles:
                 role.permissions

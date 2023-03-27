@@ -9,7 +9,7 @@ class RolesPermission(Base):
     module_id = Column(ForeignKey("permissions.id", ondelete="CASCADE", onupdate="CASCADE")) 
     is_active = Column(Boolean, default=True)
     is_available = Column(Boolean, default=True)
-    method_access = Column(String(10), default='0000')
+    method_access = Column(String(10), default='00000')
     
     def __repr__(self) -> str:
         return "<RolesPermission("\
