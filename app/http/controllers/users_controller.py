@@ -96,7 +96,7 @@ async def get_users(
         if flag:
             params.filter = user_filter
     try: 
-        if request.state.for_user['status']:
+        if hasattr(request.state,'for_user') and request.state.for_user['status']:
             if request.state.for_user['user'].department_id is None:
                 response.status_code = status.HTTP_417_EXPECTATION_FAILED
                 return {
@@ -110,7 +110,6 @@ async def get_users(
         return user_service.get_all(params=params) 
     except Exception as e:
         response.status_code = status.HTTP_417_EXPECTATION_FAILED
-        raise e
         return {
             "status": "fail",
             "message": str(e)
@@ -172,7 +171,7 @@ async def current_user(
         if user_id == None:
             decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
             user_id = decode['azp']
-        if request.state.for_user['status']:
+        if hasattr(request.state,'for_user') and request.state.for_user['status']:
             request.state.for_user['user']
             if request.state.for_user['user'].id != user_id:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
@@ -201,7 +200,7 @@ async def get_user_id(
     try:
         if id == 0:
             raise NotFoundError(id)
-        if request.state.for_user['status']:
+        if hasattr(request.state,'for_user') and request.state.for_user['status']:
             if request.state.for_user['user'].id != id:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
         return user_service.get_user_by_id(id)
@@ -278,7 +277,7 @@ async def update_password(
     request: Request,
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
-    if request.state.for_user['status']:
+    if hasattr(request.state,'for_user') and request.state.for_user['status']:
         if request.state.for_user['user'].id != id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
     return user_service.reset_password(id, password)
@@ -311,7 +310,7 @@ async def user_dismiss(
         user_service: UserService = Depends(Provide[Container.user_service]),
         HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
-        if request.state.for_user['status']:
+        if hasattr(request.state,'for_user') and request.state.for_user['status']:
             if request.state.for_user['user'].id != id:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
         Res = user_service.recover(id)
@@ -334,7 +333,7 @@ async def update_user(
     HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
     try:
-        if request.state.for_user['status']:
+        if hasattr(request.state,'for_user') and request.state.for_user['status']:
             if request.state.for_user['user'].id != id:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
         user = user_service.update_user(id, params)
@@ -349,7 +348,7 @@ async def update_user(
 @inject
 def user_delete(id: int, response: Response,request: Request, user_service: UserService = Depends(Provide[Container.user_service]),HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
-        if request.state.for_user['status']:
+        if hasattr(request.state,'for_user') and request.state.for_user['status']:
             if request.state.for_user['user'].id != id:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
         user_service.delete_user_by_id(id)
