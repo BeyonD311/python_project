@@ -76,6 +76,19 @@ class UserRepository(SuperRepository):
     def get_by_id(self, user_id: int) -> User:
         return super().get_by_id(user_id)
 
+    def get_user_permission(self, user_id: int)->dict:
+        with self.session_factory() as session:
+            sql = f"select p.module_name, rp.method_access  from users u "\
+                    f"left join user_roles ur on ur.user_id = u.id "\
+                    f"left join roles_permission rp on rp.role_id = ur.role_id "\
+                    f"left join permissions p on p.id = rp.module_id " \
+                    f"where u.id = {user_id}"
+            result = {}
+            for item in session.execute(sql).all():
+                result[item[0]] = {
+                    "method_access": item[1]
+                }
+            return result
     def update(self, id, user_model: User):
         with self.session_factory() as session:
             user = user_model
@@ -235,6 +248,8 @@ class UserRepository(SuperRepository):
                 query = query.filter(self.base_model.status_id.in_(params.filter.status))
             if params.filter.login != None:
                 query = query.filter(self.base_model.login == params.filter.login)
+            if params.filter.deparment != None:
+                query = query.filter(self.base_model.department_id == params.filter.deparment)
         return query
 
     def __sort(self, query: Query, params):
