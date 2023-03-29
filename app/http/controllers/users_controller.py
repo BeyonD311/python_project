@@ -11,7 +11,7 @@ from app.http.services.users import UsersFilter
 from app.http.services.users import UserParams
 from app.http.services.departments import DepartmentsService
 from app.http.services.groups import GroupsService
-from app.http.services.users import SkillService
+from app.http.services.users import SkillService, UserPermission
 from app.database import NotFoundError
 from fastapi.security import HTTPBearer
 from sqlalchemy.exc import IntegrityError
@@ -203,7 +203,7 @@ async def get_user_id(
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
             if request.state.for_user['user'].id != id:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
-        return user_service.get_user_by_id(id)
+        return user_service.get_user_by_id(id, False)
     except NotFoundError as e:
         print(e)
         response.status_code = status.HTTP_404_NOT_FOUND
@@ -263,6 +263,25 @@ async def update_status(
         return {
             "message": "set status"
         }
+    except IntegrityError as e:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {
+            "message": "Not found status"
+        }
+
+@route.patch("/permissions")
+@inject
+async def user_set_permission(
+    response: Response, 
+    request: Request, 
+    params: UserPermission,
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    try:
+        if hasattr(request.state,'for_user') and request.state.for_user['status']:
+            if request.state.for_user['user'].id != id:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
+        return user_service.set_permission(params)
     except IntegrityError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
         return {
@@ -361,5 +380,6 @@ def user_delete(id: int, response: Response,request: Request, user_service: User
             "message": str(e)
         }
     
+
 
 

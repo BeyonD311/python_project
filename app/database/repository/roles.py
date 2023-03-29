@@ -10,12 +10,18 @@ class RolesRepository(SuperRepository):
     def get_all(self):
         with self.session_factory() as session:
             modules = self.__permission_default(session)
+            print("modules-----------------------------")
+            print(modules)            
+            print("modules-----------------------------")
             roles = self.__query_all(session).order_by(RolesModel.id.asc())
             return self.__parse_role(modules=modules,roles=roles)
     def get_by_id(self, id: int):
         with self.session_factory() as session:
             modules = self.__permission_default(session)
             current_role = self.__query_all(session).filter(RolesModel.id == id).all()
+            print("modules-----------------------------")
+            print(self.__parse_role(modules=modules,roles=current_role))            
+            print("modules-----------------------------")
             return self.__parse_role(modules=modules,roles=current_role)
         
     def get_all_modules(self):
@@ -90,8 +96,8 @@ class RolesRepository(SuperRepository):
                     'access': {}
                 }
             result[role[3]]['access'][role[4]] = {
-                    "module_name": role[1],
-                    "name": role[0],
+                    "module_name": role[0],
+                    "name": role[1],
                     "method_access": role[2]
                 }
         for role_id, item in result.items():
