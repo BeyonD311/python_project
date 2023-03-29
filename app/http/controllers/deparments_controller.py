@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, Response, Request
+from fastapi import APIRouter, Depends, status, Response
 from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
 from app.http.services.helpers import parse_params_num
