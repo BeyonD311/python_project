@@ -1,9 +1,9 @@
 from sqlalchemy import Boolean, Column, ForeignKey, String, BigInteger
 from app.kernel.database import Base
 
-class RolesPermission(Base):
+class UsersPermission(Base):
 
-    __tablename__ = "roles_permission"
+    __tablename__ = "users_permission"
     id = Column('id', BigInteger, primary_key=True)
     user_id = Column(ForeignKey("users.id", ondelete="CASCADE", onupdate="CASCADE"))
     module_id = Column(ForeignKey("permissions.id", ondelete="CASCADE", onupdate="CASCADE")) 
