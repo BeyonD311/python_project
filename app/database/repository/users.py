@@ -7,6 +7,9 @@ from app.database import SkillsModel
 from app.database import StatusModel
 from app.database import PositionModel
 from app.database import DepartmentsModel
+from app.database import UsersPermission
+from app.database import RolesPermission
+from app.http.services.access import Access
 from sqlalchemy import event
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query
@@ -62,10 +65,6 @@ class UserRepository(SuperRepository):
     def get_by_login(self, login: str) -> User:
         with self.session_factory() as session:
             user = session.query(self.base_model).filter(self.base_model.login == login).first()
-            print("-------------------------------")
-            print(user)
-            print("-------------------------------")
-
             if user is None:
                 raise UserNotFoundError(login)
             return user
@@ -80,19 +79,48 @@ class UserRepository(SuperRepository):
     def get_by_id(self, user_id: int) -> User:
         return super().get_by_id(user_id)
 
-    def get_user_permission(self, user_id: int)->dict:
+    def get_user_permission(self, user_id: int, only_access: bool = True)->dict:
         with self.session_factory() as session:
-            sql = f"select p.module_name, rp.method_access  from users u "\
-                    f"left join user_roles ur on ur.user_id = u.id "\
-                    f"left join roles_permission rp on rp.role_id = ur.role_id "\
-                    f"left join permissions p on p.id = rp.module_id " \
-                    f"where u.id = {user_id}"
-            result = {}
-            for item in session.execute(sql).all():
-                result[item[0]] = {
-                    "method_access": item[1]
+            sql = f"select p.name, p.module_name, up.method_access, r.id role_id, r.name as role_name, up.module_id from users_permission up "\
+                    f"join roles r on r.id = up.role_id "\
+                    f"join permissions p on p.id = up.module_id "\
+                    f"where up.user_id = {user_id} and r.is_active = true "
+            result = session.execute(sql).all()
+            return self.__parse_permission_query(result, only_access)
+    
+    def get_role_permission(self, user_id: int, only_access: bool = True):
+        with self.session_factory() as session:
+            sql = f"select p.name, p.module_name, rp.method_access, r.id role_id, r.name as role_name, rp.module_id from roles_permission rp "\
+                    f"join user_roles ur on ur.role_id = rp.role_id "\
+                    f"join roles r on r.id = rp.role_id "\
+                    f"join permissions p on p.id = rp.module_id "\
+                    f"where ur.user_id = {user_id} and r.is_active = true "
+            result = session.execute(sql).all()
+            return self.__parse_permission_query(result, only_access)
+            
+
+    def __parse_permission_query(self, params, only_access: bool = True):
+        result = {}
+        access = Access()
+        for item in params:
+            if item[3] not in result:
+                result[item[3]] = {
+                    "id": item[3],
+                    "role_name": item[4],
+                    "permissions": {}
                 }
-            return result
+            if only_access and int(item[2]) == 0:
+                continue
+            access.parse(item[2])
+            result[item[3]]["permissions"][item[1]] = {
+                "name": item[0],
+                "method_access": access.get_access_model(),
+                "module_name": item[1],
+                "module_id": item[5],
+            }
+        return result
+            
+
     def update(self, id, user_model: User):
         with self.session_factory() as session:
             user = user_model
@@ -126,6 +154,29 @@ class UserRepository(SuperRepository):
             current.groups
             
             return current
+
+    def set_permission(self, params):
+        with self.session_factory() as session:
+            user: User = session.query(self.base_model).filter(self.base_model.id == params.user_id).first()
+            if user == None:
+                raise UserNotFoundError(f" Not found user by id: {params.user_id} ")
+            user_permission = user.user_permission
+            if len(user_permission) > 0:
+                [session.delete(p) for p in user.user_permission]
+                session.commit()
+            access = Access()
+            for role in params.role:
+                for permission in role.permissions:
+                    access.set_access_model(permission.method_access)
+                    p = UsersPermission(
+                        user_id = user.id,
+                        role_id = role.id,
+                        method_access = str(access),
+                        module_id = permission.module_id
+                    )
+                    session.add(p)
+            session.commit()  
+
 
     def get_all_status(self):
         with self.session_factory() as session:
@@ -172,6 +223,15 @@ class UserRepository(SuperRepository):
                 user.image
                 for role in user.roles:
                     role.permissions
+                    permission: RolesPermission
+                    for permission in role.permission_model:
+                        session.add(UsersPermission(
+                            user_id = user.id,
+                            role_id = permission.role_id,
+                            module_id = permission.module_id,
+                            method_access = permission.method_access
+                        ))
+                session.commit()
                 user.groups
                 return user
         except IntegrityError as e: 

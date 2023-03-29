@@ -26,7 +26,7 @@ class Access():
             self._parse_access(str_model=str_model)
 
     def __str__(self):
-        return f"{int(self.create)}{int(self.read)}{int(self.update)}{int(self.delete)}{int(self.user)}"
+        return f"{int(self._base_access.create)}{int(self._base_access.read)}{int(self._base_access.update)}{int(self._base_access.delete)}{int(self._base_access.personal)}"
     
     def parse(self, str_model: str):
         self._parse_access(str_model=str_model)
@@ -43,6 +43,16 @@ class Access():
     def check_personal(self) -> bool:
         return self._base_access.personal
     
+    def set_access_model(self, base_access: BaseAccess):
+        self._base_access = base_access
+        self._access_map={
+            "get": self._base_access.read,
+            "post": self._base_access.create,
+            "put": self._base_access.update,
+            "patch": self._base_access.update,
+            "delete": self._base_access.delete
+        }
+
     """ Парсинг  """
     def _parse_access(self,str_model: str) -> None:
         modules = [*str_model]

@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import List
 from app.database.repository.super import Pagination
+from app.http.services.access import BaseAccess
 
 class UserLoginParams(BaseModel):
     login: str
@@ -31,7 +33,20 @@ class UsersResponse(BaseModel):
     employment_status: bool
     status: UserStatus = None
 
+class Permission(BaseModel):
+    name: str
+    module_id: int
+    module_name: str
+    method_access: BaseAccess
 
+class Role(BaseModel):
+    id: int
+    role_name: str
+    permissions: List[Permission]
+
+class UserPermission(BaseModel):
+    user_id: int
+    role: List[Role]
 
 class UserDetailResponse(BaseModel):
     id: int

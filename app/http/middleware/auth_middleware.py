@@ -12,12 +12,15 @@ path_exception = ("auth", "docs", "openapi.json", "images")
 user_path_exception = ("/users/status", "/users/current")
 
 @inject
-def get_user(id, user = Depends(Provide[Container.user_repository])):
-    return user.get_by_id(id)
+def get_user(id, user_repository = Depends(Provide[Container.user_repository])):
+    return user_repository.get_by_id(id)
 
 @inject
-def get_user_permission(id, user = Depends(Provide[Container.user_repository])):
-    return user.get_user_permission(id)
+def get_user_permission(user, user_repository = Depends(Provide[Container.user_repository])):
+    result = user_repository.get_user_permission(user.id)
+    if result == {}:
+        result = user_repository.get_role_permission(user.id)
+    return result
 
 @inject
 async def redis(jwt_m: JwtManagement = Depends(Provide[Container.jwt])):
@@ -46,18 +49,16 @@ class Auth(BaseHTTPMiddleware):
             if str(request.get("path")) in user_path_exception:
                 return await call_next(request)
             access = Access(method=method)
-            permissions = {}
-            for module_name, value in get_user_permission(id=user.id).items():
-                permissions[module_name] = access.parse(value['method_access'])
-            if path[1] in permissions:
-                map_access = permissions[path[1]].check_access_method()
-                if map_access:
+            for role_id, value in get_user_permission(user).items():
+                if path[1] in value['permissions']:
+                    map_access = value['permissions'][path[1]]
+                    access.set_access_model(map_access['method_access'])
                     request.state.for_user = {
-                        "status": permissions[path[1]].check_personal(),
+                        "status": access.check_personal(),
                         "user": user
                     }
-                    permissions = None
-                    return await call_next(request)
+                    if access.check_access_method():
+                        return await call_next(request)
             return responses.JSONResponse(content= {
                 "messgae": "the module is not available, for this role"
             },status_code=status.HTTP_423_LOCKED)
