@@ -31,7 +31,6 @@ class Jwt:
         roles_result = {}
         for role in self.user.roles:
             roles_result[role.id] = {}
-            print(role.permission_model)
             # for access in role.permission_model:
             #     roles_result[role.id][access.module_id] = access.method_access
         access_token = jwt.encode(
@@ -52,8 +51,6 @@ class Jwt:
         await self.redis.set(f"users:black_list:{token}", "0")
 
     async def check_black_list(self, token: str):
-        print("--------------------------")
-        print(token)
         black_list = await self.redis.get(f"users:black_list:{token}")
         if black_list is not None:
             raise TokenInBlackList
