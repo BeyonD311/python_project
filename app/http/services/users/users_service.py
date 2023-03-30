@@ -12,6 +12,8 @@ from app.http.services.users.user_base_models import UserRequest
 from app.http.services.users.user_base_models import UserParams
 from app.http.services.users.user_base_models import UserDetailResponse
 from app.http.services.users.user_base_models import UserStatus
+from app.http.services.users.user_base_models import UserPermission
+from app.http.services.access import Access
 
 class UserService:
     def __init__(self, user_repository: UserRepository, redis: RedisInstance) -> None:
@@ -41,9 +43,9 @@ class UserService:
     def get_user_position(self):
         return self._repository.get_users_position()
 
-    def get_user_by_id(self, user_id: int):
+    def get_user_by_id(self, user_id: int, only_access: bool = True):
         user = self._repository.get_by_id(user_id)
-        userDetail = self.__user_response(user)
+        userDetail = self.__user_response(user, only_access)
         password = ""
         for i in range(len(userDetail.password)):
             password += "*"
@@ -104,7 +106,11 @@ class UserService:
         return {
             "message": "Password is update"
         }
-
+    def set_permission(self, params: UserPermission):
+        self._repository.set_permission(params)
+        return {
+            "message": "rights installation completed successfully"
+        }
     async def get_users_status(self, users_id: list):
         result = {}
         for user_id in users_id:
@@ -134,7 +140,7 @@ class UserService:
         user_create.hashed_password = sha256(user.password.encode()).hexdigest()
         return user_create
 
-    def __user_response(self, user: UserModel):
+    def __user_response(self, user: UserModel, only_access: bool = False):
         userDetail = UserDetailResponse(
             id=user.id,
             email=user.email,
@@ -177,9 +183,14 @@ class UserService:
             userDetail.photo_path = user.image
         else:
             userDetail.photo_path = user.image.path
-        for role in user.roles:
-            role.permissions
-        userDetail.roles = user.roles
+        result_roles = {}
+        user_permission = self._repository.get_user_permission(user.id, only_access)
+        if user_permission == {}:
+            user_permission = self._repository.get_role_permission(user.id, only_access)
+        for role_id, params in user_permission.items():
+            result_roles[role_id] = params
+            result_roles[role_id]['permissions'] = list(params['permissions'].values())
+        userDetail.roles = list(result_roles.values())
         del status_user
         return userDetail
 
@@ -198,4 +209,4 @@ class SkillService:
     def find(self, text:str):
         return self._repository.find_skill(text)
 
-__all__ = ('UserService', 'SkillsRepository')
+__all__ = ('UserService', 'SkillsRepository') 

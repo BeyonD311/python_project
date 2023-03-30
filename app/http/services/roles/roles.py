@@ -1,62 +1,30 @@
 from app.database import RolesRepository, RolesModel, RolesPermissionRepository
-from app.http.services.helpers import parse_access, BaseAccess
+from app.http.services.access import Access, BaseAccess
 from app.http.services.roles.roles_base_model import Create, Update
 
 class RolesServices():
     def __init__(self, roles_repository: RolesRepository) -> None:
         self._repository = roles_repository
-    
-    def get_by_id(self, id: int):
-        role = self._repository.get_by_id(id)
-        role_res = {
-                "id": role.id,
-                "name": role.name,
-                "access": []
-            }
-        modules = {r.id:r for r in role.permissions}
-        for access in role.permission_model:
-            if access.module_id in modules:
-                parse = parse_access(access.method_access)
-                module = {
-                    "id": modules[access.module_id].id,
-                    "module_name": modules[access.module_id].module_name,
-                    "name": modules[access.module_id].name,
-                    "access": {
-                        "create": parse.create,
-                        "read": parse.read,
-                        "update": parse.update,
-                        "delete": parse.delete
-                    }
-                }
-                role_res['access'].append(module)
-        return role_res
 
-    def get_all(self):
-        roles = self._repository.get_all()
+    def get(self, id: int = None):
+        if id is not None:
+            roles = self._repository.get_by_id(id)
+        else:
+            roles = self._repository.get_all()
+        access = Access()
         result = []
-        for role in roles:
-            role_res = {
-                "id": role.id,
-                "name": role.name,
-                "access": []
-            }
-            modules = {r.id:r for r in role.permissions}
-            for access in role.permission_model:
-                if access.module_id in modules:
-                    parse = parse_access(access.method_access)
-                    module = {
-                        "id": modules[access.module_id].id,
-                        "module_name": modules[access.module_id].module_name,
-                        "name": modules[access.module_id].name,
-                        "access": {
-                            "create": parse.create,
-                            "read": parse.read,
-                            "update": parse.update,
-                            "delete": parse.delete
-                        }
-                    }
-                    role_res['access'].append(module)
-            result.append(role_res)
+        for role_id, role in roles.items():
+            res = []
+            for module_id, module in role['access'].items():
+                access.parse(module['method_access'])
+                res.append({
+                    'id': module['id'],
+                    'name': module['name'],
+                    'module_name': module['module_name'],
+                    'access': access.get_access_model()
+                })
+            role['access'] = res
+            result.append(role)
         return result
     def get_modules(self):
         modules = self._repository.get_all_modules()

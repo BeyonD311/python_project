@@ -4,7 +4,7 @@ from dependency_injector.wiring import inject, Provide
 from fastapi import status, responses, Depends
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.kernel.container import Container
-from app.http.services.helpers import parse_access
+from app.http.services.access import Access
 from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
 
 path_exception = ("auth", "docs", "openapi.json", "images")
@@ -12,8 +12,15 @@ path_exception = ("auth", "docs", "openapi.json", "images")
 user_path_exception = ("/users/status", "/users/current")
 
 @inject
-def get_user(id, user = Depends(Provide[Container.user_repository])):
-    return user.get_user_by_id(id)
+def get_user(id, user_repository = Depends(Provide[Container.user_repository])):
+    return user_repository.get_by_id(id)
+
+@inject
+def get_user_permission(user, user_repository = Depends(Provide[Container.user_repository])):
+    result = user_repository.get_user_permission(user.id)
+    if result == {}:
+        result = user_repository.get_role_permission(user.id)
+    return result
 
 @inject
 async def redis(jwt_m: JwtManagement = Depends(Provide[Container.jwt])):
@@ -41,14 +48,16 @@ class Auth(BaseHTTPMiddleware):
             method = request.method.lower()
             if str(request.get("path")) in user_path_exception:
                 return await call_next(request)
-            roles = {r.id:r for r in user.roles}
-            for role in roles:
-                role = roles[role]
-                modules = {m.module_id: parse_access(m.method_access) for m in role.permission_model}
-                permissions = {p.module_name: modules[p.id] for p in role.permissions}
-                if path[1] in permissions:
-                    map_access = permissions[path[1]].map
-                    if method in map_access and map_access[method]:
+            access = Access(method=method)
+            for role_id, value in get_user_permission(user).items():
+                if path[1] in value['permissions']:
+                    map_access = value['permissions'][path[1]]
+                    access.set_access_model(map_access['method_access'])
+                    request.state.for_user = {
+                        "status": access.check_personal(),
+                        "user": user
+                    }
+                    if access.check_access_method():
                         return await call_next(request)
             return responses.JSONResponse(content= {
                 "messgae": "the module is not available, for this role"

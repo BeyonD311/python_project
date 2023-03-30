@@ -7,6 +7,7 @@ from .user_base_models import UsersFilter
 from .user_base_models import UserParams
 from .user_base_models import UserDetailResponse
 from .user_base_models import UserStatus
+from .user_base_models import UserPermission
 
 
 __all__ = [
@@ -19,5 +20,6 @@ __all__ = [
     'UserParams',
     'SkillService',
     'UserDetailResponse',
-    'UserStatus'
+    'UserStatus',
+    'UserPermission'
 ]

@@ -46,6 +46,8 @@ class UserModel(Base):
     deparment = relationship("DepartmentsModel", back_populates="users", cascade="save-update")
     status_history = relationship("StatusHistoryModel", back_populates="users", cascade="all, delete", passive_deletes=True)  
     image = relationship("ImagesModel")
+    user_permission = relationship("UsersPermission")
+    
     def __repr__(self): 
         return f"<User(id={self.id}" \
                f"email=\"{self.email}\"" \
