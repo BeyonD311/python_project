@@ -67,7 +67,23 @@ def get_employees(
             "status": status,
             "phone": phone
         }
-        return department_service.get_users_deprtment(filter_params, page, limit)
+        return department_service.get_users_department(filter_params, page, limit)
+    except NotFoundError as e:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {
+            "message": str(e)
+        }
+
+@route.get("/management/{id}")
+@inject
+def get_department_management(
+    response: Response,
+    id: int,
+    department_service: DepartmentsService = Depends(Provide[Container.department_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    try:
+        # return department_service
+        ...
     except NotFoundError as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {

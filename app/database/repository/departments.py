@@ -9,8 +9,6 @@ from app.database.models import PositionModel
 from app.database.models import StatusModel
 from sqlalchemy.orm import Query
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, func
-from sqlalchemy.orm import ColumnProperty
 from typing import Iterator
 
 class UserStatus(BaseModel):
@@ -32,7 +30,7 @@ class UsersResponse(BaseModel):
     fio: str = None
     inner_phone: str = None
     position: str = None
-    is_head_of_depatment: bool = False
+    is_head_of_department: bool = False
     status: dict = None
 
 class DepartmentsRepository(SuperRepository):
@@ -88,7 +86,7 @@ class DepartmentsRepository(SuperRepository):
                             fio = res[5],
                             inner_phone = res[6],
                             position = res[12],
-                            is_head_of_depatment=bool(res[8]),
+                            is_head_of_department=bool(res[8]),
                             status={
                                 "id": res[11],
                                 "status": res[10],
@@ -287,36 +285,36 @@ class DepartmentsRepository(SuperRepository):
     
     def __add_employee(self, params, session: Session ,id: int):
         if params.director_user_id is not None:
-            session.add(HeadOfDepatment(
+            session.add(HeadOfDepartment(
                     department_id=id,
-                    head_of_depatment_id=params.director_user_id
+                    head_of_department_id=params.director_user_id
                 ))
         for user_id in params.deputy_head_id:
-            session.add(HeadOfDepatment(
+            session.add(HeadOfDepartment(
                 department_id=id,
                 deputy_head_id=user_id
             ))
     
     def __department_update_employee(self, id, params, session: Session):
-        departments = session.query(HeadOfDepatment).filter(HeadOfDepatment.department_id == id).all()
-        head_employees_deprament = None
+        departments = session.query(HeadOfDepartment).filter(HeadOfDepartment.department_id == id).all()
+        head_employees_department = None
         for department in departments:
-            if department.head_of_depatment_id != None:
-                head_employees_deprament = department
+            if department.head_of_department_id != None:
+                head_employees_department = department
             else:
                 session.delete(department)
         del departments
-        if head_employees_deprament != None and params.director_user_id != None:
-            if params.director_user_id != head_employees_deprament.head_of_depatment_id:
-                head_employees_deprament.head_of_depatment_id = params.director_user_id
-                session.add(head_employees_deprament)
-        elif head_employees_deprament == None and params.director_user_id != None:
-            session.add(HeadOfDepatment(
+        if head_employees_department != None and params.director_user_id != None:
+            if params.director_user_id != head_employees_department.head_of_department_id:
+                head_employees_department.head_of_department_id = params.director_user_id
+                session.add(head_employees_department)
+        elif head_employees_department == None and params.director_user_id != None:
+            session.add(HeadOfDepartment(
                     department_id=id,
-                    head_of_depatment_id=params.director_user_id
+                    head_of_department_id=params.director_user_id
                 ))
         for user_id in params.deputy_head_id:
-            session.add(HeadOfDepatment(
+            session.add(HeadOfDepartment(
                 department_id=id,
                 deputy_head_id=user_id
             ))
@@ -324,16 +322,16 @@ class DepartmentsRepository(SuperRepository):
     def __query_employees(self, filter):
         query1 = self.__query_select_fields(False) + " " + self.__query_join(True) + " " + self.__filter_params(filter)
         query2 = self.__query_select_fields(True) + " " + self.__query_join() + " " + self.__filter_params(filter)
-        return f"select templ.department_id, templ.department_name, templ.department_parent, templ.is_parent, templ.user_id, templ.user_fio, templ.user_inner_phone, templ.status_at, templ.head_of_depatment_id, templ.status_color, templ.status_name, templ.status_id, position"\
+        return f"select templ.department_id, templ.department_name, templ.department_parent, templ.is_parent, templ.user_id, templ.user_fio, templ.user_inner_phone, templ.status_at, templ.head_of_department_id, templ.status_color, templ.status_name, templ.status_id, position"\
                 f"  from ({query1} union {query2}) templ where 1=1 "
         
 
     def __query_select_fields(self, fake = False):
         fields = ""
         if fake == False:
-            fields = f" head_of_departments.head_of_depatment_id AS head_of_depatment_id,"
+            fields = f" head_of_departments.head_of_department_id AS head_of_department_id,"
         else:
-            fields = f"int'0' AS head_of_depatment_id,"
+            fields = f"int'0' AS head_of_department_id,"
         select = f"select departments.id AS department_id,"\
                 f"departments.name AS department_name,"\
                 f"departments.parent_department_id AS department_parent,"\
@@ -352,7 +350,7 @@ class DepartmentsRepository(SuperRepository):
     def __query_join(self, head = False):
         if head:
             head = f"LEFT OUTER JOIN head_of_departments ON head_of_departments.department_id = departments.id "\
-                   f"JOIN users ON users.id = head_of_departments.head_of_depatment_id or users.id = head_of_departments.deputy_head_id "
+                   f"JOIN users ON users.id = head_of_departments.head_of_department_id or users.id = head_of_departments.deputy_head_id "
         else:
             head = f"JOIN users ON users.department_id = departments.id"
         

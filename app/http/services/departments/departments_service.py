@@ -8,7 +8,7 @@ from typing import List
 class EmployeeResponse(BaseModel):
     id: int
     fio: str
-    is_head_of_depatment: bool
+    is_head_of_department: bool
     status:str
     status_at: str
     inner_phone: str
@@ -60,7 +60,7 @@ class DepartmentsService:
             res.append(item)
         return res
 
-    def get_users_deprtment(self, filter: dict, page:int, size: int):
+    def get_users_department(self, filter: dict, page:int, size: int):
         filter = self.__check_filter(filter)
         result = self._repository.get_user_departments(filter=filter, limit=size, page=page)
         users = []

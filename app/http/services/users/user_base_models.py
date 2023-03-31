@@ -18,7 +18,7 @@ class UserPosition(BaseModel):
     id: int
     name: str
 
-class UserDepatment(BaseModel):
+class UserDepartment(BaseModel):
     id: int
     name: str
 
@@ -29,7 +29,7 @@ class UsersResponse(BaseModel):
     inner_phone: int = None
     department: str = None
     position: str = None
-    is_head_of_depatment: bool = False
+    is_head_of_department: bool = False
     employment_status: bool
     status: UserStatus = None
 
