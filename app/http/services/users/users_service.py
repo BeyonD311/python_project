@@ -156,7 +156,8 @@ class UserService:
             date_dismissal_at = user.date_dismissal_at,
             phone=user.phone,
             image_id=user.image_id,
-            employment_status=user.employment_status
+            employment_status=user.employment_status,
+            personal_number=user.personal_number
         )
         userDetail.groups = user.groups
         if userDetail.is_operator:
