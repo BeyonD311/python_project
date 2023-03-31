@@ -27,9 +27,9 @@ route = APIRouter(
 @route.get("/departments")
 @inject
 async def get_departments(
-    depratments_service: DepartmentsService = Depends(Provide[Container.department_service]),
+    departments_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
-    return depratments_service.get_all()
+    return departments_service.get_all()
 
 @route.get("/groups")
 @inject

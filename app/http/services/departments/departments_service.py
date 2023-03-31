@@ -24,7 +24,7 @@ class Node(BaseModel):
     id: int
     child: List = []
 
-class DeparmentResponse(BaseModel):
+class DepartmentResponse(BaseModel):
     nodes: Node
 
 class DepartmentsService:
@@ -39,8 +39,8 @@ class DepartmentsService:
     def __check_filter(self, filter: set):
         flag = False
         for param in filter:
-            v = filter[param]
-            if v != None:
+            value = filter[param]
+            if value != None:
                 flag = True
                 break
         if flag == False:
@@ -68,7 +68,7 @@ class DepartmentsService:
             user = UsersResponse(
                 id = employee.id,
                 fio = employee.fio,
-                head_of_depatment=employee.head_of_depatment,
+                head_of_department=employee.head_of_department,
                 inner_phone=employee.inner_phone,
             )
             if employee.position != None:

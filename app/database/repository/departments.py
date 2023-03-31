@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from .super import SuperRepository, NotFoundError, Pagination
 from app.database.models import DepartmentsModel
 from app.database.models import UserModel
-from app.database.models import HeadOfDepatment
+from app.database.models import HeadOfDepartment
 from app.database.models import PositionModel
 from app.database.models import StatusModel
 from sqlalchemy.orm import Query
@@ -19,7 +19,7 @@ class UserStatus(BaseModel):
     status_at: datetime = None
     color: str = None
 
-class Depratment(BaseModel):
+class Department(BaseModel):
     id: int
     name: str = None
     parent_department_id: int = None
@@ -46,7 +46,7 @@ class DepartmentsRepository(SuperRepository):
                 return []
             return query
     
-    def get_employees(self, filter = None) -> Depratment:
+    def get_employees(self, filter = None) -> Department:
         with self.session_factory() as session:
             query = session.query(
                 self.base_model.id.label("department_id"),
@@ -57,14 +57,14 @@ class DepartmentsRepository(SuperRepository):
                 UserModel.fio.label("user_fio"),
                 UserModel.inner_phone.label("user_inner_phone"),
                 UserModel.status_at.label("status_at"),
-                HeadOfDepatment.head_of_depatment_id.label("head_of_depatment_id"),
+                HeadOfDepartment.head_of_department_id.label("head_of_department_id"),
                 StatusModel.color.label("status_color"),
                 StatusModel.name.label("status_name"),
                 StatusModel.id.label("status_id"),
                 PositionModel.name.label("position")
                 )\
             .join(UserModel, UserModel.department_id == self.base_model.id, isouter=True)\
-            .join(HeadOfDepatment, HeadOfDepatment.head_of_depatment_id == UserModel.id, isouter=True)\
+            .join(HeadOfDepartment, HeadOfDepartment.head_of_department_id == UserModel.id, isouter=True)\
             .join(StatusModel, StatusModel.id == UserModel.status_id, isouter=True)\
             .join(PositionModel, PositionModel.id == UserModel.position_id, isouter=True)
             query = self.filter_params(query=query, filter=filter)
@@ -75,7 +75,7 @@ class DepartmentsRepository(SuperRepository):
                 if res[2] is not None:
                     parents.append(res[2])
                 if res[0] not in result:
-                    result[res[0]] = Depratment(
+                    result[res[0]] = Department(
                         id = res[0],
                         name = res[1],
                         parent_department_id=res[2],
@@ -115,7 +115,7 @@ class DepartmentsRepository(SuperRepository):
             query = session.query(recursive_q).all()
             for res in query:
                 if res[0] not in result:
-                    result[res[0]] = Depratment(
+                    result[res[0]] = Department(
                         id = res[0],
                         name = res[1],
                         parent_department_id=res[2],
@@ -203,12 +203,12 @@ class DepartmentsRepository(SuperRepository):
             
     def add(self, params):
         with self.session_factory() as session:
-            self.find_depratment_by_name(params.name, session)
+            self.find_department_by_name(params.name, session)
             
             if params.source_department == 0:
                 params.source_department = None
             else:
-                parent = self.find_deprment_by_id(params.source_department, session=session)
+                parent = self.find_department_by_id(params.source_department, session=session)
                 parent.is_parent = True
                 session.add(parent)
             department = DepartmentsModel(
@@ -232,19 +232,19 @@ class DepartmentsRepository(SuperRepository):
             
     def update(self, id, params):
         with self.session_factory() as session:
-            current = self.find_deprment_by_id(id, session=session)
+            current = self.find_department_by_id(id, session=session)
             if params.source_department == 0:
                 params.source_department = None
             else:
                 if current.parent_department_id != params.source_department:
-                    new_parent = self.find_deprment_by_id(params.source_department, session=session)
+                    new_parent = self.find_department_by_id(params.source_department, session=session)
                     new_parent.is_parent = True
                     session.add(new_parent)
                     if current.parent_department_id is not None:
-                        old_parent = self.find_deprment_by_id(current.parent_department_id, session)
-                        childs = session.query(self.base_model).filter(self.base_model.parent_department_id == current.parent_department_id).all()
+                        old_parent = self.find_department_by_id(current.parent_department_id, session)
+                        chields = session.query(self.base_model).filter(self.base_model.parent_department_id == current.parent_department_id).all()
                         count = 0
-                        for child in childs:
+                        for child in chields:
                             if child.id != id:
                                 count += 1
                         if count == 0:
@@ -252,7 +252,7 @@ class DepartmentsRepository(SuperRepository):
                             session.add(old_parent)
             current.name = params.name
             current.parent_department_id = params.source_department
-            self.__deparment_update_employee(id, session=session, params=params)
+            self.__department_update_employee(id, session=session, params=params)
             session.commit()
             return current
 
@@ -267,19 +267,19 @@ class DepartmentsRepository(SuperRepository):
             users[user.id] = user
         return users
     
-    def find_depratment_by_name(self, name: str, session):
+    def find_department_by_name(self, name: str, session):
         query = session.query(self.base_model).filter(self.base_model.name.ilike(f"%{name}%")).first()
         if query is not None:
             raise NotFoundError("department exists")
 
-    def find_employee(self, deparment_id: int, session):
+    def find_employee(self, department_id: int, session):
         result = {}
-        query = session.query(UserModel).filter(UserModel.id != 0).filter(UserModel.department_id == deparment_id).all()
+        query = session.query(UserModel).filter(UserModel.id != 0).filter(UserModel.department_id == department_id).all()
         for employee in query:
                 result[employee.user_id] = employee
         return result
 
-    def find_deprment_by_id(self, id, session) -> DepartmentsModel:
+    def find_department_by_id(self, id, session) -> DepartmentsModel:
         query = session.query(self.base_model).filter(self.base_model.id == id).first()
         if query is None:
             raise NotFoundError("department exists")
@@ -297,7 +297,7 @@ class DepartmentsRepository(SuperRepository):
                 deputy_head_id=user_id
             ))
     
-    def __deparment_update_employee(self, id, params, session: Session):
+    def __department_update_employee(self, id, params, session: Session):
         departments = session.query(HeadOfDepatment).filter(HeadOfDepatment.department_id == id).all()
         head_employees_deprament = None
         for department in departments:
@@ -331,7 +331,7 @@ class DepartmentsRepository(SuperRepository):
     def __query_select_fields(self, fake = False):
         fields = ""
         if fake == False:
-            fields = f" head_of_depatments.head_of_depatment_id AS head_of_depatment_id,"
+            fields = f" head_of_departments.head_of_depatment_id AS head_of_depatment_id,"
         else:
             fields = f"int'0' AS head_of_depatment_id,"
         select = f"select departments.id AS department_id,"\
@@ -351,8 +351,8 @@ class DepartmentsRepository(SuperRepository):
 
     def __query_join(self, head = False):
         if head:
-            head = f"LEFT OUTER JOIN head_of_depatments ON head_of_depatments.department_id = departments.id "\
-                   f"JOIN users ON users.id = head_of_depatments.head_of_depatment_id or users.id = head_of_depatments.deputy_head_id "
+            head = f"LEFT OUTER JOIN head_of_departments ON head_of_departments.department_id = departments.id "\
+                   f"JOIN users ON users.id = head_of_departments.head_of_depatment_id or users.id = head_of_departments.deputy_head_id "
         else:
             head = f"JOIN users ON users.department_id = departments.id"
         

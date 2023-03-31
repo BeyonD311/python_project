@@ -23,7 +23,7 @@ def get_departments(
     position: str = "",
     status: str = "",
     phone: str = None,
-    deparment_service: DepartmentsService = Depends(Provide[Container.department_service]),
+    department_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
         department = parse_params_num(department)
@@ -36,7 +36,7 @@ def get_departments(
             "status": status,
             "phone": phone
         }
-        return deparment_service.get_employees(filter_params)
+        return department_service.get_employees(filter_params)
     except NotFoundError as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {
@@ -54,7 +54,7 @@ def get_employees(
     phone: str = None,
     page: int = 1,
     limit: int = 10,
-    deparment_service: DepartmentsService = Depends(Provide[Container.department_service]),
+    department_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
         department = parse_params_num(department)
@@ -67,7 +67,7 @@ def get_employees(
             "status": status,
             "phone": phone
         }
-        return deparment_service.get_users_deprtment(filter_params, page, limit)
+        return department_service.get_users_deprtment(filter_params, page, limit)
     except NotFoundError as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {
@@ -76,13 +76,13 @@ def get_employees(
 
 @route.post("/")
 @inject
-def add_deparment(
+def add_department(
     params: DepartmentParams,
     response: Response,
-    deparment_service: DepartmentsService = Depends(Provide[Container.department_service]),
+    department_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
-        return deparment_service.add(params=params)
+        return department_service.add(params=params)
     except NotFoundError as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {
@@ -91,14 +91,14 @@ def add_deparment(
 
 @route.put("/{id}")
 @inject
-def update_deparment(
+def update_department(
     id: int,
     params: DepartmentParams,
     response: Response,
-    deparment_service: DepartmentsService = Depends(Provide[Container.department_service]),
+    department_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
-        return deparment_service.update(params=params, id=id)
+        return department_service.update(params=params, id=id)
     except NotFoundError as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {
@@ -107,13 +107,13 @@ def update_deparment(
 
 @route.delete("/{id}")
 @inject
-def delete_deparment(
+def delete_department(
     id:int,
     response: Response,
-    deparment_service: DepartmentsService = Depends(Provide[Container.department_service]),
+    department_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
-        return     deparment_service.delete(id)
+        return     department_service.delete(id)
     except NotFoundError as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {
