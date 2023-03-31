@@ -28,7 +28,7 @@ class UserService:
                 id=user.id,
                 inner_phone=user.inner_phone,
                 position=user.position,
-                deparment=user.department,
+                department=user.department,
                 fio=user.fio,
                 employment_status=user.employment_status,
                 status=UserStatus(
@@ -167,10 +167,10 @@ class UserService:
         status_user = user.status
         if user.position != None:
             userDetail.position = user.position
-        if user.deparment != None:
-            userDetail.deparment = {
-                "id":user.deparment.id,
-                "name":user.deparment.name
+        if user.department != None:
+            userDetail.department = {
+                "id":user.department.id,
+                "name":user.department.name
             }
         if status_user != None:
             userDetail.status = UserStatus(

@@ -35,7 +35,7 @@ class UsersResponse(BaseModel):
     is_head_of_depatment: bool = False
     status: dict = None
 
-class DeparmentsRepository(SuperRepository):
+class DepartmentsRepository(SuperRepository):
 
     base_model = DepartmentsModel
 
@@ -133,10 +133,10 @@ class DeparmentsRepository(SuperRepository):
             fio = filter['fio']
             params.append(f"users.fio ilike '%{fio}%'")
             query = query.filter(UserModel.fio.ilike(f'%{fio}%'))
-        if len(filter['deparment']) != 0:
-            deparment = ','.join(filter['deparment'])
-            params.append(f"departments.id in ({deparment})")
-            query = query.filter(self.base_model.id.in_(filter['deparment']))
+        if len(filter['department']) != 0:
+            department = ','.join(filter['department'])
+            params.append(f"departments.id in ({department})")
+            query = query.filter(self.base_model.id.in_(filter['department']))
         if len(filter['position']) != 0:
             position = ','.join(filter['position'])
             params.append(f"users.position_id in ({position})")
@@ -156,9 +156,9 @@ class DeparmentsRepository(SuperRepository):
         if filter['fio'] != None:  
             fio = filter['fio']
             params.append(f"users.fio ilike '%{fio}%'")
-        if len(filter['deparment']) != 0:
-            deparment = ','.join(filter['deparment'])
-            params.append(f"departments.id in ({deparment})")
+        if len(filter['department']) != 0:
+            department = ','.join(filter['department'])
+            params.append(f"departments.id in ({department})")
         if len(filter['position']) != 0:
             position = ','.join(filter['position'])
             params.append(f"users.position_id in ({position})")
@@ -172,7 +172,7 @@ class DeparmentsRepository(SuperRepository):
             return "where " + " and ".join(params)
         return ""
 
-    def get_user_deparments(self, filter, limit: int, page: int):
+    def get_user_departments(self, filter, limit: int, page: int):
         with self.session_factory() as session:
             offset = 0
             if page <= 1:

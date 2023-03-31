@@ -142,7 +142,7 @@ class UserRepository(SuperRepository):
             current = self.item_add_or_update(current, session)
             current.skills
             current.position
-            current.deparment
+            current.department
             current.skills
             current.status 
             current.image
@@ -217,7 +217,7 @@ class UserRepository(SuperRepository):
                     user.status_id = status.id
                     user.status_at = datetime.now()
                 user.position
-                user.deparment
+                user.department
                 user.skills
                 user.status
                 user.image
@@ -312,8 +312,8 @@ class UserRepository(SuperRepository):
                 query = query.filter(self.base_model.status_id.in_(params.filter.status))
             if params.filter.login != None:
                 query = query.filter(self.base_model.login == params.filter.login)
-            if params.filter.deparment != None:
-                query = query.filter(self.base_model.department_id == params.filter.deparment)
+            if params.filter.department != None:
+                query = query.filter(self.base_model.department_id == params.filter.department)
         return query
 
     def __sort(self, query: Query, params):

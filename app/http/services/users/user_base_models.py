@@ -27,7 +27,7 @@ class UsersResponse(BaseModel):
     id: int = None
     fio: str = None
     inner_phone: int = None
-    deparment: str = None
+    department: str = None
     position: str = None
     is_head_of_depatment: bool = False
     employment_status: bool
@@ -58,7 +58,7 @@ class UserDetailResponse(BaseModel):
     fio: str
     inner_phone: int = None
     phone: str = None
-    deparment: dict = None
+    department: dict = None
     position: dict = None
     groups: list = None
     skills: list = None
@@ -100,7 +100,7 @@ class UsersFilter(BaseModel):
     fio: str = None
     login: str = None
     status: list[int] = None
-    deparment: int = None 
+    department: int = None 
 
 class UserParams(BaseModel):
     page: int

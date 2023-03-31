@@ -43,7 +43,7 @@ class UserModel(Base):
     groups = relationship("GroupsModel", secondary='user_groups', back_populates="users", cascade="save-update, delete")
     roles = relationship("RolesModel", secondary='user_roles', back_populates="users", cascade="save-update, delete")
     skills = relationship("SkillsModel", secondary='user_skills', back_populates="users", cascade="save-update, delete")
-    deparment = relationship("DepartmentsModel", back_populates="users", cascade="save-update")
+    department = relationship("DepartmentsModel", back_populates="users", cascade="save-update")
     status_history = relationship("StatusHistoryModel", back_populates="users", cascade="all, delete", passive_deletes=True)  
     image = relationship("ImagesModel")
     user_permission = relationship("UsersPermission")

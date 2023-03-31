@@ -24,9 +24,9 @@ route = APIRouter(
     responses={404: {"description": "Not found"}} 
 )
 
-@route.get("/deparments")
+@route.get("/departments")
 @inject
-async def get_deparments(
+async def get_departments(
     depratments_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     return depratments_service.get_all()
@@ -101,11 +101,11 @@ async def get_users(
                 response.status_code = status.HTTP_417_EXPECTATION_FAILED
                 return {
                     "status": "fail",
-                    "message": "User Not found deparment"
+                    "message": "User Not found department"
                 }
             if params.filter is None:
                 params.filter = UsersFilter()
-            params.filter.deparment = request.state.for_user['user'].department_id
+            params.filter.department = request.state.for_user['user'].department_id
             del request.state.for_user['user']
         return user_service.get_all(params=params) 
     except Exception as e:

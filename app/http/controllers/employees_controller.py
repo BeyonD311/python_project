@@ -19,7 +19,7 @@ security = HTTPBearer()
 def get_employees(
     response: Response,
     fio: str = None,
-    deparment: str = "",
+    department: str = "",
     position: int = "",
     status: int = "",
     phone: str = None,
@@ -28,12 +28,12 @@ def get_employees(
     deparment_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
-        deparment = parse_params_num(deparment)
+        department = parse_params_num(department)
         position = parse_params_num(position)
         status = parse_params_num(status)
         filter_params = {
             "fio": fio,
-            "deparment": deparment,
+            "department": department,
             "position": position,
             "status": status,
             "phone": phone

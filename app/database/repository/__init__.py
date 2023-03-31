@@ -1,6 +1,6 @@
 from .users import UserRepository
 from .super import NotFoundError
-from .departments import DeparmentsRepository
+from .departments import DepartmentsRepository
 from .position import PositionRepository
 from .groups import GroupsRepository
 from .roles import RolesRepository

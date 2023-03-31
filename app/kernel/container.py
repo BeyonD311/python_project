@@ -58,7 +58,7 @@ class Container(containers.DeclarativeContainer):
         skill_repository = skills_repository
     )
     dependencies_repository = providers.Factory(
-        DatabaseCustom.DeparmentsRepository,
+        DatabaseCustom.DepartmentsRepository,
         session_factory=db.provided.session,
     )
     position_repository = providers.Factory(
@@ -82,7 +82,7 @@ class Container(containers.DeclarativeContainer):
         roles_repository=roles_repository
     )
     department_repository = providers.Factory(
-        DatabaseCustom.DeparmentsRepository,
+        DatabaseCustom.DepartmentsRepository,
         session_factory=db.provided.session,
     )
     department_service = providers.Factory(

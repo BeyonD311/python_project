@@ -1,4 +1,4 @@
-from app.database import DeparmentsRepository
+from app.database import DepartmentsRepository
 from app.database import DepartmentsModel
 from app.http.services.users import UserStatus
 from app.http.services.users import UsersResponse
@@ -29,8 +29,8 @@ class DeparmentResponse(BaseModel):
 
 class DepartmentsService:
 
-    def __init__(self, repository: DeparmentsRepository) -> None:
-        self._repository: DeparmentsRepository = repository
+    def __init__(self, repository: DepartmentsRepository) -> None:
+        self._repository: DepartmentsRepository = repository
 
     def get_all(self):
         return self._repository.get_all()
@@ -62,7 +62,7 @@ class DepartmentsService:
 
     def get_users_deprtment(self, filter: dict, page:int, size: int):
         filter = self.__check_filter(filter)
-        result = self._repository.get_user_deparments(filter=filter, limit=size, page=page)
+        result = self._repository.get_user_departments(filter=filter, limit=size, page=page)
         users = []
         for employee in result['employees']:
             user = UsersResponse(
@@ -73,8 +73,8 @@ class DepartmentsService:
             )
             if employee.position != None:
                 user.position = employee.position.name
-            if employee.deparment != None:
-                user.deparment = employee.deparment.name
+            if employee.department != None:
+                user.department = employee.department.name
             if employee.status != None:
                 user.status=UserStatus(
                     status_id=employee.id,
