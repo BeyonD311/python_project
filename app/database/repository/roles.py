@@ -16,6 +16,8 @@ class RolesRepository(SuperRepository):
         with self.session_factory() as session:
             modules = self.__permission_default(session)
             current_role = self.__query_all(session).filter(RolesModel.id == id).all()
+            if current_role == []:
+                raise NotFoundError(f"Role not found {id}")
             return self.__parse_role(modules=modules,roles=current_role)
         
     def get_all_modules(self):
@@ -27,6 +29,11 @@ class RolesRepository(SuperRepository):
                 name = params.name
             )
             self.role_create(params=params, session=session, role=role)
+
+    def delete_by_id(self, id: int) -> None:
+        if id == 1:
+            raise NotFoundError("Role not found")
+        return super().delete_by_id(id)
 
     def update(self, params):
         with self.session_factory() as session:
@@ -41,11 +48,11 @@ class RolesRepository(SuperRepository):
     def role_create(self, params, session, role):
         access_right = {}
         for modules in params.modules:
-            modul = session.query(PermissionsAccessModel).filter(PermissionsAccessModel.id == modules.id).first()
+            module = session.query(PermissionsAccessModel).filter(PermissionsAccessModel.id == modules.id).first()
             permission = modules.access 
             permission_right = f"{int(permission.create)}{int(permission.read)}{int(permission.update)}{int(permission.delete)}{int(permission.personal)}"
             access_right[modules.id] = permission_right
-            role.permissions.append(modul)
+            role.permissions.append(module)
         session.add(role)
         session.commit()
         role_permission = session.query(RolesPermission).filter(RolesPermission.role_id == role.id).all()

@@ -36,10 +36,17 @@ async def get_modules(
 @inject
 async def get_role(
     id: int,
+    response: Response,
     roles_model: RolesServices = Depends(Provide[Container.roles_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
-    return roles_model.get(id)[0]
+    try:
+        return roles_model.get(id).pop()
+    except NotFoundError:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {
+            "message": f"Not found role {id}"
+        }
 
 @route.post("/")
 @inject
