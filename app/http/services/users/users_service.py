@@ -151,7 +151,6 @@ class UserService:
             fio=user.fio,
             inner_phone=user.inner_phone,
             password=user.password,
-            is_operator=user.is_operator,
             date_employment_at=user.date_employment_at,
             date_dismissal_at = user.date_dismissal_at,
             phone=user.phone,
@@ -159,11 +158,9 @@ class UserService:
             employment_status=user.employment_status,
             personal_number=user.personal_number
         )
+        userDetail.is_operator = user.is_operator
         userDetail.groups = user.groups
-        if userDetail.is_operator:
-            userDetail.skills = user.skills
-        else:
-            userDetail.skills = []
+        userDetail.skills = user.skills
         userDetail.position = user.position
         status_user = user.status
         if user.position != None:

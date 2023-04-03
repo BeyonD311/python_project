@@ -239,9 +239,11 @@ class UserRepository(SuperRepository):
     def item_add_or_update(self, user: User, session):
         roles = session.query(RolesModel).filter(RolesModel.id.in_(user.roles_id)).all()
         groups = session.query(GroupsModel).filter(GroupsModel.id.in_(user.group_id)).all()
-        if user.skills_id != []:
+        if user.is_operator and user.skills_id != []:
             skills = session.query(SkillsModel).filter(SkillsModel.id.in_(user.skills_id)).all() 
             [user.skills.append(s) for s in skills]
+        elif user.is_operator == False:
+            user.skills = []
         [user.roles.append(r) for r in roles]
         [user.groups.append(g) for g in groups]
         session.add(user)

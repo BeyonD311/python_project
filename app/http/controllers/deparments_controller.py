@@ -5,6 +5,7 @@ from app.http.services.helpers import parse_params_num
 from app.database import NotFoundError
 from app.kernel import Container
 from app.http.services.departments import DepartmentsService, DepartmentParams
+from app.http.services.helpers import default_error
 
 route = APIRouter(
     prefix="/department",
@@ -74,22 +75,6 @@ def get_employees(
             "message": str(e)
         }
 
-@route.get("/management/{id}")
-@inject
-def get_department_management(
-    response: Response,
-    id: int,
-    department_service: DepartmentsService = Depends(Provide[Container.department_service]),
-    HTTPBearerSecurity: HTTPBearer = Depends(security)):
-    try:
-        # return department_service
-        ...
-    except NotFoundError as e:
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return {
-            "message": str(e)
-        }
-
 @route.post("/")
 @inject
 def add_department(
@@ -99,11 +84,10 @@ def add_department(
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
         return department_service.add(params=params)
-    except NotFoundError as e:
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return {
-            "message": str(e)
-        }
+    except Exception as e:
+        res = default_error(e)
+        response.status_code = res[0]
+        return res[1]
 
 @route.put("/{id}")
 @inject
@@ -115,11 +99,10 @@ def update_department(
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
         return department_service.update(params=params, id=id)
-    except NotFoundError as e:
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return {
-            "message": str(e)
-        }
+    except Exception as e:
+        res = default_error(e)
+        response.status_code = res[0]
+        return res[1]
 
 @route.delete("/{id}")
 @inject

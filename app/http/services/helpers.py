@@ -15,9 +15,10 @@ class RedisInstance():
         del self 
 
 def default_error(error: Exception):
-    from app.http.services import TokenInBlackList, TokenNotFound
+    from app.http.services.jwt_managment import TokenInBlackList, TokenNotFound
     from app.database import NotFoundError
     from jwt.exceptions import InvalidSignatureError, ExpiredSignatureError
+    from sqlalchemy.exc import IntegrityError
 
     if isinstance(error, InvalidSignatureError):
         return status.HTTP_409_CONFLICT, message(error)
@@ -29,7 +30,14 @@ def default_error(error: Exception):
         return status.HTTP_401_UNAUTHORIZED, message("Pleace auth")
     if isinstance(error, ExpiredSignatureError):
         return status.HTTP_409_CONFLICT, message("Signature has expired")
-    
+    if isinstance(error, IntegrityError):
+        info_error = str(error.orig.__repr__())
+        detail = re.findall(r"(?:DETAIL:(.*\(.*\))(.*)?(\".*\"))", info_error)
+        if detail is not None:
+            detail = str(detail[0][1]).strip().upper()
+        else:
+            detail = "error"
+        return status.HTTP_409_CONFLICT, message(detail)
     raise error
 
 def message(message):
