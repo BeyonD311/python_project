@@ -9,6 +9,8 @@ from app.database import PositionModel
 from app.database import DepartmentsModel
 from app.database import UsersPermission
 from app.database import RolesPermission
+from app.database import HeadOfDepartment
+from app.database import ImagesModel
 from app.http.services.access import Access
 from sqlalchemy import event
 from sqlalchemy.exc import IntegrityError
@@ -76,6 +78,28 @@ class UserRepository(SuperRepository):
                 query = []
             return query
 
+    def get_users_department(self, department_id):
+        with self.session_factory() as session:
+            result = session.query(self.base_model.id,
+                                  self.base_model.inner_phone,
+                                  self.base_model.fio,
+                                  self.base_model.department_id,
+                                  HeadOfDepartment.is_active.label("head_of_department"),
+                                  StatusModel.name.label("status"), 
+                                  PositionModel.name.label("position"),
+                                  ImagesModel.path.label("path_image")
+                                  )\
+                    .join(ImagesModel, ImagesModel.id == self.base_model.image_id, isouter=True)\
+                    .join(StatusModel, StatusModel.id == self.base_model.status_id, isouter=True)\
+                    .join(PositionModel, PositionModel.id == self.base_model.position_id, isouter=True)\
+                    .join(HeadOfDepartment, HeadOfDepartment.head_of_department_id == self.base_model.id, isouter=True)\
+                    .filter(self.base_model.department_id == department_id, self.base_model.status_id !=4)\
+                    .filter((PositionModel.id == 1) | (HeadOfDepartment.is_active == True))\
+                    .order_by(self.base_model.id).all()
+            if result is None:
+                raise UserNotFoundError(department_id)
+            return result
+        
     def get_by_id(self, user_id: int) -> User:
         return super().get_by_id(user_id)
 

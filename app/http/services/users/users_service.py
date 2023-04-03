@@ -42,6 +42,10 @@ class UserService:
 
     def get_user_position(self):
         return self._repository.get_users_position()
+    
+    def get_departments_employees(self, department_id):
+        result = self._repository.get_users_department(department_id=department_id)
+        return result
 
     def get_user_by_id(self, user_id: int, only_access: bool = True):
         user = self._repository.get_by_id(user_id)
