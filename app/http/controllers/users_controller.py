@@ -31,6 +31,34 @@ async def get_departments(
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     return departments_service.get_all()
 
+@route.get("/departments/{departments_id}")
+@inject
+async def get_departments_user(
+    departments_id: int,
+    response: Response,
+    user_service: UserService = Depends(Provide[Container.user_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    '''
+
+    Результат - вывод Супервизоров и руководителя отдела ("head_of_department": true)
+
+     описание полея \n
+     - departments_id - id отдела пользователя 
+    '''
+
+    try:
+        if departments_id == 0:
+            raise NotFoundError(departments_id)
+        return user_service.get_departments_employees(departments_id)
+    except Exception as e:
+        print(e)
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {
+            "status": "fail",
+            "message": "Not found departments"
+        }
+    
+
 @route.get("/groups")
 @inject
 def get_all_groups(
