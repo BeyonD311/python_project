@@ -24,7 +24,7 @@ class UserModel(Base):
     login = Column(String, unique=True, nullable = False)
     is_operator = Column(Boolean, default = False)
     phone = Column(String(25), nullable=True)
-    inner_phone = Column(String, nullable=True)
+    inner_phone_id = ForeignKey('inner_phones.id', onupdate="CASCADE", ondelete="SET NULL")
     is_active = Column(Boolean, default = True) 
     personal_number = Column(String, nullable=True)
     image_id = Column(BIGINT, ForeignKey('images.id', onupdate="CASCADE", ondelete="SET NULL"))
@@ -47,7 +47,7 @@ class UserModel(Base):
     status_history = relationship("StatusHistoryModel", back_populates="users", cascade="all, delete", passive_deletes=True)  
     image = relationship("ImagesModel")
     user_permission = relationship("UsersPermission")
-    
+    inner_phone = relationship('InnerPhone', back_populates="users", cascade="save-update")
     def __repr__(self): 
         return f"<User(id={self.id}" \
                f"email=\"{self.email}\"" \
