@@ -182,7 +182,7 @@ class UserRepository(SuperRepository):
             for role in current.roles:
                 role.permissions
             current.groups
-            user.inner_phone
+            current.inner_phone
             
             return current
 
