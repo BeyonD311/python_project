@@ -31,6 +31,7 @@ def import_modules_controller(container):
 
 container = create_container()
 db = container.db()
+asterisk = container.asterisk()
 db.create_database()
 app = FastAPI(debug=True)
 app.container = container

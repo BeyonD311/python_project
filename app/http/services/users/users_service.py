@@ -147,13 +147,13 @@ class UserService:
     def __user_response(self, user: UserModel, only_access: bool = False):
         userDetail = UserDetailResponse(
             id=user.id,
+            uuid=user.uuid,
             email=user.email,
             login=user.login,
             name=user.name,
             last_name=user.last_name,
             patronymic=user.patronymic,
             fio=user.fio,
-            inner_phone=user.inner_phone,
             password=user.password,
             date_employment_at=user.date_employment_at,
             date_dismissal_at = user.date_dismissal_at,
@@ -167,6 +167,8 @@ class UserService:
         userDetail.skills = user.skills
         userDetail.position = user.position
         status_user = user.status
+        if user.inner_phone != []:
+            userDetail.inner_phone = user.inner_phone[0].phone_number
         if user.position != None:
             userDetail.position = user.position
         if user.department != None:

@@ -393,7 +393,7 @@ async def update_user(
     
 @route.delete("/{id}")
 @inject
-def user_delete(id: int, response: Response,request: Request, user_service: UserService = Depends(Provide[Container.user_service]),HTTPBearerSecurity: HTTPBearer = Depends(security)):
+async def user_delete(id: int, response: Response,request: Request, user_service: UserService = Depends(Provide[Container.user_service]),HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
             if request.state.for_user['user'].id != id:
