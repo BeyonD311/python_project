@@ -84,6 +84,10 @@ class UserService:
     async def set_status(self, user_id: int, status_id: int):
         status_params = self._repository.set_status(user_id=user_id, status_id=status_id)
         await self.__set_status_redis(status_params)
+    async def set_status_by_aster(self, uuid: str, status_code: str, status_time: str):
+        print(uuid, status_code, status_time)
+        status_params = self._repository.set_status_by_uuid(uuid=uuid,status_cod=status_code,status_time=status_time)
+        # await self.__set_status_redis(status_params)
             
     def dismiss(self, id: int, date_dismissal_at: datetime.datetime = None):
         if date_dismissal_at == None:

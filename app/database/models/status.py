@@ -10,6 +10,7 @@ class StatusModel(Base):
     id = Column(SMALLINT, primary_key=True, autoincrement='ignore_fk')
     name = Column(String)
     color = Column(String, default=None)
+    code = Column(String)
     # is_active = Column(Boolean) 
 
     def __repr__(self) -> str:

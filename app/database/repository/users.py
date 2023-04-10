@@ -236,6 +236,25 @@ class UserRepository(SuperRepository):
                 "color": current.status.color,
                 "status": current.status.name
             }
+    def set_status_by_uuid(self, uuid, status_cod, status_time):
+        global event_type
+        with self.session_factory() as session:
+            current = session.query(self.base_model).filter(self.base_model.uuid == uuid).first()
+            if current is None:
+                raise NotFoundError("User not found")
+            status = session.query(StatusModel).filter(StatusModel.code == status_cod).first()
+            current.status_id = status.id
+            current.status_at = status_time
+            event_type="set_status"
+            session.add(current)
+            session.commit()
+            return {
+                "id": current.id,
+                "status_id": current.status_id,
+                "status_at": str(current.status_at),
+                "color": current.status.color,
+                "status": current.status.name
+            }
 
     def add(self, user_model: User) -> any:
         try:
