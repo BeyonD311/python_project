@@ -167,7 +167,7 @@ class UserService:
         userDetail.skills = user.skills
         userDetail.position = user.position
         status_user = user.status
-        if user.inner_phone != []:
+        if user.inner_phone is not None and user.inner_phone != []:
             userDetail.inner_phone = user.inner_phone[0].phone_number
         if user.position != None:
             userDetail.position = user.position
