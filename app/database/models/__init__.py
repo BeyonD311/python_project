@@ -14,6 +14,7 @@ from .images import ImagesModel
 from .status_history import StatusHistoryModel
 from .head_of_department import HeadOfDepartment
 from .user_permission import UsersPermission
+from .inner_phone import InnerPhone
 
 __all__ = [
     'UserModel', 
@@ -31,5 +32,6 @@ __all__ = [
     'ImagesModel',
     'StatusHistoryModel',
     'HeadOfDepartment',
-    'UsersPermission'
+    'UsersPermission', 
+    'InnerPhone'
 ]

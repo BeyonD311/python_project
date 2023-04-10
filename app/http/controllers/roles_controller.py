@@ -41,7 +41,7 @@ async def get_role(
     HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
     try:
-        return roles_model.get(id).pop()
+        return roles_model.get(id)
     except NotFoundError:
         response.status_code = status.HTTP_404_NOT_FOUND
         return {

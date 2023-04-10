@@ -1,6 +1,6 @@
 db:
   uri: "postgresql+psycopg2://${DB_NAME}:${DB_PASS}@db/${DB_USER}"
-redis:
-  uri: "123"
+asterisk:
+  uri: "mysql+pymysql://${ASTERISK_USER}:${ASTERISK_PASS}@${ASTERISK_HOST}:${ASTERISK_PORT}/${ASTERISK_DB}?charset=utf8mb4"
 jwt:
   secret: "${SECRET_KEY}"

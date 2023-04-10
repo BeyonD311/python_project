@@ -14,6 +14,7 @@ from app.kernel.database import Base
 class UserModel(Base):
     __tablename__ = "users"
     id = Column(BIGINT, primary_key=True, autoincrement='ignore_fk')
+    uuid = Column(String, unique=True)
     email = Column(String, unique=True, nullable = False)
     hashed_password = Column(String)
     password = Column(String)
@@ -24,7 +25,6 @@ class UserModel(Base):
     login = Column(String, unique=True, nullable = False)
     is_operator = Column(Boolean, default = False)
     phone = Column(String(25), nullable=True)
-    inner_phone = Column(String, nullable=True)
     is_active = Column(Boolean, default = True) 
     personal_number = Column(String, nullable=True)
     image_id = Column(BIGINT, ForeignKey('images.id', onupdate="CASCADE", ondelete="SET NULL"))
@@ -47,9 +47,10 @@ class UserModel(Base):
     status_history = relationship("StatusHistoryModel", back_populates="users", cascade="all, delete", passive_deletes=True)  
     image = relationship("ImagesModel")
     user_permission = relationship("UsersPermission")
-    
+    inner_phone = relationship('InnerPhone', back_populates="users")
     def __repr__(self): 
         return f"<User(id={self.id}" \
+               f"uuid={self.uuid}"\
                f"email=\"{self.email}\"" \
                f"hashed_password=\"{self.hashed_password}\"" \
                f"is_active={self.is_active}"\
@@ -58,7 +59,6 @@ class UserModel(Base):
                f"patronymic={self.patronymic}"\
                f"login={self.login}"\
                f"phone={self.phone}"\
-               f"inner_phone={self.inner_phone}"\
                f"image_id={self.image_id}"\
                f"status_id={self.status_id}"\
                f"employment_status={self.employment_status}"\

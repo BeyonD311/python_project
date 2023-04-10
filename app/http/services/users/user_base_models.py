@@ -56,6 +56,7 @@ class UserDetailResponse(BaseModel):
     patronymic: str = None
     login: str
     fio: str
+    uuid: str = None
     inner_phone: int = None
     phone: str = None
     department: dict = None
@@ -82,7 +83,6 @@ class UserRequest(BaseModel):
     login: str
     is_operator: bool
     phone: str = None
-    inner_phone: int = None
     image_id: int = None
     department_id: int = None
     personal_number: str = None 

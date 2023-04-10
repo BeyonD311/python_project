@@ -11,6 +11,7 @@ from app.database import UsersPermission
 from app.database import RolesPermission
 from app.database import HeadOfDepartment
 from app.database import ImagesModel
+from app.database import InnerPhone
 from app.http.services.access import Access
 from sqlalchemy import event
 from sqlalchemy.exc import IntegrityError
@@ -31,10 +32,14 @@ event_type = None
 class UserRepository(SuperRepository): 
     base_model = User
     
-    def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]) -> None:
+    def __init__(self, 
+                 session_factory: Callable[..., AbstractContextManager[Session]],
+                 session_asterisk: Callable[..., AbstractContextManager[Session]] = None
+                 ) -> None:
         global event_type
         event_type = None
         super().__init__(session_factory)
+        self.session_asterisk = session_asterisk
 
     def get_all(self, params) -> dict[User]:
         with self.session_factory() as session:
@@ -44,7 +49,7 @@ class UserRepository(SuperRepository):
             query = session.query(self.base_model.id,
                                   self.base_model.status_id,
                                   self.base_model.status_at,
-                                  self.base_model.inner_phone,
+                                  InnerPhone.phone_number.label("inner_phone"),
                                   self.base_model.fio,
                                   StatusModel.name.label("status"), StatusModel.color.label("status_color"),
                                   PositionModel.name.label("position"),
@@ -54,6 +59,7 @@ class UserRepository(SuperRepository):
                     .join(StatusModel, StatusModel.id == self.base_model.status_id, isouter=True)\
                     .join(PositionModel, PositionModel.id == self.base_model.position_id, isouter=True)\
                     .join(DepartmentsModel, DepartmentsModel.id == self.base_model.department_id, isouter=True)\
+                    .join(InnerPhone, InnerPhone.user_id == self.base_model.id, isouter=True)\
                     .filter(self.base_model.id != 0)
             query = self.__filter(query, params=params)
             result = self.get_pagination(query, params.size, params.page)
@@ -284,6 +290,7 @@ class UserRepository(SuperRepository):
         return True
 
     def soft_delete(self, id: int, delete_time = None):
+        phones = []
         with self.session_factory() as session:
             user = self.get_by_id(id)
             if delete_time is None:
@@ -291,13 +298,23 @@ class UserRepository(SuperRepository):
             else:
                 user.date_dismissal_at = delete_time
             user.is_active = False
+            for phone in user.inner_phone:
+                phones.append(f"{phone.phone_number}")
+                session.delete(phone)
             session.add(user)
-            session.commit()       
+            session.commit()   
+        with self.session_asterisk() as session:
+            if phones != []:
+                queries = self._delete_asterisk(",".join(phones))
+                for query in queries:
+                    session.execute(query)
+            session.commit()
     
     def user_dismiss(self, user_id: int,  date_dismissal_at: datetime = None):
         user = self.get_by_id(user_id)
         global event_type
         event_type = 0
+        phones = []
         with self.session_factory() as session:
             status = session.query(StatusModel).filter(StatusModel.name.ilike('уволен')).first()
             if status == None:
@@ -305,7 +322,16 @@ class UserRepository(SuperRepository):
             user.date_dismissal_at = date_dismissal_at
             user.status_at =  date_dismissal_at
             user.status_id = status.id
+            for phone in user.inner_phone:
+                phones.append(phone.phone_number)
+                session.delete(phone)
             session.add(user)
+            session.commit()
+        with self.session_asterisk() as session:
+            if phones != []:
+                queries = self._delete_asterisk(",".join(phones))
+                for query in queries:
+                    session.execute(query)
             session.commit()
 
     def user_recover(self, user_id: int):
@@ -330,6 +356,12 @@ class UserRepository(SuperRepository):
             session.add(user)
             session.commit()       
 
+    def _delete_asterisk(self, id):
+        aors = f" delete from ps_aors where id in ({id})"
+        auth = f" delete from ps_auths where id in ({id})"
+        endpoints = f" delete from ps_endpoints where id in ({id})"
+        return aors, auth, endpoints
+    
     def __filter(self, query: Query, params) -> Query:
         if params.filter is not None:
             if params.filter.fio != None:

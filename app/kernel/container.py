@@ -9,6 +9,7 @@ from app.http.services.groups import GroupsService
 from app.http.services.roles import RolesServices
 from app.http.services.departments import DepartmentsService
 from app.http.services.images_service import ImagesServices
+from app.http.services.inner_phone import InnerPhoneServices
 from .redis import init_redis_pool
 from app.http.services.jwt_managment import JwtManagement
 from app.http.services.helpers import RedisInstance
@@ -18,6 +19,7 @@ class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(modules=['app.http.middleware.auth_middleware'])
     config = providers.Configuration(yaml_files=[Path('config.yml')])
     db = providers.Singleton(Database, db_url=config.db.uri) 
+    asterisk = providers.Singleton(Database, db_url=config.asterisk.uri) 
     # Service Provider
     redis_pool = providers.Resource(
         init_redis_pool,
@@ -35,6 +37,7 @@ class Container(containers.DeclarativeContainer):
     user_repository = providers.Factory(
         DatabaseCustom.UserRepository,
         session_factory=db.provided.session,
+        session_asterisk=asterisk.provided.session 
     ) 
     skills_repository = providers.Factory(
         DatabaseCustom.SkillsRepository,
@@ -71,7 +74,7 @@ class Container(containers.DeclarativeContainer):
     )
     groups_service = providers.Factory(
         GroupsService,
-        goups_repository=groups_repository
+        groups_repository=groups_repository
     )
     roles_repository = providers.Factory(
         DatabaseCustom.RolesRepository,
@@ -96,4 +99,13 @@ class Container(containers.DeclarativeContainer):
     image_services = providers.Factory(
         ImagesServices,
         image_repository=image_repository
+    )
+    inner_phone_repository = providers.Factory(
+        DatabaseCustom.InnerPhones,
+        session_factory=db.provided.session,
+        session_asterisk=asterisk.provided.session 
+    )
+    inner_phone_service = providers.Factory(
+        InnerPhoneServices,
+        inner_phone_repository=inner_phone_repository
     )
