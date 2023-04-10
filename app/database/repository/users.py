@@ -182,6 +182,7 @@ class UserRepository(SuperRepository):
             for role in current.roles:
                 role.permissions
             current.groups
+            current.inner_phone
             
             return current
 
@@ -263,6 +264,7 @@ class UserRepository(SuperRepository):
                         ))
                 session.commit()
                 user.groups
+                user.inner_phone
                 return user
         except IntegrityError as e: 
             raise(e)
