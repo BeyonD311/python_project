@@ -85,7 +85,6 @@ class UserService:
         status_params = self._repository.set_status(user_id=user_id, status_id=status_id)
         await self.__set_status_redis(status_params)
     async def set_status_by_aster(self, uuid: str, status_code: str, status_time: str):
-        status_time += 3600 * 3
         status_time = datetime.datetime.fromtimestamp(status_time)
         status_params = self._repository.set_status_by_uuid(uuid=uuid,status_cod=status_code,status_time=status_time)
         await self.__set_status_redis(status_params)
