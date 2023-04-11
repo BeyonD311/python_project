@@ -2,6 +2,7 @@ from sqlalchemy import String
 from sqlalchemy import Column
 from sqlalchemy import SMALLINT
 from sqlalchemy import Boolean
+from sqlalchemy import Time
 from app.kernel.database import Base
 
 class StatusModel(Base):
@@ -11,6 +12,9 @@ class StatusModel(Base):
     name = Column(String)
     color = Column(String, default=None)
     code = Column(String)
+    behavior = Column(String)
+    alter_name = Column(String)
+    life_time = Column(Time, nullable=True)
     # is_active = Column(Boolean) 
 
     def __repr__(self) -> str:

@@ -1,4 +1,5 @@
 import jwt, os
+from datetime import datetime
 from fastapi import Depends, APIRouter, Response, Request
 from fastapi.security import HTTPBearer
 from app.kernel.container import Container
@@ -62,12 +63,13 @@ async def update_status(
         return {
             "message": err[1]
         }
+    
 @route.patch("/asterisk")
 @inject
 async def update_status_asterisk(
     status_cod: str, 
     uuid: str,
-    status_time: str,
+    status_time: int,
     response: Response, 
     request: Request, 
     user_service: UserService = Depends(Provide[Container.user_service])):
