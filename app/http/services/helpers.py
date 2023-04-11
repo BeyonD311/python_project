@@ -34,7 +34,7 @@ def default_error(error: Exception):
         info_error = str(error.orig.__repr__())
         detail = re.findall(r"(?:DETAIL:(.*\(.*\))(.*)?(\".*\"))", info_error)
         if detail is not None:
-            detail = str(detail[0][1]).strip().upper()
+            detail = str(error)
         else:
             detail = "error"
         return status.HTTP_409_CONFLICT, message(detail)

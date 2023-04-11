@@ -5,6 +5,7 @@ from uuid import uuid4
 from typing import Callable
 from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
+from datetime import time, datetime
 
 class InnerPhones(SuperRepository):
 
@@ -59,8 +60,12 @@ class InnerPhones(SuperRepository):
                 if inner_phone_params.registration and inner_phone_params.default and check_default == False:
                     param = inner_phone_params.dict()
                     param['uuid'] = user.uuid
-                    param['webrtc'] = "no"
-                    param['transport'] = "transport-udp"
+                    param['webrtc'] = "yes"
+                    param['transport'] = "transport-wss"
+                    param['duration_call'] = (inner_phone_params.duration_call.hour * 3600) + (inner_phone_params.duration_call.minute * 60) + inner_phone_params.duration_call.second
+                    param['duration_conversation'] = (inner_phone_params.duration_conversation.hour * 3600) \
+                        + (inner_phone_params.duration_conversation.minute * 60) \
+                        + inner_phone_params.duration_conversation.second
                     asterisk_phone.append(param)
                     check_default = True
                 del inner_phone_params
@@ -98,8 +103,12 @@ class InnerPhones(SuperRepository):
                 if inner_phone_params.registration and inner_phone_params.default and check_default == False:
                     param = inner_phone_params.dict()
                     param['last_id'] = inner_phone.phone_number
-                    param['webrtc'] = "no"
-                    param['transport'] = "transport-udp"
+                    param['webrtc'] = "yes"
+                    param['transport'] = "transport-wss"
+                    param['duration_call'] = (inner_phone_params.duration_call.hour * 3600) + (inner_phone_params.duration_call.minute * 60) + inner_phone_params.duration_call.second
+                    param['duration_conversation'] = (inner_phone_params.duration_conversation.hour * 3600) \
+                        + (inner_phone_params.duration_conversation.minute * 60) \
+                        + inner_phone_params.duration_conversation.second
                     asterisk_phone.append(param)
                     check_default = True
                 session.add(inner_phone)
