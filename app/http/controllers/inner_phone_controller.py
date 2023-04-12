@@ -46,9 +46,7 @@ def add_inner_phone(
     except Exception as e:
         err = default_error(e)
         response.status_code = err[0]
-        return {
-            "message": err[1]
-        }
+        return err[1]
 
 @route.put('/')
 @inject
@@ -65,9 +63,7 @@ def update_inner_phone(
     except Exception as e:
         err = default_error(e)
         response.status_code = err[0]
-        return {
-            "message": err[1]
-        }
+        return err[1]
 
 @route.delete('/')
 @inject
@@ -86,6 +82,4 @@ def delete_inner_phone(
     except Exception as e:
         err = default_error(e)
         response.status_code = err[0]
-        return {
-            "message": err[1]
-        }
+        return err[1]

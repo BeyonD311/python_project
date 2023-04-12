@@ -37,10 +37,10 @@ class InnerPhones(SuperRepository):
             return query
 
     def add(self, params):
-        id_response = []
         with self.session_factory() as session:
             user = self._find_user(session=session, user_id=params.user_id)
             asterisk_phone = []
+            phones = []
             check_default = False
             for inner_phone_params in params.inner_phones:
                 inner_phone = InnerPhone(
@@ -57,27 +57,41 @@ class InnerPhones(SuperRepository):
                     incoming_calls = inner_phone_params.incoming_calls,
                     comment = inner_phone_params.comment
                 )
+                if check_default == inner_phone_params.default:
+                    raise NotFoundError("Только 1 номер по дефолту")
                 if inner_phone_params.registration and inner_phone_params.default and check_default == False:
-                    param = self.__params(inner_phone, inner_phone_params)
+                    param = self.__params(user,inner_phone, inner_phone_params)
                     asterisk_phone.append(param)
                     check_default = True
                 del inner_phone_params
                 session.add(inner_phone)
-                id_response
+                phones.append(inner_phone)
             session.commit()
-        with self.session_asterisk() as session:
+        with self.session_asterisk() as asterisk_session:
             value: dict
-            for i, value in enumerate(asterisk_phone):
-                user = self._check_user(session=session, params=value)
-                if user is not None:
-                    raise NotFoundError("The user exists")
-                queries = self._create_insert_asterisk(value)
-                for query in queries:
-                    session.execute(query)
-            session.commit()
+            uuid = ""
+            try:
+                for i, value in enumerate(asterisk_phone):
+                    user = self._check_user(session=asterisk_session, params=value)
+                    if user is not None:
+                        raise NotFoundError("The user exists")
+                    queries = self._create_insert_asterisk(value)
+                    for query in queries:
+                        uuid = value['phone_uuid']
+                        print(query)
+                        asterisk_session.execute(query)
+                asterisk_session.commit()
+            except Exception as e:
+                with self.session_factory() as session:
+                    for phone in phones:
+                        session.delete(phone)
+                    session.commit()
+                raise e
     def update(self, params):
         asterisk_phone = []
         check_default = False
+        uuid = ""
+        count_default = 0
         with self.session_factory() as session:
             user = self._find_user(session=session, user_id=params.user_id)
             for inner_phone_params in params.inner_phones:
@@ -93,8 +107,10 @@ class InnerPhones(SuperRepository):
                 inner_phone.duration_conversation = inner_phone_params.duration_conversation,
                 inner_phone.incoming_calls = inner_phone_params.incoming_calls,
                 inner_phone.comment = inner_phone_params.comment
+                if count_default > 1:
+                    raise NotFoundError("Запрещено имень больше 2 номеров по умолчанию")
                 if inner_phone_params.registration and inner_phone_params.default and check_default == False:
-                    param = self.__params(inner_phone, inner_phone_params)
+                    param = self.__params(user, inner_phone, inner_phone_params)
                     asterisk_phone.append(param)
                     check_default = True
                 session.add(inner_phone)
@@ -129,8 +145,8 @@ class InnerPhones(SuperRepository):
 
         aors = f" insert into ps_aors(id, max_contacts) values({params['phone_number']}{w}, 1) "
         auth = f" insert into ps_auths(id, password, username, uuid,duration_call,duration_conversation, status) "\
-               f" values({params['phone_number']}{w},'{params['password']}','{params['login']}','{params['uuid']}', '{str(params['duration_call'])}', '{str(params['duration_conversation'])}') "
-        endpoints = f" insert into ps_endpoints (id, aors, auth, webrtc, transport) values ({params['phone_number']}{w}, {params['phone_number']}{w}, {params['phone_number']}{w}, '{params['webrtc']}', '{params['transport']}', 10) "
+               f" values({params['phone_number']}{w},'{params['password']}','{params['login']}','{params['uuid']}', '{str(params['duration_call'])}', '{str(params['duration_conversation'])}', 10)"
+        endpoints = f" insert into ps_endpoints (id, aors, auth, webrtc, transport) values ({params['phone_number']}{w}, {params['phone_number']}{w}, {params['phone_number']}{w}, '{params['webrtc']}', '{params['transport']}') "
         return aors, auth, endpoints
     
     def _check_user(self, params, session: Session):
@@ -159,11 +175,13 @@ class InnerPhones(SuperRepository):
             raise NotFoundError("User not found")
         return user
     
-    def __params(self, inner_phone: InnerPhone, inner_phone_params):
+    def __params(self, user: UserModel, inner_phone: InnerPhone, inner_phone_params):
         param = inner_phone_params.dict()
+        param['uuid'] = user.uuid
         param['last_id'] = inner_phone.phone_number
         param['webrtc'] = "yes"
         param['transport'] = "transport-wss"
+        param['phone_uuid'] = inner_phone.uuid
         param['duration_call'] = (inner_phone_params.duration_call.hour * 3600) + (inner_phone_params.duration_call.minute * 60) + inner_phone_params.duration_call.second
         param['duration_conversation'] = (inner_phone_params.duration_conversation.hour * 3600) \
             + (inner_phone_params.duration_conversation.minute * 60) \

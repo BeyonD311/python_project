@@ -15,7 +15,7 @@ class InnerPhone(Base):
     id = Column(BIGINT, primary_key=True)
     uuid = Column(String, unique=True)
     user_id = Column(BIGINT, ForeignKey('users.id', onupdate="CASCADE", ondelete="CASCADE"))
-    phone_number = Column(BIGINT)
+    phone_number = Column(BIGINT, unique=True)
     description = Column(Text, nullable=True)
     is_registration = Column(Boolean, default=False)
     is_default = Column(Boolean, default=False)

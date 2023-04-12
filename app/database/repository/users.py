@@ -224,6 +224,7 @@ class UserRepository(SuperRepository):
 
     def set_status(self, user_id, status_id):
         global event_type
+        current = None
         with self.session_factory() as session:
             current = session.query(self.base_model).get(user_id)
             current.status_id = status_id
@@ -231,15 +232,17 @@ class UserRepository(SuperRepository):
             event_type="set_status"
             session.add(current)
             session.commit()
-            return {
-                "id": current.id,
-                "status_id": current.status_id,
-                "status_at": str(current.status_at),
-                "color": current.status.color,
-                "status": current.status.name
-            }
+        self.__save_status_asterisk(current)
+        return {
+            "id": current.id,
+            "status_id": current.status_id,
+            "status_at": str(current.status_at),
+            "color": current.status.color,
+            "status": current.status.name
+        }
     def set_status_by_uuid(self, uuid, status_cod, status_time):
         global event_type
+        current = None
         with self.session_factory() as session:
             current = session.query(self.base_model).filter(self.base_model.uuid == uuid).first()
             if current is None:
@@ -250,13 +253,14 @@ class UserRepository(SuperRepository):
             event_type="set_status"
             session.add(current)
             session.commit()
-            return {
-                "id": current.id,
-                "status_id": current.status_id,
-                "status_at": str(current.status_at),
-                "color": current.status.color,
-                "status": current.status.name
-            }
+        self.__save_status_asterisk(current)
+        return {
+            "id": current.id,
+            "status_id": current.status_id,
+            "status_at": str(current.status_at),
+            "color": current.status.color,
+            "status": current.status.name
+        }
 
     def add(self, user_model: User) -> any:
         try:
@@ -416,6 +420,12 @@ class UserRepository(SuperRepository):
         else:
             field = field.asc()
         return field
+    
+    def __save_status_asterisk(self, user: User):
+        with self.session_asterisk() as session_asterisk:
+            query = f" update ps_auths set status {user.status_id} where uuid = '{user.uuid}' "
+            session_asterisk.execute(query)
+            session_asterisk.commit()
 
 class StatusBehavior():
     behavior = {
