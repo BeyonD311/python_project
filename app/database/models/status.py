@@ -22,7 +22,10 @@ class StatusModel(Base):
         f"id={self.id},"\
         f"name={self.name},"\
         f"color={self.color}"\
-        # f"is_active={self.is_active}"\
+        f"code={self.code}"\
+        f"behavior={self.behavior}"\
+        f"alter_name={self.alter_name}"\
+        f"life_time={self.life_time}"\
         f")>"
 
 __all__ = ('StatusModel') 

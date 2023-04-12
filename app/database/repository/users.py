@@ -229,10 +229,11 @@ class UserRepository(SuperRepository):
             current = session.query(self.base_model).get(user_id)
             current.status_id = status_id
             current.status_at = datetime.now()
+            current.status
             event_type="set_status"
             session.add(current)
             session.commit()
-        self.__save_status_asterisk(current)
+        self.__save_status_asterisk(current) 
         return {
             "id": current.id,
             "status_id": current.status_id,
@@ -250,6 +251,7 @@ class UserRepository(SuperRepository):
             status = session.query(StatusModel).filter(StatusModel.code == status_cod).first()
             current.status_id = status.id
             current.status_at = str(status_time)
+            current.status
             event_type="set_status"
             session.add(current)
             session.commit()
@@ -423,7 +425,7 @@ class UserRepository(SuperRepository):
     
     def __save_status_asterisk(self, user: User):
         with self.session_asterisk() as session_asterisk:
-            query = f" update ps_auths set status {user.status_id} where uuid = '{user.uuid}' "
+            query = f" update ps_auths set status = {user.status_id} where ps_auths.uuid = \"{user.uuid}\" "
             session_asterisk.execute(query)
             session_asterisk.commit()
 
