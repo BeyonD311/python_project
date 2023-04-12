@@ -58,14 +58,7 @@ class InnerPhones(SuperRepository):
                     comment = inner_phone_params.comment
                 )
                 if inner_phone_params.registration and inner_phone_params.default and check_default == False:
-                    param = inner_phone_params.dict()
-                    param['uuid'] = user.uuid
-                    param['webrtc'] = "yes"
-                    param['transport'] = "transport-wss"
-                    param['duration_call'] = (inner_phone_params.duration_call.hour * 3600) + (inner_phone_params.duration_call.minute * 60) + inner_phone_params.duration_call.second
-                    param['duration_conversation'] = (inner_phone_params.duration_conversation.hour * 3600) \
-                        + (inner_phone_params.duration_conversation.minute * 60) \
-                        + inner_phone_params.duration_conversation.second
+                    param = self.__params(inner_phone, inner_phone_params)
                     asterisk_phone.append(param)
                     check_default = True
                 del inner_phone_params
@@ -101,14 +94,7 @@ class InnerPhones(SuperRepository):
                 inner_phone.incoming_calls = inner_phone_params.incoming_calls,
                 inner_phone.comment = inner_phone_params.comment
                 if inner_phone_params.registration and inner_phone_params.default and check_default == False:
-                    param = inner_phone_params.dict()
-                    param['last_id'] = inner_phone.phone_number
-                    param['webrtc'] = "yes"
-                    param['transport'] = "transport-wss"
-                    param['duration_call'] = (inner_phone_params.duration_call.hour * 3600) + (inner_phone_params.duration_call.minute * 60) + inner_phone_params.duration_call.second
-                    param['duration_conversation'] = (inner_phone_params.duration_conversation.hour * 3600) \
-                        + (inner_phone_params.duration_conversation.minute * 60) \
-                        + inner_phone_params.duration_conversation.second
+                    param = self.__params(inner_phone, inner_phone_params)
                     asterisk_phone.append(param)
                     check_default = True
                 session.add(inner_phone)
@@ -142,9 +128,9 @@ class InnerPhones(SuperRepository):
     def _create_insert_asterisk(self, params, w = ""):
 
         aors = f" insert into ps_aors(id, max_contacts) values({params['phone_number']}{w}, 1) "
-        auth = f" insert into ps_auths(id, password, username, uuid,duration_call,duration_conversation) "\
+        auth = f" insert into ps_auths(id, password, username, uuid,duration_call,duration_conversation, status) "\
                f" values({params['phone_number']}{w},'{params['password']}','{params['login']}','{params['uuid']}', '{str(params['duration_call'])}', '{str(params['duration_conversation'])}') "
-        endpoints = f" insert into ps_endpoints (id, aors, auth, webrtc, transport) values ({params['phone_number']}{w}, {params['phone_number']}{w}, {params['phone_number']}{w}, '{params['webrtc']}', '{params['transport']}') "
+        endpoints = f" insert into ps_endpoints (id, aors, auth, webrtc, transport) values ({params['phone_number']}{w}, {params['phone_number']}{w}, {params['phone_number']}{w}, '{params['webrtc']}', '{params['transport']}', 10) "
         return aors, auth, endpoints
     
     def _check_user(self, params, session: Session):
@@ -172,3 +158,14 @@ class InnerPhones(SuperRepository):
         if user is None:
             raise NotFoundError("User not found")
         return user
+    
+    def __params(self, inner_phone: InnerPhone, inner_phone_params):
+        param = inner_phone_params.dict()
+        param['last_id'] = inner_phone.phone_number
+        param['webrtc'] = "yes"
+        param['transport'] = "transport-wss"
+        param['duration_call'] = (inner_phone_params.duration_call.hour * 3600) + (inner_phone_params.duration_call.minute * 60) + inner_phone_params.duration_call.second
+        param['duration_conversation'] = (inner_phone_params.duration_conversation.hour * 3600) \
+            + (inner_phone_params.duration_conversation.minute * 60) \
+            + inner_phone_params.duration_conversation.second
+        return param

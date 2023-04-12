@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from uuid import uuid4
 from .super import SuperRepository, NotFoundError
 from app.database import UserModel as User
 from app.database import RolesModel
@@ -261,6 +262,7 @@ class UserRepository(SuperRepository):
             with self.session_factory() as session:
                 status:StatusModel = session.query(StatusModel).filter(StatusModel.code == 'offline').first()
                 user = user_model
+                user.uuid = uuid4()
                 user = self.item_add_or_update(user, session)
                 if status != None:
                     # Сохраняем текущий статус в редис для быстрого доступа
