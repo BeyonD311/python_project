@@ -20,6 +20,7 @@ from sqlalchemy.engine.base import Connection
 from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
 from typing import Callable
+from uuid import uuid4
 
 
 """ 
@@ -242,6 +243,7 @@ class UserRepository(SuperRepository):
             with self.session_factory() as session:
                 status:StatusModel = session.query(StatusModel).filter(StatusModel.name.ilike("оффлайн")).first()
                 user = user_model
+                user.uuid = uuid4()
                 user = self.item_add_or_update(user, session)
                 if status != None:
                     # Сохраняем текущий статус в редис для быстрого доступа
