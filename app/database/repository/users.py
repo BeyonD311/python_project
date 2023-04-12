@@ -21,6 +21,7 @@ from sqlalchemy.engine.base import Connection
 from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
 from typing import Callable
+from uuid import uuid4
 
 
 """ 
