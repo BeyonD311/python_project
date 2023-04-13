@@ -92,11 +92,12 @@ class UserRepository(SuperRepository):
                                   self.base_model.inner_phone,
                                   self.base_model.fio,
                                   self.base_model.department_id,
+                                  self.base_model.status_id,
                                   HeadOfDepartment.is_active.label("head_of_department"),
-                                  StatusModel.name.label("status"), 
+                                  StatusModel.name.label("status"),
                                   PositionModel.name.label("position"),
                                   ImagesModel.path.label("path_image"),
-                                  InnerPhone.name.label("user_inner_phone")
+                                  InnerPhone.phone_number.label("user_inner_phone")
                                   )\
                     .join(ImagesModel, ImagesModel.id == self.base_model.image_id, isouter=True)\
                     .join(StatusModel, StatusModel.id == self.base_model.status_id, isouter=True)\
@@ -237,7 +238,6 @@ class UserRepository(SuperRepository):
             "id": current.id,
             "status_id": current.status_id,
             "status_at": str(current.status_at),
-            "color": current.status.color,
             "status": current.status.name
         }
     def set_status_by_uuid(self, uuid, status_cod, status_time):
@@ -259,7 +259,6 @@ class UserRepository(SuperRepository):
             "id": current.id,
             "status_id": current.status_id,
             "status_at": str(current.status_at),
-            "color": current.status.color,
             "status": current.status.name
         }
 
