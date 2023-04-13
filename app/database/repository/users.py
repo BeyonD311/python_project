@@ -238,7 +238,9 @@ class UserRepository(SuperRepository):
             "id": current.id,
             "status_id": current.status_id,
             "status_at": str(current.status_at),
-            "status": current.status.name
+            "status": current.status.name,
+            "code": current.status.behavior,
+            "alter_name": current.status.alter_name,
         }
     def set_status_by_uuid(self, uuid, status_cod, status_time):
         global event_type

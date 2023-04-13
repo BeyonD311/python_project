@@ -72,6 +72,7 @@ async def update_status_asterisk(
     status_time: int,
     response: Response, 
     request: Request, 
+    caller: str = None,
     user_service: UserService = Depends(Provide[Container.user_service])):
     """ 
         **status_cod** - код статуса\n
@@ -79,7 +80,7 @@ async def update_status_asterisk(
         **status_time** - время установки статуса 
     """
     try:
-        await user_service.set_status_by_aster(uuid=uuid, status_code=status_cod, status_time=status_time)
+        await user_service.set_status_by_aster(uuid=uuid, status_code=status_cod, status_time=status_time, incoming_call=caller)
         return {
             "message": "set status"
         }
