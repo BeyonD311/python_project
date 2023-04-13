@@ -150,7 +150,7 @@ async def get_all_status(
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     return user_service.get_all_status_users()
 
-@route.get("/status/")
+@route.get("/status")
 @inject
 async def current_user_status(
     user_id: str,
