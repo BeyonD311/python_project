@@ -91,8 +91,9 @@ class UserRepository(SuperRepository):
                                   self.base_model.inner_phone,
                                   self.base_model.fio,
                                   self.base_model.department_id,
+                                  self.base_model.status_id,
                                   HeadOfDepartment.is_active.label("head_of_department"),
-                                  StatusModel.name.label("status"), 
+                                  StatusModel.name.label("status"),
                                   PositionModel.name.label("position"),
                                   ImagesModel.path.label("path_image"),
                                   InnerPhone.phone_number.label("user_inner_phone")
