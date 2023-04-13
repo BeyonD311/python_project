@@ -13,13 +13,14 @@ from app.database import HeadOfDepartment
 from app.database import ImagesModel
 from app.database import InnerPhone
 from app.http.services.access import Access
-from sqlalchemy import event
+from sqlalchemy import and_, event
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query
 from sqlalchemy.engine.base import Connection
 from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
 from typing import Callable
+from uuid import uuid4
 
 
 """ 
@@ -49,17 +50,17 @@ class UserRepository(SuperRepository):
             query = session.query(self.base_model.id,
                                   self.base_model.status_id,
                                   self.base_model.status_at,
-                                  InnerPhone.phone_number.label("inner_phone"),
                                   self.base_model.fio,
                                   StatusModel.name.label("status"), StatusModel.color.label("status_color"),
                                   PositionModel.name.label("position"),
                                   DepartmentsModel.name.label("department"),
+                                  InnerPhone.phone_number.label("inner_phone"),
                                   self.base_model.employment_status
                                   )\
                     .join(StatusModel, StatusModel.id == self.base_model.status_id, isouter=True)\
                     .join(PositionModel, PositionModel.id == self.base_model.position_id, isouter=True)\
                     .join(DepartmentsModel, DepartmentsModel.id == self.base_model.department_id, isouter=True)\
-                    .join(InnerPhone, InnerPhone.user_id == self.base_model.id, isouter=True)\
+                    .join(InnerPhone, and_(InnerPhone.user_id == self.base_model.id, InnerPhone.is_default == True, InnerPhone.is_registration == True), isouter=True)\
                     .filter(self.base_model.id != 0)
             query = self.__filter(query, params=params)
             result = self.get_pagination(query, params.size, params.page)
@@ -90,15 +91,18 @@ class UserRepository(SuperRepository):
                                   self.base_model.inner_phone,
                                   self.base_model.fio,
                                   self.base_model.department_id,
+                                  self.base_model.status_id,
                                   HeadOfDepartment.is_active.label("head_of_department"),
-                                  StatusModel.name.label("status"), 
+                                  StatusModel.name.label("status"),
                                   PositionModel.name.label("position"),
-                                  ImagesModel.path.label("path_image")
+                                  ImagesModel.path.label("path_image"),
+                                  InnerPhone.phone_number.label("user_inner_phone")
                                   )\
                     .join(ImagesModel, ImagesModel.id == self.base_model.image_id, isouter=True)\
                     .join(StatusModel, StatusModel.id == self.base_model.status_id, isouter=True)\
                     .join(PositionModel, PositionModel.id == self.base_model.position_id, isouter=True)\
                     .join(HeadOfDepartment, HeadOfDepartment.head_of_department_id == self.base_model.id, isouter=True)\
+                    .join(InnerPhone, and_(InnerPhone.user_id == self.base_model.id, InnerPhone.is_default == True, InnerPhone.is_registration == True), isouter=True)\
                     .filter(self.base_model.department_id == department_id, self.base_model.status_id !=4)\
                     .filter((PositionModel.id == 1) | (HeadOfDepartment.is_active == True))\
                     .order_by(self.base_model.id).all()
@@ -242,6 +246,7 @@ class UserRepository(SuperRepository):
             with self.session_factory() as session:
                 status:StatusModel = session.query(StatusModel).filter(StatusModel.name.ilike("оффлайн")).first()
                 user = user_model
+                user.uuid = uuid4()
                 user = self.item_add_or_update(user, session)
                 if status != None:
                     # Сохраняем текущий статус в редис для быстрого доступа
