@@ -51,8 +51,7 @@ class DepartmentsService:
     def get_employees(self, filter: dict):
         items = self._repository.get_employees(self.__check_filter(filter))
         res = []
-        for item in items:
-            item = items[item]
+        for i, item in items.items():
             if item.parent_department_id != None: 
                 continue
             if item.is_parent:

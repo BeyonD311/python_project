@@ -25,7 +25,7 @@ class Department(BaseModel):
     name: str = None
     parent_department_id: int = None
     is_parent: bool
-    employees: list = {}
+    employees: list = []
     child: list = []
 
 class UsersResponse(BaseModel):
@@ -85,7 +85,10 @@ class DepartmentsRepository(SuperRepository):
                     )
                 if res[4] is not None:
                     if res[4] is not result[res[0]].employees:
-                        result[res[0]].employees[res[4]] = UsersResponse(
+                        if res[4] == 0:
+                            continue
+                        result[res[0]].employees.append(
+                             UsersResponse(
                             id = res[4],
                             fio = res[5],
                             inner_phone = res[6],
@@ -97,6 +100,7 @@ class DepartmentsRepository(SuperRepository):
                                 "status_id": res[7],
                                 "color": res[9]
                             }
+                        )
                         )
             #TODO возможно понадобиться для работы если нет то удалить
             """ Получем родителей рекурсивно """
