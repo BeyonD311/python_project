@@ -14,7 +14,7 @@ from app.database import HeadOfDepartment
 from app.database import ImagesModel
 from app.database import InnerPhone
 from app.http.services.access import Access
-from sqlalchemy import event
+from sqlalchemy import and_, event
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query
 from sqlalchemy.engine.base import Connection
@@ -51,17 +51,17 @@ class UserRepository(SuperRepository):
             query = session.query(self.base_model.id,
                                   self.base_model.status_id,
                                   self.base_model.status_at,
-                                  InnerPhone.phone_number.label("inner_phone"),
                                   self.base_model.fio,
                                   StatusModel.name.label("status"), StatusModel.color.label("status_color"),
                                   PositionModel.name.label("position"),
                                   DepartmentsModel.name.label("department"),
+                                  InnerPhone.phone_number.label("inner_phone"),
                                   self.base_model.employment_status
                                   )\
                     .join(StatusModel, StatusModel.id == self.base_model.status_id, isouter=True)\
                     .join(PositionModel, PositionModel.id == self.base_model.position_id, isouter=True)\
                     .join(DepartmentsModel, DepartmentsModel.id == self.base_model.department_id, isouter=True)\
-                    .join(InnerPhone, InnerPhone.user_id == self.base_model.id, isouter=True)\
+                    .join(InnerPhone, and_(InnerPhone.user_id == self.base_model.id, InnerPhone.is_default == True, InnerPhone.is_registration == True), isouter=True)\
                     .filter(self.base_model.id != 0)
             query = self.__filter(query, params=params)
             result = self.get_pagination(query, params.size, params.page)
@@ -95,12 +95,14 @@ class UserRepository(SuperRepository):
                                   HeadOfDepartment.is_active.label("head_of_department"),
                                   StatusModel.name.label("status"), 
                                   PositionModel.name.label("position"),
-                                  ImagesModel.path.label("path_image")
+                                  ImagesModel.path.label("path_image"),
+                                  InnerPhone.name.label("user_inner_phone")
                                   )\
                     .join(ImagesModel, ImagesModel.id == self.base_model.image_id, isouter=True)\
                     .join(StatusModel, StatusModel.id == self.base_model.status_id, isouter=True)\
                     .join(PositionModel, PositionModel.id == self.base_model.position_id, isouter=True)\
                     .join(HeadOfDepartment, HeadOfDepartment.head_of_department_id == self.base_model.id, isouter=True)\
+                    .join(InnerPhone, and_(InnerPhone.user_id == self.base_model.id, InnerPhone.is_default == True, InnerPhone.is_registration == True), isouter=True)\
                     .filter(self.base_model.department_id == department_id, self.base_model.status_id !=4)\
                     .filter((PositionModel.id == 1) | (HeadOfDepartment.is_active == True))\
                     .order_by(self.base_model.id).all()
