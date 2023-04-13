@@ -44,7 +44,14 @@ class UserService:
         return self._repository.get_users_position()
     
     def get_departments_employees(self, department_id):
-        result = self._repository.get_users_department(department_id=department_id)
+        department_headers, department_employees = [], []
+        users = self._repository.get_users_department(department_id=department_id)
+        for person in users:
+            (department_headers if person[5] == True else department_employees).append(person)
+        result = {
+            "management": department_headers,
+            "supervisor": department_employees
+        }
         return result
 
     def get_user_by_id(self, user_id: int, only_access: bool = True):
