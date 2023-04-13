@@ -3,13 +3,16 @@ from datetime import datetime
 from pydantic import BaseModel
 from .super import SuperRepository, NotFoundError, Pagination
 from app.database.models import DepartmentsModel
+from app.database.models import InnerPhone
 from app.database.models import UserModel
 from app.database.models import HeadOfDepartment
 from app.database.models import PositionModel
 from app.database.models import StatusModel
+from sqlalchemy import and_
 from sqlalchemy.orm import Query
 from sqlalchemy.orm import Session
 from typing import Iterator
+
 
 class UserStatus(BaseModel):
     status: str = None
@@ -53,18 +56,19 @@ class DepartmentsRepository(SuperRepository):
                 self.base_model.is_parent.label("is_parent"),
                 UserModel.id.label("user_id"),
                 UserModel.fio.label("user_fio"),
-                UserModel.inner_phone.label("user_inner_phone"),
                 UserModel.status_at.label("status_at"),
                 HeadOfDepartment.head_of_department_id.label("head_of_department_id"),
                 StatusModel.color.label("status_color"),
                 StatusModel.name.label("status_name"),
                 StatusModel.id.label("status_id"),
-                PositionModel.name.label("position")
+                PositionModel.name.label("position"),
+                InnerPhone.phone_number.label("user_inner_phone")
                 )\
             .join(UserModel, UserModel.department_id == self.base_model.id, isouter=True)\
             .join(HeadOfDepartment, HeadOfDepartment.head_of_department_id == UserModel.id, isouter=True)\
             .join(StatusModel, StatusModel.id == UserModel.status_id, isouter=True)\
-            .join(PositionModel, PositionModel.id == UserModel.position_id, isouter=True)
+            .join(PositionModel, PositionModel.id == UserModel.position_id, isouter=True)\
+            .join(InnerPhone, and_(InnerPhone.user_id == self.base_model.id, InnerPhone.is_default == True, InnerPhone.is_registration == True), isouter=True)
             query = self.filter_params(query=query, filter=filter)
             result = {}
             parents = []
@@ -338,13 +342,13 @@ class DepartmentsRepository(SuperRepository):
                 f"departments.is_parent AS is_parent,"\
                 f"users.id AS user_id,"\
                 f"users.fio AS user_fio,"\
-                f"users.inner_phone AS user_inner_phone,"\
                 f"users.status_at AS status_at,"\
                 f"{fields}"\
                 f"status_users.color AS status_color,"\
                 f"status_users.name AS status_name,"\
                 f"status_users.id AS status_id,"\
-                f"position.name AS position from departments"
+                f"position.name AS position,"\
+                f"inner_phones.phone_number AS user_inner_phone from departments"
         return select
 
     def __query_join(self, head = False):
@@ -356,5 +360,6 @@ class DepartmentsRepository(SuperRepository):
         
         join = f"{head} "\
                f"LEFT OUTER JOIN status_users ON status_users.id = users.status_id "\
-               f"LEFT OUTER JOIN position ON position.id = users.position_id "
+               f"LEFT OUTER JOIN position ON position.id = users.position_id "\
+               f"LEFT OUTER JOIN inner_phones ON inner_phones.user_id = users.id AND inner_phones.is_default = true AND inner_phones.is_registration = true "
         return join
