@@ -11,7 +11,6 @@ class RedisInstance():
     def __enter__(self):
         return self.redis
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        print(exc_type, exc_value, exc_traceback)
         del self 
 
 def default_error(error: Exception):

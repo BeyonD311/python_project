@@ -107,9 +107,6 @@ class UserRepository(SuperRepository):
             if result is None:
                 raise UserNotFoundError(department_id)
             return result
-        
-    def get_by_id(self, user_id: int) -> User:
-        return super().get_by_id(user_id)
 
     def get_user_permission(self, user_id: int, only_access: bool = True)->dict:
         with self.session_factory() as session:

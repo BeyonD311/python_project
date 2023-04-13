@@ -1,5 +1,9 @@
 import datetime
 import json
+from aioredis import Redis, ConnectionError
+from fastapi.websockets import WebSocket
+from websockets.exceptions import ConnectionClosedOK
+from aioredis.client import PubSub, PubSubHandler
 from hashlib import sha256
 from app.database import UserModel
 from app.database import UserRepository
@@ -13,12 +17,10 @@ from app.http.services.users.user_base_models import UserParams
 from app.http.services.users.user_base_models import UserDetailResponse
 from app.http.services.users.user_base_models import UserStatus
 from app.http.services.users.user_base_models import UserPermission
-from app.http.services.access import Access
-
 class UserService:
     def __init__(self, user_repository: UserRepository, redis: RedisInstance) -> None:
         self._repository: UserRepository = user_repository
-        self._redis = redis
+        self._redis:RedisInstance = redis
 
     def get_all(self, params: UserParams) -> ResponseList:
         result = self._repository.get_all(params)
@@ -84,6 +86,17 @@ class UserService:
     async def set_status(self, user_id: int, status_id: int):
         status_params = self._repository.set_status(user_id=user_id, status_id=status_id)
         await self.__set_status_redis(status_params)
+    async def redis_pub_sub(self, websocket: WebSocket, user_id: int):
+            pubsub: PubSub = self._redis.redis.pubsub()
+            await pubsub.subscribe(f"status:user:{user_id}:c")
+            listen = pubsub.listen()
+            async for result in listen:
+                print("iterator")
+                try:
+                    await websocket.send_text(json.dumps(result))
+                except ConnectionClosedOK as e:
+                    print(str(e))
+                    return
     async def set_status_by_aster(self, uuid: str, status_code: str, status_time: str):
         status_time = datetime.datetime.fromtimestamp(status_time)
         status_params = self._repository.set_status_by_uuid(uuid=uuid,status_cod=status_code,status_time=status_time)
@@ -206,6 +219,7 @@ class UserService:
         id = status_info['id']
         del status_info['id']
         await self._redis.redis.set(f"status.user.{id}", json.dumps(status_info))
+        await self._redis.redis.publish(f"status:user:{id}:c", json.dumps(status_info))
             
 class SkillService:
     def __init__(self, skill_repository: SkillsRepository) -> None:

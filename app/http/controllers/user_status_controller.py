@@ -1,6 +1,6 @@
-import jwt, os
-from datetime import datetime
-from fastapi import Depends, APIRouter, Response, Request
+import jwt, os, json, logging
+from websockets.exceptions import ConnectionClosedError
+from fastapi import Depends, APIRouter, Response, Request, WebSocket
 from fastapi.security import HTTPBearer
 from app.kernel.container import Container
 from dependency_injector.wiring import Provide, inject
@@ -89,3 +89,31 @@ async def update_status_asterisk(
         return {
             "message": err[1]
         }
+
+@route.websocket("/ws")
+@inject
+async def ws_channel_user_status(
+    websocket: WebSocket,
+    user_service: UserService = Depends(Provide[Container.user_service])
+):
+    await websocket.accept()
+    try:
+        while True:
+            incoming_data = await websocket.receive_json()
+            if 'user_id' not in incoming_data:
+                raise ConnectionClosedError(rcvd="Пользователь не найден",sent="Close")
+            if bool(incoming_data['user_id']) == False:
+                raise ConnectionClosedError(rcvd="Пользователь не найден",sent="Close")
+            await user_service.redis_pub_sub(websocket, incoming_data['user_id'])
+    except json.decoder.JSONDecodeError as decode_exception:
+        await websocket.send_json({
+            "status": "fail",
+            "data": [],
+            "message": "Данные не обнаружены"
+        })
+    except ConnectionClosedError as connect_close:
+        await websocket.send_json({
+            "status": "fail",
+            "data": [],
+            "message": "Данные не обнаружены "
+        })
