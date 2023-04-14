@@ -25,4 +25,4 @@ class InnerPhone(Base):
     duration_conversation = Column(Time, nullable=True)
     incoming_calls = Column(SmallInteger, default=1)
     comment = Column(Text, nullable=True)
-    users = relationship('UserModel',back_populates="inner_phone") 
+    users = relationship('UserModel',back_populates="inner_phone")
