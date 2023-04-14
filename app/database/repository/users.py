@@ -380,12 +380,17 @@ class UserRepository(SuperRepository):
                 res = datetime.now()
             else:
                 res = res.update_at
-            return {
+            result = {
                 "event": "CHANGE_STATUS",
+                "statusName": "",
                 "startTimeCurrentStatus": str(user.status_at),
                 "startTimeKC": str(res),
-                "color": user.status.color
+                "color": ""
             }
+            if user.status is None:
+                result['statusName'] = user.status.alter_name
+                result['color'] = user.status.color
+            return result
         
     def user_recover(self, user_id: int):
             user = self.get_by_id(user_id)
