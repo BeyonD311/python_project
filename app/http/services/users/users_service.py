@@ -106,8 +106,9 @@ class UserService:
             status_id=status_params['status_id'],
             status_cod=status_params['code'],
             status_at=str(status_params['status_at']),
-            color=status_params['color'],
-            event=event
+            status=status_params['alter_name'],
+            event=event,
+            color=status_params['color']
         )
         await self.__set_status_redis(params)
 
@@ -115,11 +116,8 @@ class UserService:
             pubsub: PubSub = self._redis.redis.pubsub()
             try:
                 channel = f"user:status:{user_id}:c"
-                # queue = asyncio.queues.Queue()
-                # await self.__read(websocket, queue)
                 async for result in subscriber(pubsub, channel):
                     await websocket.send_text(result)
-                    
             except ConnectionClosedOK as e:
                 print(str(e))
                 return
@@ -145,6 +143,7 @@ class UserService:
             status_id=status_params['status_id'],
             status_cod=status_params['code'],
             status_at=str(status_params['status_at']),
+            status=status_params['alter_name'],
             event=event,
             color=status_params['color'],
             incoming_call=incoming_call
@@ -193,7 +192,7 @@ class UserService:
                     status_id=status['status_id'],
                     status_at=status['status_at'],
                     color=status['color'],
-                    status=status['status']
+                    status=status['alter_name']
                 )
             result[user_id] = status
         return result

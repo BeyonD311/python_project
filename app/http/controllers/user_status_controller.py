@@ -1,4 +1,4 @@
-import jwt, os, json, logging
+import jwt, os, json, logging, asyncio
 from websockets.exceptions import ConnectionClosedError
 from fastapi import Depends, APIRouter, Response, Request, WebSocket
 from fastapi.security import HTTPBearer
@@ -98,14 +98,23 @@ async def ws_channel_user_status(
     user_service: UserService = Depends(Provide[Container.user_service])
 ):
     await websocket.accept()
+    queue = asyncio.queues.Queue()
     try:
-        while True:
-            incoming_data = await websocket.receive_json()
-            if 'user_id' not in incoming_data:
-                raise ConnectionClosedError(rcvd="Пользователь не найден",sent="Close")
-            if bool(incoming_data['user_id']) == False:
-                raise ConnectionClosedError(rcvd="Пользователь не найден",sent="Close")
-            await user_service.redis_pub_sub(websocket, incoming_data['user_id'])
+        async def read_from_socket(websocket: WebSocket):
+            async for data in websocket.iter_json():
+                queue.put_nowait(data)
+
+        async def get_data_and_send():
+            data = await queue.get()
+            fetch_task = asyncio.create_task(user_service.redis_pub_sub(websocket, data['user_id']))
+            while True:
+                data = await queue.get()
+                if not fetch_task.done():
+                    fetch_task.cancel()
+                fetch_task = asyncio.create_task(user_service.redis_pub_sub(websocket, data['user_id']))
+
+        await asyncio.gather(read_from_socket(websocket), get_data_and_send())
+
     except json.decoder.JSONDecodeError as decode_exception:
         await websocket.send_json({
             "status": "fail",

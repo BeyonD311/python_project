@@ -10,6 +10,7 @@ class Params(BaseModel):
     status_id: int
     status_cod: str
     status_at: str
+    status: str
     color: str = None
     incoming_call: str = None
     event: str = None
