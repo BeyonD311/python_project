@@ -382,7 +382,6 @@ class UserRepository(SuperRepository):
                 res = res.update_at
             return {
                 "event": "CHANGE_STATUS",
-                "statusName": user.status.alter_name,
                 "startTimeCurrentStatus": str(user.status_at),
                 "startTimeKC": str(res),
                 "color": user.status.color
