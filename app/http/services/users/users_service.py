@@ -113,7 +113,7 @@ class UserService:
                 async for result in subscriber(pubsub, channel):
                     if result == "1":
                         result = json.dumps(await self._repository.user_get_time(user_id))
-                    await websocket.send_text(result)
+                    await websocket.send_json(result)
             except ConnectionClosedOK as e:
                 print(str(e))
                 return
