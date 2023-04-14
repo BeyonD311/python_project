@@ -186,15 +186,15 @@ class UserService:
         for user_id in users_id:
             status = await self._redis.redis.get(f"status.user.{user_id}")
             if status is not None:
-                status = json.loads(status)
+                status_params = json.loads(status)
                 result[user_id] = UserStatus(
-                    user_id=user_id,
-                    status_id=status['status_id'],
-                    status_at=status['status_at'],
-                    color=status['color'],
-                    status=status['alter_name']
+                    user_id=status_params['user_id'],
+                    status_id=status_params['status_id'],
+                    status_cod=status_params['status_cod'],
+                    status_at=str(status_params['status_at']),
+                    status=status_params['status'],
+                    color=status_params['color'],
                 )
-            result[user_id] = status
         return result
 
     def __fill_fields(self, user: UserRequest):
