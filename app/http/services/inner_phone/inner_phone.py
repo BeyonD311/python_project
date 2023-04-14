@@ -57,7 +57,7 @@ class InnerPhoneServices:
                 option=self._get_options()
             )
         # Пока получение options захардкожена
-        settings.option.display_name = settings.accounts[0].name
+        settings.options.display_name = settings.accounts[0].name
         return settings
 
     def add(self, params: RequestInnerPhone):
