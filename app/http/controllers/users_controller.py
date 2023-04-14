@@ -123,47 +123,18 @@ async def get_users(
                 user_filter.__setattr__(r[0], param)
         if flag:
             params.filter = user_filter
-    try: 
-        if hasattr(request.state,'for_user') and request.state.for_user['status']:
-            if request.state.for_user['user'].department_id is None:
-                response.status_code = status.HTTP_417_EXPECTATION_FAILED
-                return {
-                    "status": "fail",
-                    "message": "User Not found department"
-                }
-            if params.filter is None:
-                params.filter = UsersFilter()
-            params.filter.department = request.state.for_user['user'].department_id
-            del request.state.for_user['user']
-        return user_service.get_all(params=params) 
-    except Exception as e:
-        response.status_code = status.HTTP_417_EXPECTATION_FAILED
-        return {
-            "status": "fail",
-            "message": str(e)
-        }
-
-@route.get("/status_all")
-@inject
-async def get_all_status(
-    user_service: UserService = Depends(Provide[Container.user_service]),
-    HTTPBearerSecurity: HTTPBearer = Depends(security)):
-    return user_service.get_all_status_users()
-
-@route.get("/status")
-@inject
-async def current_user_status(
-    user_id: str,
-    user_service: UserService = Depends(Provide[Container.user_service]),
-    HTTPBearerSecurity: HTTPBearer = Depends(security)):
-    """ 
-        long polling - для статусов \n
-        **user_id - принимает в себя id пользователей через запятую пример "1,2,3"
-    """
-    users: list = user_id.split(",")
-    statuses = await user_service.get_users_status(users_id=users)
-
-    return statuses
+    if hasattr(request.state,'for_user') and request.state.for_user['status']:
+        if request.state.for_user['user'].department_id is None:
+            response.status_code = status.HTTP_417_EXPECTATION_FAILED
+            return {
+                "status": "fail",
+                "message": "User Not found department"
+            }
+        if params.filter is None:
+            params.filter = UsersFilter()
+        params.filter.department = request.state.for_user['user'].department_id
+        del request.state.for_user['user']
+    return user_service.get_all(params=params) 
 
 @route.get("/position")
 @inject
@@ -269,32 +240,6 @@ async def add_user(
         match = re.findall(pattern=pattern, string=errorInfo[0])
         return {
             "message": match[0]
-        }
-
-@route.patch("/status")
-@inject
-async def update_status(
-    status_id: int, 
-    response: Response, 
-    request: Request, 
-    user_id: int = None,
-    user_service: UserService = Depends(Provide[Container.user_service]),
-    HTTPBearerSecurity: HTTPBearer = Depends(security)):
-    """ Если параметр '**user_id** == null' то будет изменен статус текущего пользователя """
-    try:
-        if user_id == None:
-            token = request.headers.get('authorization').replace("Bearer ", "")
-            decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
-            user_id = decode['azp']
-        
-        await user_service.set_status(user_id,status_id=status_id)
-        return {
-            "message": "set status"
-        }
-    except IntegrityError as e:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {
-            "message": "Not found status"
         }
 
 @route.patch("/permissions")

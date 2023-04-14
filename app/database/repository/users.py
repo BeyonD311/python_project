@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from uuid import uuid4
 from .super import SuperRepository, NotFoundError
 from app.database import UserModel as User
 from app.database import RolesModel
@@ -51,11 +52,11 @@ class UserRepository(SuperRepository):
                                   self.base_model.status_id,
                                   self.base_model.status_at,
                                   self.base_model.fio,
-                                  StatusModel.name.label("status"), StatusModel.color.label("status_color"),
                                   PositionModel.name.label("position"),
                                   DepartmentsModel.name.label("department"),
                                   InnerPhone.phone_number.label("inner_phone"),
-                                  self.base_model.employment_status
+                                  self.base_model.employment_status,
+                                  self.base_model.is_active
                                   )\
                     .join(StatusModel, StatusModel.id == self.base_model.status_id, isouter=True)\
                     .join(PositionModel, PositionModel.id == self.base_model.position_id, isouter=True)\
@@ -96,7 +97,11 @@ class UserRepository(SuperRepository):
                                   StatusModel.name.label("status"),
                                   PositionModel.name.label("position"),
                                   ImagesModel.path.label("path_image"),
-                                  InnerPhone.phone_number.label("user_inner_phone")
+                                  InnerPhone.phone_number.label("user_inner_phone"),
+                                  StatusModel.code.label("status_code"),
+                                  self.base_model.status_at.label("status_at"),
+                                  StatusModel.alter_name.label("status_name"),
+                                  StatusModel.color.label("status_color")
                                   )\
                     .join(ImagesModel, ImagesModel.id == self.base_model.image_id, isouter=True)\
                     .join(StatusModel, StatusModel.id == self.base_model.status_id, isouter=True)\
@@ -109,9 +114,6 @@ class UserRepository(SuperRepository):
             if result is None:
                 raise UserNotFoundError(department_id)
             return result
-        
-    def get_by_id(self, user_id: int) -> User:
-        return super().get_by_id(user_id)
 
     def get_user_permission(self, user_id: int, only_access: bool = True)->dict:
         with self.session_factory() as session:
@@ -226,25 +228,54 @@ class UserRepository(SuperRepository):
 
     def set_status(self, user_id, status_id):
         global event_type
+        current = None
         with self.session_factory() as session:
             current = session.query(self.base_model).get(user_id)
             current.status_id = status_id
             current.status_at = datetime.now()
+            current.status
             event_type="set_status"
             session.add(current)
             session.commit()
-            return {
-                "id": current.id,
-                "status_id": current.status_id,
-                "status_at": str(current.status_at),
-                "color": current.status.color,
-                "status": current.status.name
-            }
+        self.__save_status_asterisk(current) 
+        return {
+            "id": current.id,
+            "status_id": current.status_id,
+            "status_at": str(current.status_at),
+            "status": current.status.name,
+            "code": current.status.behavior,
+            "color": current.status.color,
+            "alter_name": current.status.alter_name,
+        }
+    def set_status_by_uuid(self, uuid, status_cod, status_time):
+        global event_type
+        current = None
+        with self.session_factory() as session:
+            current = session.query(self.base_model).filter(self.base_model.uuid == uuid).first()
+            if current is None:
+                raise NotFoundError("User not found")
+            status = session.query(StatusModel).filter(StatusModel.code == status_cod).first()
+            current.status_id = status.id
+            current.status_at = str(status_time)
+            current.status
+            event_type="set_status"
+            session.add(current)
+            session.commit()
+        self.__save_status_asterisk(current)
+        return{
+            "id": current.id,
+            "status_id": current.status_id,
+            "status_at": str(current.status_at),
+            "status": current.status.name,
+            "code": current.status.behavior,
+            "color": current.status.color,
+            "alter_name": current.status.alter_name,
+        }
 
     def add(self, user_model: User) -> any:
         try:
             with self.session_factory() as session:
-                status:StatusModel = session.query(StatusModel).filter(StatusModel.name.ilike("оффлайн")).first()
+                status:StatusModel = session.query(StatusModel).filter(StatusModel.code == 'offline').first()
                 user = user_model
                 user.uuid = uuid4()
                 user = self.item_add_or_update(user, session)
@@ -323,7 +354,7 @@ class UserRepository(SuperRepository):
         event_type = 0
         phones = []
         with self.session_factory() as session:
-            status = session.query(StatusModel).filter(StatusModel.name.ilike('уволен')).first()
+            status = session.query(StatusModel).filter(StatusModel.code == 'dismiss').first()
             if status == None:
                 raise NotFoundError("Не найден статус увольнения")
             user.date_dismissal_at = date_dismissal_at
@@ -346,7 +377,7 @@ class UserRepository(SuperRepository):
             global event_type
             event_type = "recover"
             with self.session_factory() as session:
-                status = session.query(StatusModel).filter(StatusModel.name.ilike('оффлайн')).first()
+                status = session.query(StatusModel).filter(StatusModel.code == 'offline').first()
                 if status == None:
                     raise NotFoundError("Не найден статус увольнения")
                 user.date_dismissal_at = None
@@ -399,6 +430,20 @@ class UserRepository(SuperRepository):
         else:
             field = field.asc()
         return field
+    
+    def __save_status_asterisk(self, user: User):
+        with self.session_asterisk() as session_asterisk:
+            query = f" update ps_auths set status = {user.status_id} where ps_auths.uuid = \"{user.uuid}\" "
+            session_asterisk.execute(query)
+            session_asterisk.commit()
+
+class StatusBehavior():
+    behavior = {
+        "dismiss": "",
+        "offline": "",
+        "break": "",
+        "ready": ""
+    }
 
 class UserNotFoundError(NotFoundError):
     entity_name: str = "User"
@@ -413,13 +458,16 @@ def after_update_handler(mapper, connection: Connection, target: User):
             query_update += f", time_at = '{time_at}'"
         query_update += f" where user_id = {target.id} and is_active = true"
         connection.execute(query_update)
-    def add(user_id, status_id, update_at):
-        connection.execute(f"insert into status_history (user_id,status_id,update_at,is_active) values ({user_id},{status_id},'{update_at}',true)")
+    def add(user_id, status_id, update_at, is_active = "true"):
+        if status_id == 16 or status_id == 15:
+            is_active = "false"
+        connection.execute(f"insert into status_history (user_id,status_id,update_at,is_active) values ({user_id},{status_id},'{update_at}',{is_active})")
 
     if event_type != None:
         with connection.begin():
             status_current = connection.execute(f"select update_at, status_id, user_id from status_history where user_id = {target.id} and is_active = true").first()
-            target.status_at = datetime.now()
+            if type(target.status_at) == str:
+                target.status_at = datetime.strptime(target.status_at, "%Y-%m-%d %H:%M:%S")
             time_at = None
             if status_current is not None:
                 date:datetime = status_current[0]

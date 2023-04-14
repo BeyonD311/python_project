@@ -1,9 +1,10 @@
 import re
 from aioredis import Redis
 from fastapi import status
-from pydantic import BaseModel
+from fastapi.websockets import WebSocket
+from asyncio.queues import Queue
 
-__all__ = ["default_error", "message"]
+__all__ = ["default_error", "message", "read_from_socket"]
 
 class RedisInstance():
     def __init__(self, redis: Redis) -> None:
@@ -11,7 +12,6 @@ class RedisInstance():
     def __enter__(self):
         return self.redis
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        print(exc_type, exc_value, exc_traceback)
         del self 
 
 def default_error(error: Exception):
@@ -34,7 +34,7 @@ def default_error(error: Exception):
         info_error = str(error.orig.__repr__())
         detail = re.findall(r"(?:DETAIL:(.*\(.*\))(.*)?(\".*\"))", info_error)
         if detail is not None:
-            detail = str(detail[0][1]).strip().upper()
+            detail = str(error)
         else:
             detail = "error"
         return status.HTTP_409_CONFLICT, message(detail)
@@ -49,3 +49,8 @@ def parse_params_num(params: str) -> set:
     reg = re.findall(r'[0-9]{1,}', params)
     result = {*reg}
     return result
+
+async def read_from_socket(websocket: WebSocket, queue: Queue):
+    async for data in websocket.iter_json():
+        print(data)
+        queue.put_nowait(data)
