@@ -381,14 +381,14 @@ class UserRepository(SuperRepository):
             else:
                 res = res.update_at
             result = {
-                "event": "CHANGE_STATUS",
-                "statusName": "",
-                "startTimeCurrentStatus": str(user.status_at),
+                "event": "CONNECTION",
+                "status": "",
+                "status_at": str(user.status_at),
                 "startTimeKC": str(res),
                 "color": ""
             }
             if user.status is not None:
-                result['statusName'] = user.status.alter_name
+                result['status'] = user.status.alter_name
                 result['color'] = user.status.color
             return result
         
