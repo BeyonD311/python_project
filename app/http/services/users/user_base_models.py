@@ -9,9 +9,11 @@ class UserLoginParams(BaseModel):
     password: str
 
 class UserStatus(BaseModel):
+    user_id: int
+    status_id: int
+    status_cod: str
+    status_at: str
     status: str = None
-    status_id: int = None
-    status_at: datetime = None
     color: str = None
 
 class UserPosition(BaseModel):
