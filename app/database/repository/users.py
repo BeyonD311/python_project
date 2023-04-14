@@ -387,7 +387,7 @@ class UserRepository(SuperRepository):
                 "startTimeKC": str(res),
                 "color": ""
             }
-            if user.status is None:
+            if user.status is not None:
                 result['statusName'] = user.status.alter_name
                 result['color'] = user.status.color
             return result
