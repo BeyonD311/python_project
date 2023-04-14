@@ -1,6 +1,7 @@
 import datetime
 import json
-from fastapi.websockets import WebSocket
+import asyncio
+from fastapi.websockets import WebSocket, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosedOK
 from aioredis.client import PubSub
 from hashlib import sha256
@@ -105,6 +106,7 @@ class UserService:
             status_id=status_params['status_id'],
             status_cod=status_params['code'],
             status_at=str(status_params['status_at']),
+            color=status_params['color'],
             event=event
         )
         await self.__set_status_redis(params)
@@ -112,19 +114,30 @@ class UserService:
     async def redis_pub_sub(self, websocket: WebSocket, user_id: int):
             pubsub: PubSub = self._redis.redis.pubsub()
             try:
-                async for result in subscriber(pubsub, user_id):
+                channel = f"user:status:{user_id}:c"
+                # queue = asyncio.queues.Queue()
+                # await self.__read(websocket, queue)
+                async for result in subscriber(pubsub, channel):
                     await websocket.send_text(result)
+                    
             except ConnectionClosedOK as e:
                 print(str(e))
                 return
-                
+            except WebSocketDisconnect as e:
+                print(str(e))
+                return
+    async def __read(self, websocket: WebSocket, queue: asyncio.queues.Queue):
+        async for data in websocket.iter_json():
+            print(data)
+            queue.put_nowait(data)
+
     async def set_status_by_aster(self, uuid: str, status_code: str, status_time: str, incoming_call: str = None):
         status_time = datetime.datetime.fromtimestamp(status_time)
         status_params = self._repository.set_status_by_uuid(uuid=uuid,status_cod=status_code,status_time=status_time)
         enums = EventRoute
         event = None
         try:
-           event = enums[status_params['code'].upper()].value
+            event = enums[status_params['code'].upper()].value
         except Exception as e:
             event = "CHANGE_STATUS"
         params = PublisherParams(
@@ -133,9 +146,10 @@ class UserService:
             status_cod=status_params['code'],
             status_at=str(status_params['status_at']),
             event=event,
+            color=status_params['color'],
             incoming_call=incoming_call
         )
-        await self.__set_status_redis(status_params)
+        await self.__set_status_redis(params)
             
     def dismiss(self, id: int, date_dismissal_at: datetime.datetime = None):
         if date_dismissal_at == None:
@@ -162,6 +176,7 @@ class UserService:
         return {
             "message": "Password is update"
         }
+    
     def set_permission(self, params: UserPermission):
         self._repository.set_permission(params)
         return {
@@ -252,7 +267,8 @@ class UserService:
 
     async def __set_status_redis(self, status_info: PublisherParams):
         await self._redis.redis.set(f"status.user.{status_info.user_id}", json.dumps(dict(status_info)))
-        await publisher(self._redis.redis, dict(status_info))
+        channel = f"user:status:{status_info.user_id}:c"
+        await publisher(self._redis.redis, channel, dict(status_info))
             
 class SkillService:
     def __init__(self, skill_repository: SkillsRepository) -> None:

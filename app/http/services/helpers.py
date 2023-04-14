@@ -1,9 +1,10 @@
 import re
 from aioredis import Redis
 from fastapi import status
-from pydantic import BaseModel
+from fastapi.websockets import WebSocket
+from asyncio.queues import Queue
 
-__all__ = ["default_error", "message"]
+__all__ = ["default_error", "message", "read_from_socket"]
 
 class RedisInstance():
     def __init__(self, redis: Redis) -> None:
@@ -48,3 +49,8 @@ def parse_params_num(params: str) -> set:
     reg = re.findall(r'[0-9]{1,}', params)
     result = {*reg}
     return result
+
+async def read_from_socket(websocket: WebSocket, queue: Queue):
+    async for data in websocket.iter_json():
+        print(data)
+        queue.put_nowait(data)

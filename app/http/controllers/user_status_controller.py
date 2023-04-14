@@ -64,7 +64,7 @@ async def update_status(
             "message": err[1]
         }
     
-@route.patch("/asterisk")
+@route.get("/asterisk")
 @inject
 async def update_status_asterisk(
     status_cod: str, 

@@ -240,6 +240,7 @@ class UserRepository(SuperRepository):
             "status_at": str(current.status_at),
             "status": current.status.name,
             "code": current.status.behavior,
+            "color": current.status.color,
             "alter_name": current.status.alter_name,
         }
     def set_status_by_uuid(self, uuid, status_cod, status_time):
@@ -257,11 +258,14 @@ class UserRepository(SuperRepository):
             session.add(current)
             session.commit()
         self.__save_status_asterisk(current)
-        return {
+        return{
             "id": current.id,
             "status_id": current.status_id,
             "status_at": str(current.status_at),
-            "status": current.status.name
+            "status": current.status.name,
+            "code": current.status.behavior,
+            "color": current.status.color,
+            "alter_name": current.status.alter_name,
         }
 
     def add(self, user_model: User) -> any:

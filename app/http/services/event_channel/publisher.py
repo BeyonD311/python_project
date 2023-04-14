@@ -10,6 +10,7 @@ class Params(BaseModel):
     status_id: int
     status_cod: str
     status_at: str
+    color: str = None
     incoming_call: str = None
     event: str = None
 
@@ -24,6 +25,6 @@ class EventRoute(Enum):
     DISMISS = "CHANGE_STATUS"
     
 
-async def publisher(redis: Redis, params: Params):
-    await redis.publish(f"user:status:{params['user_id']}:c", dumps(params))
+async def publisher(redis: Redis, channel: str, params: Params):
+    await redis.publish(channel, dumps(params))
     
