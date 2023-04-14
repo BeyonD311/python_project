@@ -35,13 +35,7 @@ class UserService:
                 position=user.position,
                 department=user.department,
                 fio=user.fio,
-                employment_status=user.employment_status,
-                status=UserStatus(
-                    status=user.status,
-                    status_id=user.status_id,
-                    status_at=user.status_at,
-                    color=user.status_color
-                )
+                employment_status=user.employment_status
             ))
         return ResponseList(pagination = result['pagination'], users = users)
 
@@ -102,7 +96,6 @@ class UserService:
         except Exception as e:
             event = "CHANGE_STATUS"
         params = PublisherParams(
-            user_id=status_params['id'],
             status_id=status_params['status_id'],
             status_cod=status_params['code'],
             status_at=str(status_params['status_at']),
@@ -117,6 +110,8 @@ class UserService:
             try:
                 channel = f"user:status:{user_id}:c"
                 async for result in subscriber(pubsub, channel):
+                    if result == "1":
+                        result = "connect"
                     await websocket.send_text(result)
             except ConnectionClosedOK as e:
                 print(str(e))
@@ -124,10 +119,6 @@ class UserService:
             except WebSocketDisconnect as e:
                 print(str(e))
                 return
-    async def __read(self, websocket: WebSocket, queue: asyncio.queues.Queue):
-        async for data in websocket.iter_json():
-            print(data)
-            queue.put_nowait(data)
 
     async def set_status_by_aster(self, uuid: str, status_code: str, status_time: str, incoming_call: str = None):
         status_time = datetime.datetime.fromtimestamp(status_time)
@@ -188,7 +179,6 @@ class UserService:
             if status is not None:
                 status_params = json.loads(status)
                 result[user_id] = UserStatus(
-                    user_id=status_params['user_id'],
                     status_id=status_params['status_id'],
                     status_cod=status_params['status_cod'],
                     status_at=str(status_params['status_at']),
@@ -244,10 +234,11 @@ class UserService:
             }
         if status_user != None:
             userDetail.status = UserStatus(
-                status=status_user.name,
-                color=status_user.color,
-                status_id=status_user.id,
-                status_at=user.status_at
+                status_id=user.status_id,
+                status_cod=user.status.code,
+                status_at=str(user.status_at),
+                status=user.status.alter_name,
+                color=user.status.color,
             )
         if user.image == None:
             userDetail.photo_path = user.image

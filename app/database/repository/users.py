@@ -52,11 +52,11 @@ class UserRepository(SuperRepository):
                                   self.base_model.status_id,
                                   self.base_model.status_at,
                                   self.base_model.fio,
-                                  StatusModel.name.label("status"), StatusModel.color.label("status_color"),
                                   PositionModel.name.label("position"),
                                   DepartmentsModel.name.label("department"),
                                   InnerPhone.phone_number.label("inner_phone"),
-                                  self.base_model.employment_status
+                                  self.base_model.employment_status,
+                                  self.base_model.is_active
                                   )\
                     .join(StatusModel, StatusModel.id == self.base_model.status_id, isouter=True)\
                     .join(PositionModel, PositionModel.id == self.base_model.position_id, isouter=True)\
@@ -97,7 +97,11 @@ class UserRepository(SuperRepository):
                                   StatusModel.name.label("status"),
                                   PositionModel.name.label("position"),
                                   ImagesModel.path.label("path_image"),
-                                  InnerPhone.phone_number.label("user_inner_phone")
+                                  InnerPhone.phone_number.label("user_inner_phone"),
+                                  StatusModel.code.label("status_code"),
+                                  self.base_model.status_at.label("status_at"),
+                                  StatusModel.alter_name.label("status_name"),
+                                  StatusModel.color.label("status_color")
                                   )\
                     .join(ImagesModel, ImagesModel.id == self.base_model.image_id, isouter=True)\
                     .join(StatusModel, StatusModel.id == self.base_model.status_id, isouter=True)\
