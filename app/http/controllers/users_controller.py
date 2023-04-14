@@ -123,25 +123,18 @@ async def get_users(
                 user_filter.__setattr__(r[0], param)
         if flag:
             params.filter = user_filter
-    try: 
-        if hasattr(request.state,'for_user') and request.state.for_user['status']:
-            if request.state.for_user['user'].department_id is None:
-                response.status_code = status.HTTP_417_EXPECTATION_FAILED
-                return {
-                    "status": "fail",
-                    "message": "User Not found department"
-                }
-            if params.filter is None:
-                params.filter = UsersFilter()
-            params.filter.department = request.state.for_user['user'].department_id
-            del request.state.for_user['user']
-        return user_service.get_all(params=params) 
-    except Exception as e:
-        response.status_code = status.HTTP_417_EXPECTATION_FAILED
-        return {
-            "status": "fail",
-            "message": str(e)
-        }
+    if hasattr(request.state,'for_user') and request.state.for_user['status']:
+        if request.state.for_user['user'].department_id is None:
+            response.status_code = status.HTTP_417_EXPECTATION_FAILED
+            return {
+                "status": "fail",
+                "message": "User Not found department"
+            }
+        if params.filter is None:
+            params.filter = UsersFilter()
+        params.filter.department = request.state.for_user['user'].department_id
+        del request.state.for_user['user']
+    return user_service.get_all(params=params) 
 
 @route.get("/position")
 @inject

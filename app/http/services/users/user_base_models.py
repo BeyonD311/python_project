@@ -9,7 +9,6 @@ class UserLoginParams(BaseModel):
     password: str
 
 class UserStatus(BaseModel):
-    user_id: int
     status_id: int
     status_cod: str
     status_at: str
