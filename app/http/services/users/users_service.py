@@ -133,7 +133,7 @@ class UserService:
                     status_id=status['status_id'],
                     status_at=status['status_at'],
                     color=status['color'],
-                    status=status['status']
+                    status_cod=status['status_cod']
                 )
             result[user_id] = status
         return result
