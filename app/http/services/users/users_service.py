@@ -96,6 +96,7 @@ class UserService:
         except Exception as e:
             event = "CHANGE_STATUS"
         params = PublisherParams(
+            user_id=status_params['id'],
             status_id=status_params['status_id'],
             status_cod=status_params['code'],
             status_at=str(status_params['status_at']),
@@ -111,7 +112,7 @@ class UserService:
                 channel = f"user:status:{user_id}:c"
                 async for result in subscriber(pubsub, channel):
                     if result == "1":
-                        result = "connect"
+                        result = json.dumps(await self._repository.user_get_time(user_id))
                     await websocket.send_text(result)
             except ConnectionClosedOK as e:
                 print(str(e))
