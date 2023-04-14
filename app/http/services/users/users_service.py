@@ -125,10 +125,13 @@ class UserService:
         status_params = self._repository.set_status_by_uuid(uuid=uuid,status_cod=status_code,status_time=status_time)
         enums = EventRoute
         event = None
-        try:
-            event = enums[status_params['code'].upper()].value
-        except Exception as e:
-            event = "CHANGE_STATUS"
+        if status_code == "hangup":
+            event = "HANGUP_CALL"
+        else:
+            try:
+                event = enums[status_params['code'].upper()].value
+            except Exception as e:
+                event = "CHANGE_STATUS"
         params = PublisherParams(
             user_id=status_params['id'],
             status_id=status_params['status_id'],
