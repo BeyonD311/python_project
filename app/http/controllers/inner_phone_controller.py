@@ -1,4 +1,6 @@
-from fastapi import Depends, APIRouter, Response, status, HTTPException
+import jwt
+import os
+from fastapi import Depends, APIRouter, Response, status, Request, HTTPException
 from fastapi.security import HTTPBearer
 from app.kernel.container import Container
 from dependency_injector.wiring import Provide, inject
@@ -82,4 +84,29 @@ def delete_inner_phone(
     except Exception as e:
         err = default_error(e)
         response.status_code = err[0]
+<<<<<<< HEAD
         return err[1]
+=======
+        return {
+            "message": err[1]
+        }
+
+
+@route.get("/settings")
+@inject
+def get_settings_by_user_id(
+        request: Request,
+        response: Response,
+        inner_phone_service: InnerPhoneServices = Depends(Provide[Container.inner_phone_service]),
+        HTTPBearerSecurity: HTTPBearer = Depends(security)
+):
+    token = request.headers.get('authorization').replace("Bearer ", "")
+    decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
+    try:
+        return inner_phone_service.get_settings_by_user_id(user_id=decode['azp'])
+    except NotFoundError as e:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {
+            "message": str(e)
+        }
+>>>>>>> 9db453f3304ee7743dcfa5ba1cd6363b4a99adb2

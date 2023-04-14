@@ -19,7 +19,7 @@ class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(modules=['app.http.middleware.auth_middleware'])
     config = providers.Configuration(yaml_files=[Path('config.yml')])
     db = providers.Singleton(Database, db_url=config.db.uri) 
-    asterisk = providers.Singleton(Database, db_url=config.asterisk.uri) 
+    asterisk = providers.Singleton(Database, db_url=config.asterisk.uri)
     # Service Provider
     redis_pool = providers.Resource(
         init_redis_pool,
@@ -103,7 +103,9 @@ class Container(containers.DeclarativeContainer):
     inner_phone_repository = providers.Factory(
         DatabaseCustom.InnerPhones,
         session_factory=db.provided.session,
-        session_asterisk=asterisk.provided.session 
+        session_asterisk=asterisk.provided.session,
+        asterisk_host=config.asterisk.host,
+        asterisk_port=config.asterisk.port
     )
     inner_phone_service = providers.Factory(
         InnerPhoneServices,

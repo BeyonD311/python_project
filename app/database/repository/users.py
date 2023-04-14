@@ -97,7 +97,8 @@ class UserRepository(SuperRepository):
                                   StatusModel.name.label("status"),
                                   PositionModel.name.label("position"),
                                   ImagesModel.path.label("path_image"),
-                                  InnerPhone.phone_number.label("user_inner_phone")
+                                  InnerPhone.phone_number.label("user_inner_phone"),
+                                  StatusModel.color.label("status_color")
                                   )\
                     .join(ImagesModel, ImagesModel.id == self.base_model.image_id, isouter=True)\
                     .join(StatusModel, StatusModel.id == self.base_model.status_id, isouter=True)\

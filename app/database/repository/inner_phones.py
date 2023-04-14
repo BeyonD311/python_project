@@ -13,26 +13,36 @@ class InnerPhones(SuperRepository):
 
     def __init__(self, 
                  session_factory: Callable[..., AbstractContextManager[Session]], 
-                 session_asterisk: Callable[..., AbstractContextManager[Session]] = None
+                 session_asterisk: Callable[..., AbstractContextManager[Session]] = None,
+                 asterisk_host: Callable[..., AbstractContextManager[Session]] = None,
+                 asterisk_port: Callable[..., AbstractContextManager[Session]] = None,
                  ) -> None:
         self.session_factory = session_factory
         self.session_asterisk = session_asterisk
+        self.asterisk_host = asterisk_host
+        self.asterisk_port = asterisk_port
         super().__init__(session_factory)
 
     def get_all(self):
         return super().get_all()
 
+    def get_asterisk_host(self):
+        return self.asterisk_host
+
+    def get_asterisk_port(self):
+        return self.asterisk_port
+
     def get_by_id(self, id: int):
         with self.session_factory() as session:
             query = session.query(self.base_model).filter(self.base_model.id == id).first()
-            if query is None:
+            if not query:
                 raise NotFoundError("Not found item")
             return query
     
     def get_by_user_id(self, user_id: int):
         with self.session_factory() as session:
             query = session.query(self.base_model).filter(self.base_model.user_id == user_id).all()
-            if query is None:
+            if not query:
                 raise NotFoundError("Not found item")
             return query
 
@@ -141,6 +151,7 @@ class InnerPhones(SuperRepository):
                 for query in queries:
                     session.execute(query)
             session.commit()
+
     def _create_insert_asterisk(self, params, w = ""):
 
         aors = f" insert into ps_aors(id, max_contacts) values({params['phone_number']}{w}, 1) "
