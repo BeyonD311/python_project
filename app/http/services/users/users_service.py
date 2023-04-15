@@ -1,6 +1,6 @@
 import datetime
 import json
-import asyncio
+from threading import Lock
 from fastapi.websockets import WebSocket, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosedOK
 from aioredis.client import PubSub
@@ -73,6 +73,14 @@ class UserService:
         user:UserDetailResponse = self.__user_response(self._repository.add(self.__fill_fields(user)))
         return user
     
+    async def all(self):
+        users = self._repository.items()
+        for user in users:
+            u = {
+                "id": user.id
+            }
+            await self._redis.redis.set(f"user:uuid:{user.uuid}", json.dumps(u))
+
     def update_user(self, id: int, user: UserRequest) -> any:
         if id == 0:
             raise NotFoundError(id)
@@ -96,7 +104,7 @@ class UserService:
         except Exception as e:
             event = "CHANGE_STATUS"
         params = PublisherParams(
-            user_id=status_params['id'],
+            uuid=status_params['uuid'],
             status_id=status_params['status_id'],
             status_cod=status_params['code'],
             status_at=str(status_params['status_at']),
@@ -120,27 +128,38 @@ class UserService:
             except WebSocketDisconnect as e:
                 print(str(e))
                 return
-
+    async def add_status_to_redis(self):
+        statuses = self._repository.get_all_status()
+        for status in statuses:
+            params = status.__dict__
+            del params['_sa_instance_state']
+            await self._redis.redis.set(f"status:code:{status.code}", json.dumps(params))
     async def set_status_by_aster(self, uuid: str, status_code: str, status_time: str, incoming_call: str = None):
         status_time = datetime.datetime.fromtimestamp(status_time)
-        status_params = self._repository.set_status_by_uuid(uuid=uuid,status_cod=status_code,status_time=status_time)
+        status = await self._redis.redis.get(f"status:code:{status_code}")
+        user_id = await self._redis.redis.get(f"user:uuid:{uuid}")
+        user_id = json.loads(user_id)
+        if status is None:
+            raise NotFoundError("status not found")
+        status = json.loads(status)
+        await self._repository.set_status_by_uuid(uuid=uuid,status_id=status['id'],status_time=status_time)
         enums = EventRoute
         event = None
         if status_code == "hangup":
             event = "HANGUP_CALL"
         else:
             try:
-                event = enums[status_params['code'].upper()].value
+                event = enums[status['code'].upper()].value
             except Exception as e:
                 event = "CHANGE_STATUS"
         params = PublisherParams(
-            user_id=status_params['id'],
-            status_id=status_params['status_id'],
-            status_cod=status_params['code'],
-            status_at=str(status_params['status_at']),
-            status=status_params['alter_name'],
+            user_id=user_id['id'],
+            status_id=status['id'],
+            status_cod=status['code'],
+            status_at=str(status_time),
+            status=status['alter_name'],
             event=event,
-            color=status_params['color'],
+            color=status['color'],
             incoming_call=incoming_call
         )
         await self.__set_status_redis(params)

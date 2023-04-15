@@ -43,7 +43,9 @@ class UserRepository(SuperRepository):
         event_type = None
         super().__init__(session_factory)
         self.session_asterisk = session_asterisk
-
+    def items(self):
+        with self.session_factory() as session:
+            return session.query(self.base_model).filter(self.base_model.id != 0).all()
     def get_all(self, params) -> dict[User]:
         with self.session_factory() as session:
             offset = 0
@@ -238,8 +240,9 @@ class UserRepository(SuperRepository):
             event_type="set_status"
             session.add(current)
             session.commit()
-        self.__save_status_asterisk(current) 
+        self.__save_status_asterisk(current.status_id, current.uuid) 
         return {
+            "uuid": current.uuid,
             "id": current.id,
             "status_id": current.status_id,
             "status_at": str(current.status_at),
@@ -248,30 +251,19 @@ class UserRepository(SuperRepository):
             "color": current.status.color,
             "alter_name": current.status.alter_name,
         }
-    def set_status_by_uuid(self, uuid, status_cod, status_time):
+    async def set_status_by_uuid(self, uuid, status_id, status_time):
         global event_type
         current = None
         with self.session_factory() as session:
-            current = session.query(self.base_model).filter(self.base_model.uuid == uuid).first()
-            if current is None:
-                raise NotFoundError("User not found")
-            status = session.query(StatusModel).filter(StatusModel.code == status_cod).first()
-            current.status_id = status.id
-            current.status_at = str(status_time)
-            current.status
+            sql = f"update users set status_id = {status_id}, status_at = '{str(status_time)}' where uuid = '{uuid}'"
+            """ current = session.query(self.base_model).filter(self.base_model.uuid == uuid).first()
+            current.status_id = status_id
+            current.status_at = status_time """
             event_type="set_status"
-            session.add(current)
+            # session.add(current)
+            session.execute(sql)
             session.commit()
-        self.__save_status_asterisk(current)
-        return{
-            "id": current.id,
-            "status_id": current.status_id,
-            "status_at": str(current.status_at),
-            "status": current.status.name,
-            "code": current.status.behavior,
-            "color": current.status.color,
-            "alter_name": current.status.alter_name,
-        }
+        self.__save_status_asterisk(status_id,uuid)
 
     def add(self, user_model: User) -> any:
         try:
@@ -451,9 +443,9 @@ class UserRepository(SuperRepository):
             field = field.asc()
         return field
     
-    def __save_status_asterisk(self, user: User):
+    def __save_status_asterisk(self, status_id, uuid):
         with self.session_asterisk() as session_asterisk:
-            query = f" update ps_auths set status = {user.status_id} where ps_auths.uuid = \"{user.uuid}\" "
+            query = f" update ps_auths set status = {status_id} where ps_auths.uuid = \"{uuid}\" "
             session_asterisk.execute(query)
             session_asterisk.commit()
 
@@ -482,7 +474,6 @@ def after_update_handler(mapper, connection: Connection, target: User):
         if status_id == 16 or status_id == 15:
             is_active = "false"
         connection.execute(f"insert into status_history (user_id,status_id,update_at,is_active) values ({user_id},{status_id},'{update_at}',{is_active})")
-
     if event_type != None:
         with connection.begin():
             status_current = connection.execute(f"select update_at, status_id, user_id from status_history where user_id = {target.id} and is_active = true").first()
