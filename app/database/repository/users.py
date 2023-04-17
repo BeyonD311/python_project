@@ -103,13 +103,13 @@ class UserRepository(SuperRepository):
                                   self.base_model.status_at.label("status_at"),
                                   StatusModel.alter_name.label("status_name"),
                                   StatusModel.color.label("status_color")
-                                  )\
+                                  ).distinct(self.base_model.id)\
                     .join(ImagesModel, ImagesModel.id == self.base_model.image_id, isouter=True)\
                     .join(StatusModel, StatusModel.id == self.base_model.status_id, isouter=True)\
                     .join(PositionModel, PositionModel.id == self.base_model.position_id, isouter=True)\
                     .join(HeadOfDepartment, HeadOfDepartment.head_of_department_id == self.base_model.id, isouter=True)\
                     .join(InnerPhone, and_(InnerPhone.user_id == self.base_model.id, InnerPhone.is_default == True, InnerPhone.is_registration == True), isouter=True)\
-                    .filter(self.base_model.department_id == department_id, self.base_model.status_id !=4)\
+                    .filter((self.base_model.department_id == department_id) | (HeadOfDepartment.department_id == department_id), self.base_model.status_id !=4)\
                     .filter((PositionModel.id == 1) | (HeadOfDepartment.is_active == True))\
                     .order_by(self.base_model.id).all()
             if result is None:
