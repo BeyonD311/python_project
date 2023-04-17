@@ -104,6 +104,7 @@ class UserService:
         except Exception as e:
             event = "CHANGE_STATUS"
         params = PublisherParams(
+            user_id=user_id,
             uuid=status_params['uuid'],
             status_id=status_params['status_id'],
             status_cod=status_params['code'],
