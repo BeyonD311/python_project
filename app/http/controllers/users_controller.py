@@ -220,7 +220,7 @@ async def add_user(
     HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
     try:
-        user = user_service.create_user(user_request)
+        user = await user_service.create_user(user_request)
         if type(user) == tuple:
             response.status_code = status.HTTP_400_BAD_REQUEST
             return {

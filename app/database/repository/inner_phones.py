@@ -67,8 +67,6 @@ class InnerPhones(SuperRepository):
                     incoming_calls = inner_phone_params.incoming_calls,
                     comment = inner_phone_params.comment
                 )
-                if check_default == inner_phone_params.default:
-                    raise NotFoundError("Только 1 номер по дефолту")
                 if inner_phone_params.registration and inner_phone_params.default and check_default == False:
                     param = self.__params(user,inner_phone, inner_phone_params)
                     asterisk_phone.append(param)
@@ -173,7 +171,7 @@ class InnerPhones(SuperRepository):
         endpoints = f" update ps_endpoints set id = {params['phone_number']}{w}, aors = {params['phone_number']}{w}, auth = {params['phone_number']}{w}, transport = 'transport-udp' "\
                     f" where id ={id}"
         return aors, auth, endpoints
-    
+
     def _delete_asterisk(self, id):
         aors = f" delete from ps_aors where id in ({id})"
         auth = f" delete from ps_auths where id in ({id})"

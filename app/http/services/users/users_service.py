@@ -69,9 +69,13 @@ class UserService:
     def find_user_by_login(self, login: str):
         return self._repository.get_by_login(login) 
 
-    def create_user(self, user: UserRequest) -> UserDetailResponse:
-        user:UserDetailResponse = self.__user_response(self._repository.add(self.__fill_fields(user)))
-        return user
+    async def create_user(self, user: UserRequest) -> UserDetailResponse:
+        user:UserDetailResponse = self._repository.add(self.__fill_fields(user))
+        user_param = {
+            "id": user.id
+        }
+        await self._redis.redis.set(f"user:uuid:{user.uuid}", json.dumps(user_param))
+        return self.__user_response(user)
     
     async def all(self):
         users = self._repository.items()
