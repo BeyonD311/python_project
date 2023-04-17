@@ -12,6 +12,7 @@ class RolesRepository(SuperRepository):
             modules = self.__permission_default(session)
             roles = self.__query_all(session).order_by(RolesModel.id.asc())
             return self.__parse_role(modules=modules,roles=roles)
+
     def get_by_id(self, id: int):
         with self.session_factory() as session:
             modules = self.__permission_default(session)
@@ -23,6 +24,7 @@ class RolesRepository(SuperRepository):
     def get_all_modules(self):
         with self.session_factory() as session:
             return session.query(PermissionsAccessModel).all()
+
     def add(self, params):
         with self.session_factory() as session:
             role = RolesModel(
@@ -61,6 +63,7 @@ class RolesRepository(SuperRepository):
                 permission.method_access = access_right[permission.module_id]
                 session.add(permission)
         session.commit()
+
     def __query_all(self, session: Session) -> Query:
         return session.query(
             PermissionsAccessModel.module_name, 
@@ -106,4 +109,3 @@ class RolesRepository(SuperRepository):
                 if module_id not in item['access']:
                     item['access'][module_id] = modules[module_id]
         return result
-        

@@ -1,4 +1,5 @@
 import re
+import json
 import jwt
 import os
 from fastapi import Depends, APIRouter, Response, status, Body, Request, HTTPException
@@ -53,11 +54,12 @@ async def get_departments_user(
     except Exception as e:
         print(e)
         response.status_code = status.HTTP_404_NOT_FOUND
+        description = "Отдел с таким ID не найден."
         return {
             "status": "fail",
-            "message": "Not found departments"
+            "message": "Not found departments",
+            "description": description
         }
-    
 
 @route.get("/groups")
 @inject
@@ -76,7 +78,7 @@ def get_user_skill(
 
 @route.post("/skill")
 @inject
-def get_user_skill(
+def create_user_skill(
     skill: str = Body(),
     skill_service: SkillService = Depends(Provide[Container.skill_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
@@ -97,7 +99,7 @@ async def get_users(
     ):
     """ 
     описание полей \n
-        ** fileter - должен содержать строку типа fio=Фамилия имя отчестов;login=логин пользователя;status=id статуса;
+        ** fileter - должен содержать строку типа fio=Фамилия имя отчество;login=логин пользователя;status=id статуса;
      """
     if page == 1 or page <= 0:
         page = 0
@@ -126,9 +128,11 @@ async def get_users(
     if hasattr(request.state,'for_user') and request.state.for_user['status']:
         if request.state.for_user['user'].department_id is None:
             response.status_code = status.HTTP_417_EXPECTATION_FAILED
+            description = f"Запрашиваемый пользователь не состоит ни в одном отделе."
             return {
                 "status": "fail",
-                "message": "User Not found department"
+                "message": "User Not found department",
+                "description": description
             }
         if params.filter is None:
             params.filter = UsersFilter()
@@ -183,8 +187,10 @@ async def current_password(
         }
     except NotFoundError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
+        description = f"Пользователя с ID={user_id} не существует."
         return {
-            "message": str(e)
+            "message": str(e),
+            "description": description
         }
 @route.get("/{id}")
 @inject
@@ -195,7 +201,6 @@ async def get_user_id(
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
-    
     try:
         if id == 0:
             raise NotFoundError(id)
@@ -206,9 +211,11 @@ async def get_user_id(
     except NotFoundError as e:
         print(e)
         response.status_code = status.HTTP_404_NOT_FOUND
+        description = f"Пользователя с ID={id} не существует."
         return {
             "status": "fail",
-            "message": "Not found user"
+            "message": "Not found user",
+            "description": description
         }
 
 @route.post("/")
@@ -223,23 +230,35 @@ async def add_user(
         user = await user_service.create_user(user_request)
         if type(user) == tuple:
             response.status_code = status.HTTP_400_BAD_REQUEST
+            description = "Неверный запрос."
             return {
-                "message": "Bad request"
+                "message": "Bad request",
+                "description": description
             }
         await user_service.set_status(user.id,user.status.status_id)
         return user
     except NotFoundError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
+        description = ""
         return {
-            "message": str(e)
+            "message": str(e),
+            "description": description
         }
     except IntegrityError as e:
         errorInfo = e.orig.args
         response.status_code = status.HTTP_400_BAD_REQUEST
-        pattern = r'(DETAIL:(?:[^\\n]*))'
+        pattern = r'(DETAIL:(?:[^\\\n]*))'
         match = re.findall(pattern=pattern, string=errorInfo[0])
+        # if re.search(pattern="already exists", string=match[0]):
+        #     pattern = r'(?<=\()[\w_@.,]+(?=.*\))'
+        #     field, value, *_ = re.findall(pattern=pattern, string=match[0])
+        #     description = f"Пользователь со значением '{value}' в поле '{field}' уже существует."
+        # else:
+        #     description = f"Неверно заполнено поле: {errorInfo}"
+        description = f"Неверно заполнено поле"
         return {
-            "message": match[0]
+            "message": match[0],
+            "description": description
         }
 
 @route.patch("/permissions")
@@ -257,8 +276,10 @@ async def user_set_permission(
         return user_service.set_permission(params)
     except IntegrityError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
+        description = ""
         return {
-            "message": "Not found status"
+            "message": "Not found status",
+            "description": description
         }
 
 @route.patch("/update_password/{id}")
@@ -289,8 +310,10 @@ async def user_dismiss(
         return user_service.dismiss(id, date_dismissal_at)
     except NotFoundError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
+        description = ""
         return {
-            "message": str(e)
+            "message": str(e),
+            "description": description
         }
 
 @route.patch("/recover/{id}")
@@ -310,8 +333,10 @@ async def user_dismiss(
         return Res
     except NotFoundError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
+        description = ""
         return {
-            "message": str(e)
+            "message": str(e),
+            "description": description
         }
 
 @route.put("/{id}")
@@ -332,8 +357,10 @@ async def update_user(
         return user
     except NotFoundError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
+        description = ""
         return {
-            "message": str(e)
+            "message": str(e),
+            "description": description
         }
     
 @route.delete("/{id}")
@@ -344,15 +371,15 @@ async def user_delete(id: int, response: Response,request: Request, user_service
             if request.state.for_user['user'].id != id:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
         user_service.delete_user_by_id(id)
+        description = ""
         return {
-            "message": f"User is delete {id}"
+            "message": f"User is delete {id}",
+            "description": description
         }
     except NotFoundError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
+        description = ""
         return {
-            "message": str(e)
+            "message": str(e),
+            "description": description
         }
-    
-
-
-

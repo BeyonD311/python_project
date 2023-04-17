@@ -71,7 +71,6 @@ class SuperRepository(ABC):
 
     def update(self):
         pass
-    
 
 
 class NotFoundError(Exception):
