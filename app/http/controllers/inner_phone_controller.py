@@ -48,9 +48,7 @@ def add_inner_phone(
     except Exception as e:
         err = default_error(e)
         response.status_code = err[0]
-        return {
-            "message": err[1]
-        }
+        return err[1]
 
 @route.put('/')
 @inject
@@ -67,9 +65,7 @@ def update_inner_phone(
     except Exception as e:
         err = default_error(e)
         response.status_code = err[0]
-        return {
-            "message": err[1]
-        }
+        return err[1]
 
 @route.delete('/')
 @inject
@@ -108,5 +104,5 @@ def get_settings_by_user_id(
     except NotFoundError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
         return {
-            "message": str(e)
+            "message": 'Not found settings for current user.'
         }

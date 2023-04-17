@@ -8,6 +8,7 @@ from app.http.services.access import Access
 from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
 
 path_exception = ("auth", "docs", "openapi.json", "images")
+path_exception_aster = ("/users/status/asterisk") 
 
 user_path_exception = ("/users/status", "/users/current")
 
@@ -30,6 +31,8 @@ class Auth(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         path = str(request.get("path")).split("/")
         if  path[1] in path_exception:
+            return await call_next(request)
+        if request.get("path") in path_exception_aster:
             return await call_next(request)
         token = request.headers.get('authorization')
         if token is None:
