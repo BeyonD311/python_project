@@ -23,6 +23,7 @@ from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
 from typing import Callable
 from uuid import uuid4
+from .asterisk import Asterisk
 
 
 """ 
@@ -42,7 +43,7 @@ class UserRepository(SuperRepository):
         global event_type
         event_type = None
         super().__init__(session_factory)
-        self.session_asterisk = session_asterisk
+        self.session_asterisk: Asterisk = Asterisk(session_asterisk)
     def items(self):
         with self.session_factory() as session:
             return session.query(self.base_model).filter(self.base_model.id != 0).all()
@@ -240,7 +241,8 @@ class UserRepository(SuperRepository):
             event_type="set_status"
             session.add(current)
             session.commit()
-        self.__save_status_asterisk(current.status_id, current.uuid) 
+        self.session_asterisk.save_status_asterisk(current.status_id, current.uuid)
+        self.session_asterisk.execute()
         return {
             "uuid": current.uuid,
             "id": current.id,
@@ -251,6 +253,7 @@ class UserRepository(SuperRepository):
             "color": current.status.color,
             "alter_name": current.status.alter_name,
         }
+    
     async def set_status_by_uuid(self, uuid, status_id, status_time):
         global event_type
         current = None
@@ -262,7 +265,8 @@ class UserRepository(SuperRepository):
             event_type="set_status"
             session.execute(sql)
             session.commit()
-        self.__save_status_asterisk(status_id,uuid)
+        self.session_asterisk.save_status_asterisk(status_id,uuid)
+        self.session_asterisk.execute()
 
     def add(self, user_model: User) -> any:
         try:
@@ -333,12 +337,9 @@ class UserRepository(SuperRepository):
                 session.delete(phone)
             session.add(user)
             session.commit()   
-        with self.session_asterisk() as session:
-            if phones != []:
-                queries = self._delete_asterisk(",".join(phones))
-                for query in queries:
-                    session.execute(query)
-            session.commit()
+        if phones != []:
+            self.session_asterisk.delete_asterisk(",".join(phones))
+            self.session_asterisk.execute()
     
     def user_dismiss(self, user_id: int,  date_dismissal_at: datetime = None):
         user = self.get_by_id(user_id)
@@ -357,12 +358,10 @@ class UserRepository(SuperRepository):
                 session.delete(phone)
             session.add(user)
             session.commit()
-        with self.session_asterisk() as session:
-            if phones != []:
-                queries = self._delete_asterisk(",".join(phones))
-                for query in queries:
-                    session.execute(query)
-            session.commit()
+        if phones != []:
+            self.session_asterisk.delete_asterisk(",".join(phones))
+            self.session_asterisk.execute()
+
     async def user_get_time(self, user_id: int):
         with self.session_factory() as session:
             user = session.query(self.base_model).filter(self.base_model.id == user_id).first()

@@ -157,7 +157,7 @@ async def current_user(
 
 @route.get("/get_pass")
 @inject
-async def current_user(
+async def current_password(
     response: Response, 
     request: Request, 
     user_id: int = None,
@@ -168,6 +168,7 @@ async def current_user(
             response.status_code = status.HTTP_404_NOT_FOUND
             return 
         if user_id == None:
+            token = request.headers.get('authorization').replace("Bearer ", "")
             decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
             user_id = decode['azp']
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
@@ -175,7 +176,6 @@ async def current_user(
             if request.state.for_user['user'].id != user_id:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
             del request.state.for_user['user']
-        token = request.headers.get('authorization').replace("Bearer ", "")
         current = user_service.by_id(user_id)
         return {
             "id": user_id,
