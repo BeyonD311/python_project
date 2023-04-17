@@ -104,5 +104,5 @@ def get_settings_by_user_id(
     except NotFoundError as e:
         response.status_code = status.HTTP_404_NOT_FOUND
         return {
-            "message": str(e)
+            "message": 'Not found settings for current user.'
         }
