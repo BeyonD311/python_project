@@ -260,7 +260,6 @@ class UserRepository(SuperRepository):
             current.status_id = status_id
             current.status_at = status_time """
             event_type="set_status"
-            # session.add(current)
             session.execute(sql)
             session.commit()
         self.__save_status_asterisk(status_id,uuid)
