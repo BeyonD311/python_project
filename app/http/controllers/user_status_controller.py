@@ -136,8 +136,8 @@ async def test_1(
 ):
     i = 0
     statuses = user_service.get_all_status_users()
-    users = ["24b59c96-d743-4039-b1c4-7c3baead98c2"]
-    # users = ["559f740b-b216-473b-8bd9-372796ceffb0"]
+    # users = ["24b59c96-d743-4039-b1c4-7c3baead98c2"]
+    users = ["559f740b-b216-473b-8bd9-372796ceffb0"]
     status_count = 0
     while i < count:
         if status_count >= len(statuses):
@@ -147,11 +147,11 @@ async def test_1(
         user = users[rand_user]
         status = statuses[rand_status]
         time = int(datetime.datetime.now().timestamp())
-        # await user_service.set_status_by_aster(user, status.code, time)
-        status = f"http://82.151.110.238:8880/users/status/asterisk?status_cod={status.code}&uuid={user}&status_time={time}"
-        res = requests.get(status)
+        await user_service.set_status_by_aster(user, "precall", time)
+        # status = f"http://10.3.0.48:8880/users/status/asterisk?status_cod=precall&uuid={user}&status_time={time}"
+        """ res = requests.get(status)
         print(res.status_code)
-        print(res.content)
+        print(res.content) """
         i += 1
         status_count += 1
 

@@ -136,7 +136,6 @@ class UserService:
             await self._redis.redis.set(f"status:code:{status.code}", json.dumps(params))
     async def set_status_by_aster(self, uuid: str, status_code: str, status_time: str, incoming_call: str = None):
         status_time = datetime.datetime.fromtimestamp(status_time)
-        print(str(status_time))
         status = await self._redis.redis.get(f"status:code:{status_code}")
         user_id = await self._redis.redis.get(f"user:uuid:{uuid}")
         user_id = json.loads(user_id)
@@ -150,7 +149,7 @@ class UserService:
             event = "HANGUP_CALL"
         else:
             try:
-                event = enums[status['code'].upper()].value
+                event = enums[status['behavior'].upper()].value
             except Exception as e:
                 event = "CHANGE_STATUS"
         params = PublisherParams(
