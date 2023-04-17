@@ -62,4 +62,4 @@ class Settings(BaseModel):
     version: str = '1.0.0'
     accounts: list[Account]
     design: Design
-    option: Options
+    options: Options

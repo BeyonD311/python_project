@@ -13,6 +13,7 @@ from app.database import RolesPermission
 from app.database import HeadOfDepartment
 from app.database import ImagesModel
 from app.database import InnerPhone
+from app.database import StatusHistoryModel
 from app.http.services.access import Access
 from sqlalchemy import and_, event
 from sqlalchemy.exc import IntegrityError
@@ -371,7 +372,26 @@ class UserRepository(SuperRepository):
                 for query in queries:
                     session.execute(query)
             session.commit()
-
+    async def user_get_time(self, user_id: int):
+        with self.session_factory() as session:
+            user = session.query(self.base_model).filter(self.base_model.id == user_id).first()
+            res = session.query(StatusHistoryModel).filter(StatusHistoryModel.user_id == user_id, StatusHistoryModel.update_at >= "2023-04-14").order_by(StatusHistoryModel.update_at.asc()).first()
+            if res is None:
+                res = datetime.now()
+            else:
+                res = res.update_at
+            result = {
+                "event": "CHANGE_STATUS",
+                "statusName": "",
+                "startTimeCurrentStatus": str(user.status_at),
+                "startTimeKC": str(res),
+                "color": ""
+            }
+            if user.status is not None:
+                result['statusName'] = user.status.alter_name
+                result['color'] = user.status.color
+            return result
+        
     def user_recover(self, user_id: int):
             user = self.get_by_id(user_id)
             global event_type
