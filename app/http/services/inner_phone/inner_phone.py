@@ -54,7 +54,7 @@ class InnerPhoneServices:
         settings = Settings(
                 accounts=self._get_accounts(user_id=user_id),
                 design=self._get_design(),
-                option=self._get_options()
+                options=self._get_options()
             )
         # Пока получение options захардкожена
         settings.options.display_name = settings.accounts[0].name
