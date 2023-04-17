@@ -64,6 +64,13 @@ class Asterisk():
     def save_status_asterisk(self, status_id, uuid):
         query = f" update ps_auths set status = {status_id} where ps_auths.uuid = \"{uuid}\" "
         self.stack_multiple_query.append(query)
+    
+    def check_device_status(self, uuid):
+        with self.session_asterisk() as session:
+            query = session.execute(f"select device_state from ps_auths where ps_auths.uuid = \"{uuid}\"")
+            print("-------------------------------------")
+            print(query)
+            print("-------------------------------------")
         
     def execute(self):
         session: Session
