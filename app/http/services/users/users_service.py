@@ -113,6 +113,9 @@ class UserService:
             color=status_params['color']
         )
         await self.__set_status_redis(params)
+        if status_params['code'] == "precall":
+            params.event = "CHANGE_STATUS"
+            await self.__set_status_redis(params)
 
     async def redis_pub_sub(self, websocket: WebSocket, user_id: int):
             pubsub: PubSub = self._redis.redis.pubsub()
