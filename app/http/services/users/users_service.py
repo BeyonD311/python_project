@@ -1,6 +1,6 @@
 import datetime
 import json
-from threading import Lock
+import asyncio
 from fastapi.websockets import WebSocket, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosedOK
 from aioredis.client import PubSub
@@ -113,9 +113,6 @@ class UserService:
             color=status_params['color']
         )
         await self.__set_status_redis(params)
-        if status_params['code'] == "precall":
-            params.event = "CHANGE_STATUS"
-            await self.__set_status_redis(params)
 
     async def redis_pub_sub(self, websocket: WebSocket, user_id: int):
             pubsub: PubSub = self._redis.redis.pubsub()
@@ -166,6 +163,11 @@ class UserService:
             incoming_call=incoming_call
         )
         await self.__set_status_redis(params)
+        if params.status_cod == "precall":
+            await asyncio.sleep(0.1)
+            params.event = "CHANGE_STATUS"
+            print(params)
+            await self.__set_status_redis(params)
             
     def dismiss(self, id: int, date_dismissal_at: datetime.datetime = None):
         if date_dismissal_at == None:
