@@ -1,6 +1,5 @@
-from app.database.repository import InnerPhones, NotFoundError
-from app.database.models import InnerPhone
-from app.http.services.inner_phone import InnerPhone, RequestInnerPhone, Settings, Account, Design, Options
+from app.database.repository import InnerPhones
+from app.http.services.inner_phone import RequestInnerPhone, Settings, Account, Design, Options, InnerPhone
 
 class InnerPhoneServices:
     
@@ -38,17 +37,13 @@ class InnerPhoneServices:
                 )
             )
         return accounts
-
-    def get_by_id(self, id: int):
-        result = []
-        for phone in self._repository.get_by_user_id(id):
-            res = phone.dict()
-            del res['uuid']
-            result.append(phone)
-        return result
-
+    
     def get_by_user_id(self, user_id: int):
-        return self._repository.get_by_user_id(user_id)
+        result = []
+        for phone in self._repository.get_by_user_id(user_id):
+            res = phone.__dict__
+            result.append(InnerPhone(**res))
+        return result
 
     def get_settings_by_user_id(self, user_id) -> Settings:
         settings = Settings(

@@ -38,7 +38,10 @@ class InnerPhones(SuperRepository):
             if not query:
                 raise NotFoundError("Not found item")
             return query
-    
+    def add(self, arg):
+        pass
+    def update(self):
+        pass
     def get_by_user_id(self, user_id: int):
         with self.session_factory() as session:
             query = session.query(self.base_model).filter(self.base_model.user_id == user_id).all()
