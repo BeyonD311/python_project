@@ -65,12 +65,16 @@ class Asterisk():
         query = f" update ps_auths set status = {status_id} where ps_auths.uuid = \"{uuid}\" "
         self.stack_multiple_query.append(query)
     
-    def check_device_status(self, uuid):
+    def check_device_status(self, uuid) -> bool:
+        '''
+            Фукция для проверки статуса оборудования (если offline или None == false) true
+        '''
         with self.session_asterisk() as session:
-            query = session.execute(f"select device_state from ps_auths where ps_auths.uuid = \"{uuid}\"")
-            print("-------------------------------------")
-            print(query)
-            print("-------------------------------------")
+            query = session.execute(f"select device_state from ps_auths where ps_auths.uuid = \"{uuid}\"").first()
+            flag = False
+            if query is not None and query[0] == "online": 
+                flag = True
+            return flag
         
     def execute(self):
         session: Session

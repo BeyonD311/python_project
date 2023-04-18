@@ -49,6 +49,8 @@ class Auth(BaseHTTPMiddleware):
                 return await call_next(request)
             user = get_user(decode_jwt['azp'])
             method = request.method.lower()
+            if method == "options":
+                return await call_next(request)
             if str(request.get("path")) in user_path_exception:
                 return await call_next(request)
             access = Access(method=method)

@@ -61,10 +61,10 @@ class InnerPhoneServices:
         return settings
 
     def add(self, params: RequestInnerPhone):
-        self._repository.add(params)
+        self._repository.create_or_update(params)
     
     def update(self, params: RequestInnerPhone):
-        self._repository.update(params)
+        self._repository.create_or_update(params)
     
     def delete(self, user_id:int, phones_id: list[int]):
         self._repository.delete_phone(user_id, phones_id)

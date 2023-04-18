@@ -241,7 +241,13 @@ class UserRepository(SuperRepository):
             event_type="set_status"
             session.add(current)
             session.commit()
-        self.session_asterisk.save_status_asterisk(current.status_id, current.uuid)
+        status_id = current.status_id
+        if current.status_id == 10 or current.status_id == 9:
+            if self.session_asterisk.check_device_status(current.uuid):
+                status_id = 10
+            else:
+                status_id = 14
+        self.session_asterisk.save_status_asterisk(status_id, current.uuid)
         self.session_asterisk.execute()
         return {
             "uuid": current.uuid,

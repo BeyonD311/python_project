@@ -1,11 +1,12 @@
 from .super import SuperRepository, NotFoundError
+from pydantic import BaseModel
 from app.database.models.inner_phone import InnerPhone
 from app.database.models.users import UserModel
 from uuid import uuid4
 from typing import Callable
 from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
-from .asterisk import Asterisk, AsteriskParams, ExceptionAsterisk
+from .asterisk import Asterisk, AsteriskParams
 
 class InnerPhones(SuperRepository):
 
@@ -45,8 +46,51 @@ class InnerPhones(SuperRepository):
             if not query:
                 raise NotFoundError("Not found item")
             return query
+        
+    def create_or_update(self, params) -> list:
+        count_default = 0
+        response = []
+        with self.session_factory() as session:
+            user = self.__find_user(session=session, user_id=params.user_id)
+            phones = session.query(self.base_model).filter(self.base_model.user_id == user.id).all()
+            phones_asterisk = []
+            phone: InnerPhone
+            for phone in phones:
+                phones_asterisk.append(phone.phone_number)
+                session.delete(phone)
+            if phones_asterisk != []:
+                self.session_asterisk.delete_asterisk(",".join)
+            for inner_phone in params.inner_phones:
+                phone = InnerPhone(
+                    uuid = uuid4(),
+                    user_id = user.id,
+                    phone_number = inner_phone.phone_number,
+                    description = inner_phone.description,
+                    is_registration = inner_phone.registration,
+                    is_default = inner_phone.default,
+                    login = inner_phone.login,
+                    password = inner_phone.password,
+                    duration_call = inner_phone.duration_call,
+                    duration_conversation = inner_phone.duration_conversation,
+                    incoming_calls = inner_phone.incoming_calls,
+                    comment = inner_phone.comment
+                )
+                if inner_phone.registration and inner_phone.default and count_default == 0:
+                    check_phone = self.session_asterisk.get_by_user_phone(inner_phone.phone_number)
+                    if check_phone is not None:
+                        raise PhoneFoundError(f"Телефон уже существует {inner_phone.phone_number}")
+                    param = self.__params(user, phone, inner_phone)
+                    self.session_asterisk.create_insert_asterisk(param)
+                    count_default += 1
+                response.append(inner_phone)
+                session.add(inner_phone)
+            session.commit()
+            self.session_asterisk.execute()
+        return response
+            
 
     def add(self, params):
+
         with self.session_factory() as session:
             user = self.__find_user(session=session, user_id=params.user_id)
             check_default = False
@@ -96,7 +140,7 @@ class InnerPhones(SuperRepository):
                 if inner_phone_params.registration and inner_phone_params.default and check_default == False:
                     check_phone = self.session_asterisk.get_by_user_phone(inner_phone_params.phone_number)
                     if check_phone is not None:
-                        raise ExceptionAsterisk("Пользователь с таким номером уже зарегистрирован")
+                        raise Not
                     param = self.__params(user,inner_phone, inner_phone_params)
                     self.session_asterisk.create_insert_asterisk(param)
                     check_default = True
@@ -116,7 +160,7 @@ class InnerPhones(SuperRepository):
                 session.commit()
         if phone_number != []:
             self.session_asterisk.delete_asterisk(",".join(phone_number))
-            self.session_asterisk.execute()
+            self.session_asterisk.execute
     
     def __find_user(self, session: Session, user_id: int):
         user = session.query(UserModel).filter(UserModel.id == user_id, UserModel.is_active == True).first()
@@ -138,3 +182,7 @@ class InnerPhones(SuperRepository):
             + inner_phone_params.duration_conversation.second,
         )
         return asterisk_params
+
+class PhoneFoundError(NotFoundError):
+    def __init__(self, message):
+        super().__init__(f"{message}")
