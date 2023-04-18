@@ -247,7 +247,8 @@ class UserRepository(SuperRepository):
                 status_id = 10
             else:
                 status_id = 14
-        self.session_asterisk.save_status_asterisk(status_id, current.uuid)
+        if current.status_id != 18:
+            self.session_asterisk.save_status_asterisk(status_id, current.uuid)
         self.session_asterisk.execute()
         return {
             "uuid": current.uuid,
