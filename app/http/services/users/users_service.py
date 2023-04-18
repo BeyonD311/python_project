@@ -1,6 +1,4 @@
-import datetime
-import json
-import asyncio
+import datetime, json, asyncio, logging
 from fastapi.websockets import WebSocket, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosedOK
 from aioredis.client import PubSub
@@ -20,6 +18,9 @@ from app.http.services.users.user_base_models import UserPermission
 from app.http.services.event_channel import (
     subscriber, publisher, Params as PublisherParams, EventRoute
 )
+
+logging.basicConfig(filename="UserService.log", filemode="w+", level=logging.DEBUG)
+
 class UserService:
     def __init__(self, user_repository: UserRepository, redis: RedisInstance) -> None:
         self._repository: UserRepository = user_repository
@@ -150,6 +151,7 @@ class UserService:
         if status is None:
             raise NotFoundError("status not found")
         status = json.loads(status)
+        logging.debug(f"uuid={uuid},status_id={status['id']},status_time={status_time}")
         await self._repository.set_status_by_uuid(uuid=uuid,status_id=status['id'],status_time=status_time)
         enums = EventRoute
         event = None

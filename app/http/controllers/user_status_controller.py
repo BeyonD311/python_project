@@ -1,4 +1,4 @@
-import jwt, os, json, random, asyncio, requests, datetime
+import jwt, os, json, random, asyncio, logging, datetime
 from websockets.exceptions import ConnectionClosedError
 from fastapi import Depends, APIRouter, Response, Request, WebSocket
 from fastapi.security import HTTPBearer
@@ -6,6 +6,8 @@ from app.kernel.container import Container
 from dependency_injector.wiring import Provide, inject
 from app.http.services.users import UserService
 from app.http.services.helpers import default_error
+
+logging.basicConfig(level=logging.DEBUG, filemode="status_log.log", filemode="w+")
 
 security = HTTPBearer()
 
@@ -80,6 +82,7 @@ async def update_status_asterisk(
         **status_time** - время установки статуса 
     """
     try:
+        logging.debug(f"Input params: status_cod = {status_cod}; uuid = {uuid}; status_time = {status_time}; caller = {caller}")
         await user_service.set_status_by_aster(uuid=uuid, status_code=status_cod, status_time=status_time, incoming_call=caller)
         return {
             "message": "set status"
