@@ -112,7 +112,7 @@ class InnerPhones(SuperRepository):
                 if inner_phone_params.registration and inner_phone_params.default and check_default == False:
                     check_phone = self.session_asterisk.get_by_user_phone(inner_phone_params.phone_number)
                     if check_phone is not None:
-                        raise ExceptionAsterisk("Пользователь с таким номером уже зарегистрирован")
+                        raise PhoneFoundError("Пользователь с таким номером уже зарегистрирован")
                     param = self.__params(user,inner_phone, inner_phone_params)
                     self.session_asterisk.create_insert_asterisk(param)
                     check_default = True
@@ -140,7 +140,7 @@ class InnerPhones(SuperRepository):
                 if inner_phone_params.registration and inner_phone_params.default and check_default == False:
                     check_phone = self.session_asterisk.get_by_user_phone(inner_phone_params.phone_number)
                     if check_phone is not None:
-                        raise Not
+                        raise PhoneFoundError("123")
                     param = self.__params(user,inner_phone, inner_phone_params)
                     self.session_asterisk.create_insert_asterisk(param)
                     check_default = True
