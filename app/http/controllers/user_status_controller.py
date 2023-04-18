@@ -6,8 +6,9 @@ from app.kernel.container import Container
 from dependency_injector.wiring import Provide, inject
 from app.http.services.users import UserService
 from app.http.services.helpers import default_error
+from app.http.services.logger_default import get_logger
 
-logging.basicConfig(level=logging.DEBUG, filemode="status_log.log", filemode="w+")
+log = get_logger("status_controller.log")
 
 security = HTTPBearer()
 
@@ -82,7 +83,7 @@ async def update_status_asterisk(
         **status_time** - время установки статуса 
     """
     try:
-        logging.debug(f"Input params: status_cod = {status_cod}; uuid = {uuid}; status_time = {status_time}; caller = {caller}")
+        log.debug(f"Input params: status_cod = {status_cod}; uuid = {uuid}; status_time = {status_time}; caller = {caller}")
         await user_service.set_status_by_aster(uuid=uuid, status_code=status_cod, status_time=status_time, incoming_call=caller)
         return {
             "message": "set status"

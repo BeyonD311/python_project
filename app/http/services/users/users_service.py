@@ -3,6 +3,7 @@ from fastapi.websockets import WebSocket, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosedOK
 from aioredis.client import PubSub
 from hashlib import sha256
+from app.http.services.logger_default import get_logger
 from app.database import UserModel
 from app.database import UserRepository
 from app.database import NotFoundError
@@ -19,7 +20,7 @@ from app.http.services.event_channel import (
     subscriber, publisher, Params as PublisherParams, EventRoute
 )
 
-logging.basicConfig(filename="UserService.log", filemode="w+", level=logging.DEBUG)
+log = get_logger("UserService.log")
 
 class UserService:
     def __init__(self, user_repository: UserRepository, redis: RedisInstance) -> None:
@@ -151,7 +152,7 @@ class UserService:
         if status is None:
             raise NotFoundError("status not found")
         status = json.loads(status)
-        logging.debug(f"uuid={uuid},status_id={status['id']},status_time={status_time}")
+        log.debug(f"uuid={uuid},status_id={status['id']},status_time={status_time}")
         await self._repository.set_status_by_uuid(uuid=uuid,status_id=status['id'],status_time=status_time)
         enums = EventRoute
         event = None
