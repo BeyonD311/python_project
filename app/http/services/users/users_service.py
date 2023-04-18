@@ -1,4 +1,4 @@
-import datetime, json, asyncio, logging
+import datetime, json, asyncio
 from fastapi.websockets import WebSocket, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosedOK
 from aioredis.client import PubSub
@@ -156,13 +156,10 @@ class UserService:
         await self._repository.set_status_by_uuid(uuid=uuid,status_id=status['id'],status_time=status_time)
         enums = EventRoute
         event = None
-        if status_code == "hangup":
-            event = "HANGUP_CALL"
-        else:
-            try:
-                event = enums[status['behavior'].upper()].value
-            except Exception as e:
-                event = "CHANGE_STATUS"
+        try:
+            event = enums[status['behavior'].upper()].value
+        except Exception as e:
+            event = "CHANGE_STATUS"
         params = PublisherParams(
             user_id=user_id['id'],
             status_id=status['id'],
@@ -213,6 +210,7 @@ class UserService:
         }
     async def get_users_status(self, users_id: list):
         result = {}
+        print(await self._repository.user_get_time(0))
         for user_id in users_id:
             status = await self._redis.redis.get(f"status.user.{user_id}")
             if status is not None:

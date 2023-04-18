@@ -1,5 +1,4 @@
 from .super import SuperRepository, NotFoundError
-from pydantic import BaseModel
 from app.database.models.inner_phone import InnerPhone
 from app.database.models.users import UserModel
 from uuid import uuid4
@@ -56,10 +55,13 @@ class InnerPhones(SuperRepository):
             phones_asterisk = []
             phone: InnerPhone
             for phone in phones:
-                phones_asterisk.append(phone.phone_number)
+                if phone.is_default:
+                    phones_asterisk.append(str(phone.phone_number))
                 session.delete(phone)
-            if phones_asterisk != []:
-                self.session_asterisk.delete_asterisk(",".join)
+            session.commit()
+            if len(phones_asterisk) > 0:
+                self.session_asterisk.delete_asterisk(",".join(phones_asterisk))
+                self.session_asterisk.execute()
             for inner_phone in params.inner_phones:
                 phone = InnerPhone(
                     uuid = uuid4(),
@@ -75,6 +77,8 @@ class InnerPhones(SuperRepository):
                     incoming_calls = inner_phone.incoming_calls,
                     comment = inner_phone.comment
                 )
+                if inner_phone.id != 0:
+                    phone.id = inner_phone.id
                 if inner_phone.registration and inner_phone.default and count_default == 0:
                     check_phone = self.session_asterisk.get_by_user_phone(inner_phone.phone_number)
                     if check_phone is not None:
@@ -82,73 +86,11 @@ class InnerPhones(SuperRepository):
                     param = self.__params(user, phone, inner_phone)
                     self.session_asterisk.create_insert_asterisk(param)
                     count_default += 1
-                response.append(inner_phone)
-                session.add(inner_phone)
+                session.add(phone)
             session.commit()
             self.session_asterisk.execute()
         return response
             
-
-    def add(self, params):
-
-        with self.session_factory() as session:
-            user = self.__find_user(session=session, user_id=params.user_id)
-            check_default = False
-            for inner_phone_params in params.inner_phones:
-                inner_phone = InnerPhone(
-                    uuid = uuid4(),
-                    user_id = user.id,
-                    phone_number = inner_phone_params.phone_number,
-                    description = inner_phone_params.description,
-                    is_registration = inner_phone_params.registration,
-                    is_default = inner_phone_params.default,
-                    login = inner_phone_params.login,
-                    password = inner_phone_params.password,
-                    duration_call = inner_phone_params.duration_call,
-                    duration_conversation = inner_phone_params.duration_conversation,
-                    incoming_calls = inner_phone_params.incoming_calls,
-                    comment = inner_phone_params.comment
-                )
-                if inner_phone_params.registration and inner_phone_params.default and check_default == False:
-                    check_phone = self.session_asterisk.get_by_user_phone(inner_phone_params.phone_number)
-                    if check_phone is not None:
-                        raise PhoneFoundError("Пользователь с таким номером уже зарегистрирован")
-                    param = self.__params(user,inner_phone, inner_phone_params)
-                    self.session_asterisk.create_insert_asterisk(param)
-                    check_default = True
-                del inner_phone_params
-                session.add(inner_phone)
-            session.commit()
-            self.session_asterisk.execute()
-    def update(self, params):
-        check_default = False
-        with self.session_factory() as session:
-            user = self._find_user(session=session, user_id=params.user_id)
-            for inner_phone_params in params.inner_phones:
-                inner_phone = session.query(self.base_model).filter(self.base_model.id == inner_phone_params.id).first()
-                if inner_phone is None:
-                    continue
-                inner_phone.description = inner_phone_params.description,
-                inner_phone.is_registration = inner_phone_params.registration,
-                inner_phone.is_default = inner_phone_params.default,
-                inner_phone.login = inner_phone_params.login,
-                inner_phone.password = inner_phone_params.password,
-                inner_phone.duration_call = inner_phone_params.duration_call,
-                inner_phone.duration_conversation = inner_phone_params.duration_conversation,
-                inner_phone.incoming_calls = inner_phone_params.incoming_calls,
-                inner_phone.comment = inner_phone_params.comment
-                if inner_phone_params.registration and inner_phone_params.default and check_default == False:
-                    check_phone = self.session_asterisk.get_by_user_phone(inner_phone_params.phone_number)
-                    if check_phone is not None:
-                        raise PhoneFoundError("123")
-                    param = self.__params(user,inner_phone, inner_phone_params)
-                    self.session_asterisk.create_insert_asterisk(param)
-                    check_default = True
-                del inner_phone_params
-                session.add(inner_phone)
-            session.commit()
-            self.session_asterisk.execute()
-    
     def delete_phone(self,user_id: int, phones_id: list):
         phone_number = []
         with self.session_factory() as session:

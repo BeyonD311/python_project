@@ -371,16 +371,18 @@ class UserRepository(SuperRepository):
     async def user_get_time(self, user_id: int):
         with self.session_factory() as session:
             user = session.query(self.base_model).filter(self.base_model.id == user_id).first()
-            res = session.query(StatusHistoryModel).filter(StatusHistoryModel.user_id == user_id, StatusHistoryModel.update_at >= "2023-04-14").order_by(StatusHistoryModel.update_at.asc()).first()
-            if res is None:
-                res = datetime.now()
+            date_now = datetime.now().__format__("%Y-%m-%d 00:00:00")
+            time_kc = session.query(StatusHistoryModel).filter(StatusHistoryModel.user_id == user_id, StatusHistoryModel.status_id == 18, StatusHistoryModel.update_at >= date_now)\
+                .order_by(StatusHistoryModel.update_at.asc()).first()
+            if time_kc is None:
+                time_kc = datetime.now()
             else:
-                res = res.update_at
+                time_kc = time_kc.update_at
             result = {
                 "event": "CONNECTION",
                 "status": "",
                 "status_at": str(user.status_at),
-                "startTimeKC": str(res),
+                "startTimeKC": str(time_kc),
                 "color": ""
             }
             if user.status is not None:

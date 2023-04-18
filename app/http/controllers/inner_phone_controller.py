@@ -1,6 +1,6 @@
 import jwt
 import os
-from fastapi import Depends, APIRouter, Response, status, Request, HTTPException
+from fastapi import Depends, APIRouter, Response, status, Request
 from fastapi.security import HTTPBearer
 from app.kernel.container import Container
 from dependency_injector.wiring import Provide, inject
@@ -40,6 +40,9 @@ def add_inner_phone(
     response: Response,
     HTTPBearerSecurity: HTTPBearer = Depends(security),
     inner_phone_service: InnerPhoneServices = Depends(Provide[Container.inner_phone_service])):
+    """ 
+        Поле id у inner_phone должно быть 0 при создании, при обновлении текущий id
+    """
     try:
         inner_phone_service.add(params)
         return {
@@ -57,6 +60,9 @@ def update_inner_phone(
     response: Response,
     HTTPBearerSecurity: HTTPBearer = Depends(security),
     inner_phone_service: InnerPhoneServices = Depends(Provide[Container.inner_phone_service])):
+    """ 
+        Поле id у inner_phone должно быть 0 при создании, при обновлении текущий id
+    """
     try:
         inner_phone_service.update(params)
         return {

@@ -78,12 +78,13 @@ class Asterisk():
         
     def execute(self):
         session: Session
+        stack = self.stack_multiple_query
         with self.session_asterisk() as session:
             while self.stack_multiple_query != []:
-                query = self.stack_multiple_query.pop()
+                query = stack.pop()
                 session.execute(query)
             session.commit()
-            session.flush()
+            session.close()
 
 class ExceptionAsterisk(NotFoundError):
     entity_name: str
