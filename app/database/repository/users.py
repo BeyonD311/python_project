@@ -262,12 +262,8 @@ class UserRepository(SuperRepository):
     
     async def set_status_by_uuid(self, uuid, status_id, status_time):
         global event_type
-        current = None
         with self.session_factory() as session:
             sql = f"update users set status_id = {status_id}, status_at = '{str(status_time)}' where uuid = '{uuid}'"
-            """ current = session.query(self.base_model).filter(self.base_model.uuid == uuid).first()
-            current.status_id = status_id
-            current.status_at = status_time """
             event_type="set_status"
             session.execute(sql)
             session.commit()
