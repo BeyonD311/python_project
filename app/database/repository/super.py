@@ -16,7 +16,6 @@ class Pagination(BaseModel):
 
 
 class SuperRepository(ABC):
-    
     base_model = None
 
     def __init__(self, session_factory: Callable[..., AbstractContextManager[Session]]) -> None:
@@ -36,9 +35,10 @@ class SuperRepository(ABC):
         with self.session_factory() as session:
             entity: self.base_model = session.query(self.base_model).filter(self.base_model.id == id).first()
             if not entity:
-                raise NotFoundError(id)
+                raise NotFoundError(entity_id=id)
             session.delete(entity)
             session.commit()
+
     def get_pagination(self, query, size: int, page: int):
         count_items = query.count()
         total_page = ceil(count_items / size)
@@ -50,30 +50,103 @@ class SuperRepository(ABC):
                 size=size
             )
         }
+
     def soft_delete(self, id: int):
         with self.session_factory() as session:
             entity: self.base_model = session.query(self.base_model).filter(self.base_model.id == id).first()
             if not entity:
-                raise NotFoundError(id)
+                raise NotFoundError(entity_id=id)
             entity.is_active = False
             session.add(entity)
             session.commit()
-    
+
     def _error_not_found(self, entity, id):
         if entity is None:
-            raise NotFoundError(id)
+            raise NotFoundError(entity_id=id)
 
     @abstractmethod
     def add(self, arg):
         pass
 
     @abstractmethod
-
     def update(self):
         pass
 
 
-class NotFoundError(Exception):
+class BaseException(Exception):
     entity_name: str
-    def __init__(self, entity_id):
-        super().__init__(f"not found, id: {entity_id}")
+
+    def __init__(self, entity_id: int, entity_description: str = None) -> None:
+        self.entity_id = entity_id
+        if entity_description is not None:
+            self.entity_description = entity_description
+    
+    def __str__(self):
+        if self.entity_description is not None:
+            message = self.entity_description
+        else:
+            message = f"Error: {self.entity_id}"
+        return message
+
+    @property
+    def message(self):
+        result = {
+            "message": self.__str__(),
+            "description": self.entity_description
+        }
+        return result
+
+
+class NotFoundError(BaseException):
+    entity_name: str
+
+    def __init__(self, *args, **kwargs) -> None:
+        BaseException.__init__(self, *args, **kwargs)
+
+
+class UserNotFoundError(NotFoundError):
+    entity_name: str = "User"
+
+    def __init__(self, *args, **kwargs) -> None:
+        BaseException.__init__(self, *args, **kwargs)
+
+
+class ExpectationError(NotFoundError):
+    """Не удаётся обработать данные в запросе.
+    """
+    entity_name: str = "User"
+
+    def __init__(self, *args, **kwargs) -> None:
+        BaseException.__init__(self, *args, **kwargs)
+
+
+class AccessException(NotFoundError):
+    """Недостаточно прав доступа.
+    """
+    entity_name: str = "User"
+
+    def __init__(self, *args, **kwargs) -> None:
+        BaseException.__init__(self, *args, **kwargs)
+
+
+class RequestException(BaseException):
+    """Неверные параметры запроса.
+    """
+    def __init__(self, *args, **kwargs) -> None:
+        BaseException.__init__(self, *args, **kwargs)
+
+
+class BadFileException(BaseException):
+    """Неверный формат загружаемого файла.
+    """
+    entity_name: str = "Image"
+
+    def __init__(self, *args, **kwargs) -> None:
+        BaseException.__init__(self, *args, **kwargs)
+
+
+class ExistsException(NotFoundError):
+    """Поле или объект уже существует.
+    """
+    def __init__(self, *args, **kwargs) -> None:
+        BaseException.__init__(self, *args, **kwargs)

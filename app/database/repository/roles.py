@@ -1,8 +1,9 @@
-from .super import SuperRepository, NotFoundError
+from .super import SuperRepository, NotFoundError, RequestException
 from app.database.models import RolesModel, PermissionsAccessModel, RolesPermission, UserRoles
 from sqlalchemy import case, literal_column
 from sqlalchemy.orm import Query
 from sqlalchemy.orm.session import Session
+from sqlalchemy.exc import IntegrityError
 
 class RolesRepository(SuperRepository):
     base_model = RolesModel
@@ -18,9 +19,10 @@ class RolesRepository(SuperRepository):
             modules = self.__permission_default(session)
             current_role = self.__query_all(session).filter(RolesModel.id == id).all()
             if current_role == []:
-                raise NotFoundError(f"Role not found {id}")
+                description = f"Не найдена роль с ID={id}"
+                raise NotFoundError(f"Role not found {id}", entity_description=description)
             return self.__parse_role(modules=modules,roles=current_role)
-        
+
     def get_all_modules(self):
         with self.session_factory() as session:
             return session.query(PermissionsAccessModel).all()
@@ -34,14 +36,16 @@ class RolesRepository(SuperRepository):
 
     def delete_by_id(self, id: int) -> None:
         if id == 1:
-            raise NotFoundError("Role not found")
+            description = f"Не найдена роль с ID={id}"
+            raise NotFoundError("Role not found", entity_description=description)
         return super().delete_by_id(id)
 
     def update(self, params):
         with self.session_factory() as session:
             role = session.query(self.base_model).filter(self.base_model.id == params.id).first()
             if role == None:
-                raise NotFoundError(params.id)
+                description = f"Не найдена роль."
+                raise NotFoundError(params.id, entity_description=description)
             role.permissions.clear()
             role.name = params.name
             self.role_create(role=role, session=session, params=params)
@@ -49,20 +53,23 @@ class RolesRepository(SuperRepository):
 
     def role_create(self, params, session, role):
         access_right = {}
-        for modules in params.modules:
-            module = session.query(PermissionsAccessModel).filter(PermissionsAccessModel.id == modules.id).first()
-            permission = modules.access 
-            permission_right = f"{int(permission.create)}{int(permission.read)}{int(permission.update)}{int(permission.delete)}{int(permission.personal)}"
-            access_right[modules.id] = permission_right
-            role.permissions.append(module)
-        session.add(role)
-        session.commit()
-        role_permission = session.query(RolesPermission).filter(RolesPermission.role_id == role.id).all()
-        for permission in role_permission:
-            if permission.module_id in access_right:
-                permission.method_access = access_right[permission.module_id]
-                session.add(permission)
-        session.commit()
+        try:
+            for modules in params.modules:
+                module = session.query(PermissionsAccessModel).filter(PermissionsAccessModel.id == modules.id).first()
+                permission = modules.access 
+                permission_right = f"{int(permission.create)}{int(permission.read)}{int(permission.update)}{int(permission.delete)}{int(permission.personal)}"
+                access_right[modules.id] = permission_right
+                role.permissions.append(module)
+            session.add(role)
+            session.commit()
+            role_permission = session.query(RolesPermission).filter(RolesPermission.role_id == role.id).all()
+            for permission in role_permission:
+                if permission.module_id in access_right:
+                    permission.method_access = access_right[permission.module_id]
+                    session.add(permission)
+            session.commit()
+        except IntegrityError as e:
+            raise RequestException from e
 
     def __query_all(self, session: Session) -> Query:
         return session.query(

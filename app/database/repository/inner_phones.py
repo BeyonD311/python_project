@@ -37,17 +37,22 @@ class InnerPhones(SuperRepository):
         with self.session_factory() as session:
             query = session.query(self.base_model).filter(self.base_model.id == id).first()
             if not query:
-                raise NotFoundError("Not found item")
+                description = f"Не найден внутренний номер с ID={id}."
+                raise NotFoundError("Not found item", entity_description=description)
             return query
+
     def add(self, arg):
         pass
+
     def update(self):
         pass
+
     def get_by_user_id(self, user_id: int):
         with self.session_factory() as session:
             query = session.query(self.base_model).filter(self.base_model.user_id == user_id).all()
             if not query:
-                raise NotFoundError("Not found item")
+                description = f"Не найден пользователь с ID={user_id}."
+                raise NotFoundError("User Not Found", entity_description=description)
             return query
         
     def create_or_update(self, params) -> list:
@@ -91,7 +96,8 @@ class InnerPhones(SuperRepository):
                 if inner_phone.is_registration and inner_phone.is_default and count_default == 0:
                     check_phone = self.session_asterisk.get_by_user_phone(inner_phone.phone_number)
                     if check_phone is not None:
-                        raise PhoneFoundError(f"Телефон уже существует {inner_phone.phone_number}")
+                        description=f"Телефон уже существует {inner_phone.phone_number}"
+                        raise PhoneFoundError(entity_description=description)
                     param = self.__params(user, phone, inner_phone)
                     self.session_asterisk.create_insert_asterisk(param)
                     count_default += 1
@@ -99,7 +105,7 @@ class InnerPhones(SuperRepository):
             session.commit()
             self.session_asterisk.execute()
         return response
-            
+
     def delete_phone(self,user_id: int, phones_id: list):
         phone_number = []
         with self.session_factory() as session:
@@ -116,7 +122,8 @@ class InnerPhones(SuperRepository):
     def __find_user(self, session: Session, user_id: int):
         user = session.query(UserModel).filter(UserModel.id == user_id, UserModel.is_active == True).first()
         if user is None:
-            raise NotFoundError("User not found")
+            description = f"Не найден пользователь с ID={user_id}."
+            raise NotFoundError("User not found", entity_description=description)
         return user
     
     def __params(self, user: UserModel, inner_phone: InnerPhone, inner_phone_params) -> AsteriskParams:

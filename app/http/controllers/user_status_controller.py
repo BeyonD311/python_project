@@ -57,17 +57,19 @@ async def update_status(
             decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
             user_id = decode['azp']
         
-        await user_service.set_status(user_id,status_id=status_id, call_id=call_id)
-        return {
-            "message": "set status"
+        await user_service.set_status(user_id, status_id=status_id, call_id=call_id)
+        result = {
+            "message": "set status",
+            "description": f"Новый статус ID={status_id} установлен."
         }
     except Exception as e:
-        err = default_error(e)
+        err = default_error(e, item='UserService')
         response.status_code = err[0]
-        return {
+        result = {
             "message": err[1]
         }
-    
+    return result
+
 @route.get("/asterisk",  include_in_schema=True)
 @inject
 async def update_status_asterisk(
@@ -87,15 +89,16 @@ async def update_status_asterisk(
     try:
         log.debug(f"Input params: status_cod = {status_cod}; uuid = {uuid}; status_time = {status_time}; caller = {caller}")
         await user_service.set_status_by_aster(uuid=uuid, status_code=status_cod, status_time=status_time, incoming_call=caller, call_id=call_id)
-        return {
+        result = {
             "message": "set status"
         }
     except Exception as e:
-        err = default_error(e)
+        err = default_error(e, item='UserService')
         response.status_code = err[0]
-        return {
+        result = {
             "message": err[1]
         }
+    return result
 
 @route.websocket("/ws", "user_status")
 @inject
@@ -118,21 +121,10 @@ async def ws_channel_user_status(
                 if not fetch_task.done():
                     fetch_task.cancel()
                 fetch_task = asyncio.create_task(user_service.redis_pub_sub(websocket, data['user_id']))
-
         await asyncio.gather(read_from_socket(websocket), get_data_and_send())
-
-    except json.decoder.JSONDecodeError as decode_exception:
-        await websocket.send_json({
-            "status": "fail",
-            "data": [],
-            "message": "Данные не обнаружены"
-        })
-    except ConnectionClosedError as connect_close:
-        await websocket.send_json({
-            "status": "fail",
-            "data": [],
-            "message": "Данные не обнаружены "
-        })
+    except Exception as e:
+        err = default_error(e, item='UserService')
+        await websocket.send_json(err[1])
 
 @route.get("/fill",  include_in_schema=False)
 @inject

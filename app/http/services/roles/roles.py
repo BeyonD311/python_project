@@ -26,6 +26,7 @@ class RolesServices():
             role['access'] = res
             result.append(role)
         return result
+
     def get_modules(self):
         modules = self._repository.get_all_modules()
         for m in modules:

@@ -1,7 +1,7 @@
 import math
 from datetime import datetime
 from pydantic import BaseModel
-from .super import SuperRepository, NotFoundError, Pagination
+from .super import SuperRepository, NotFoundError, Pagination, ExistsException
 from app.database.models import DepartmentsModel
 from app.database.models import InnerPhone
 from app.database.models import UserModel
@@ -47,7 +47,7 @@ class DepartmentsRepository(SuperRepository):
                 return []
             return query
     
-    def get_employees(self, filter = None) -> Department:
+    def get_employees(self, filter = None) -> Department:  # TODO: DISTINCT users
         with self.session_factory() as session:
             query = session.query(
                 self.base_model.id.label("department_id"),
@@ -135,7 +135,7 @@ class DepartmentsRepository(SuperRepository):
     def filter_params(self, query, filter) -> Query:
         filter_res = " and "
         params = []
-        if filter['fio'] != None:  
+        if filter['fio'] != None:
             fio = filter['fio']
             params.append(f"users.fio ilike '%{fio}%'")
             query = query.filter(UserModel.fio.ilike(f'%{fio}%'))
@@ -152,9 +152,9 @@ class DepartmentsRepository(SuperRepository):
             params.append(f"users.status_id in ({status})")
             query = query.filter(UserModel.status_id.in_(filter['status']))
         if filter['phone'] != None:
-            phone = filter['phone']
-            params.append(f"users.inner_phone ilike '%{phone}%'")
-            query = query.filter(UserModel.inner_phone.ilike(f'%{phone}%'))
+            phone = filter['phone'].replace(' ', ',').replace(',,', ',')
+            params.append(f"inner_phones.phone_number in ({phone})")
+            query = query.filter(InnerPhone.phone_number.in_(phone.split(',')))
         return query
 
     def __filter_params(self, filter):
@@ -172,8 +172,8 @@ class DepartmentsRepository(SuperRepository):
             status = ','.join(filter['status'])
             params.append(f"users.status_id in ({status})")
         if filter['phone'] != None:
-            phone = filter['phone']
-            params.append(f"users.phone ilike '%{phone}%'")
+            phone = filter['phone'].replace(' ', ',').replace(',,', ',')
+            params.append(f"inner_phones.phone_number in ({phone})")
         if len(params) > 0:
             return "where " + " and ".join(params)
         return ""
@@ -221,6 +221,7 @@ class DepartmentsRepository(SuperRepository):
                 name = params.name,
                 parent_department_id = params.source_department
             )
+
             session.add(department)
             session.commit()
 
@@ -276,19 +277,21 @@ class DepartmentsRepository(SuperRepository):
     def find_department_by_name(self, name: str, session):
         query = session.query(self.base_model).filter(self.base_model.name.ilike(f"%{name}%")).first()
         if query is not None:
-            raise NotFoundError("department exists")
+            description = f"Департамент с именем '{name}' уже существует."
+            raise ExistsException(entity_id=name, entity_description=description)
 
     def find_employee(self, department_id: int, session):
         result = {}
         query = session.query(UserModel).filter(UserModel.id != 0).filter(UserModel.department_id == department_id).all()
         for employee in query:
-                result[employee.user_id] = employee
+            result[employee.user_id] = employee
         return result
 
     def find_department_by_id(self, id, session) -> DepartmentsModel:
         query = session.query(self.base_model).filter(self.base_model.id == id).first()
         if query is None:
-            raise NotFoundError("department exists")
+            description = f"Департамента с ID={id} не существует."
+            raise NotFoundError(entity_id=id, entity_description=description)
         return query
     
     def __add_employee(self, params, session: Session ,id: int):
@@ -313,19 +316,26 @@ class DepartmentsRepository(SuperRepository):
                 session.delete(department)
         del departments
         if head_employees_department != None and params.director_user_id != None:
+            if not self.get_users(params, session):
+                description = f"Пользователя с ID={params.director_user_id} не существует."
+                raise NotFoundError(entity_id=id, entity_description=description)
             if params.director_user_id != head_employees_department.head_of_department_id:
                 head_employees_department.head_of_department_id = params.director_user_id
                 session.add(head_employees_department)
         elif head_employees_department == None and params.director_user_id != None:
+            if not self.get_users(params, session):
+                description = f"Пользователья с ID={params.director_user_id} не существует."
+                raise NotFoundError(entity_id=id, entity_description=description)
             session.add(HeadOfDepartment(
-                    department_id=id,
-                    head_of_department_id=params.director_user_id
-                ))
+                department_id=id,
+                head_of_department_id=params.director_user_id
+            ))
         for user_id in params.deputy_head_id:
             session.add(HeadOfDepartment(
                 department_id=id,
                 deputy_head_id=user_id
             ))
+
 
     def __query_employees(self, filter):
         query1 = self.__query_select_fields(False) + " " + self.__query_join(True) + " " + self.__filter_params(filter)

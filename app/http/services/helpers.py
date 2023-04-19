@@ -14,36 +14,69 @@ class RedisInstance():
     def __exit__(self, exc_type, exc_value, exc_traceback):
         del self 
 
-def default_error(error: Exception):
+def default_error(error: Exception, item=None):
     from app.http.services.jwt_managment import TokenInBlackList, TokenNotFound
-    from app.database import NotFoundError
+    from app.database import (
+        NotFoundError, ExpectationError, ExistsException, AccessException,
+        RequestException, BadFileException
+    )
     from jwt.exceptions import InvalidSignatureError, ExpiredSignatureError
+    from jwt import DecodeError
     from sqlalchemy.exc import IntegrityError
+    from websockets.exceptions import ConnectionClosedError
+    from json.decoder import JSONDecodeError
 
-    if isinstance(error, InvalidSignatureError):
-        return status.HTTP_409_CONFLICT, message(error)
-    if isinstance(error, NotFoundError):
-        return status.HTTP_404_NOT_FOUND, message("user not found")
+    if hasattr(error, "entity_description"):
+        err_description = error.entity_description
+    if isinstance(error, RequestException):
+        return status.HTTP_400_BAD_REQUEST, message(message=error)
     if isinstance(error, TokenInBlackList):
-        return status.HTTP_400_BAD_REQUEST, message(error)
+        return status.HTTP_400_BAD_REQUEST, message(message=error, description=err_description)
+    if isinstance(error, BadFileException):
+        return status.HTTP_400_BAD_REQUEST, message(message=error, description=err_description)
+    if isinstance(error, ExistsException):
+        return status.HTTP_400_BAD_REQUEST, message(message=f"Already exists {item}.", description=err_description)
     if isinstance(error, TokenNotFound):
-        return status.HTTP_401_UNAUTHORIZED, message("Pleace auth")
+        return status.HTTP_401_UNAUTHORIZED, message(message="Pleace auth")
+    if isinstance(error, DecodeError):
+        return status.HTTP_401_UNAUTHORIZED, message(message="Invaid JWT generated.")
+    if isinstance (error, AccessException):
+        return status.HTTP_403_FORBIDDEN, message(message="Resource not available")
+    if isinstance(error, NotFoundError):
+        return status.HTTP_404_NOT_FOUND, message(message=f"Not found {item}.", description=err_description)
+    # TODO: Обработать IntegrityError для ошибки NOT_FOUND
+    # if isinstance(error, IntegrityError):
+    #     return status.HTTP_404_NOT_FOUND, message(message=f"Not found {item}.", description=err_description)
+    if isinstance(error, InvalidSignatureError):
+        return status.HTTP_409_CONFLICT, message(message=error)
     if isinstance(error, ExpiredSignatureError):
-        return status.HTTP_409_CONFLICT, message("Signature has expired")
+        return status.HTTP_409_CONFLICT, message(message="Signature has expired")
+    if isinstance(error, ExpectationError):
+        # TODO: meybe better "422 Unprocessable Entity («необрабатываемый экземпляр»)"
+        return status.HTTP_417_EXPECTATION_FAILED, message(message="", description=err_description)
     if isinstance(error, IntegrityError):
-        info_error = str(error.orig.__repr__())
-        detail = re.findall(r"(?:DETAIL:(.*\(.*\))(.*)?(\".*\"))", info_error)
-        if detail is not None:
-            detail = str(error)
-        else:
-            detail = "error"
-        return status.HTTP_409_CONFLICT, message(detail)
+        # TODO: добавить поле description
+        try:
+            detail = error.args[0].split('\n')[1].replace('"',"'")
+        except:
+            detail = "No Details for Error"
+        return status.HTTP_409_CONFLICT, message(message=detail)
+    if isinstance(error, ConnectionClosedError):
+        return message(message="Данные не обнаружены", description='', status="fail", data=[])
+    if isinstance(error, JSONDecodeError):
+        return message(message="Данные не обнаружены", description='', status="fail", data=[])
     raise error
 
-def message(message):
-    return {
+def message(message, description=None, **kwargs):
+    result = {
         "message": str(message)
     }
+    if description is not None:
+        result["description"] = description
+    if kwargs:
+        for key, value in kwargs.items():
+            result[key] = value
+    return result
 
 def parse_params_num(params: str) -> set:
     reg = re.findall(r'[0-9]{1,}', params)

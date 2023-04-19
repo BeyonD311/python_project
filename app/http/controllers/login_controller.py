@@ -3,8 +3,9 @@ from hashlib import sha256
 from fastapi import APIRouter, Depends, status, Response, Request
 from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
+from app.http.services.helpers import default_error
 from app.http.services.users import UserLoginParams, UserService
-from app.http.services.jwt_managment import JwtManagement, TokenInBlackList, TokenNotFound
+from app.http.services.jwt_managment import JwtManagement, TokenNotFound
 from app.database import NotFoundError
 from app.kernel import Container
 
@@ -22,7 +23,15 @@ def get_token(request: Request) -> str:
     return access_token.replace("Bearer", "").strip()
 
 def token_decode(token: str) -> typing.Mapping:
-    return jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
+    """
+    Exceptions:
+        DecodeError
+    """
+    try:
+        result = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
+    except jwt.DecodeError:
+        raise
+    return result
 
 @route.get("/logout")
 @inject
@@ -32,7 +41,14 @@ async def logout(
     user_service: UserService = Depends(Provide[Container.user_service]),
     jwt_m: JwtManagement = Depends(Provide[Container.jwt]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
-    
+    """
+    Exceptions:
+        InvalidSignatureError
+        NotFoundError
+        TokenInBlackList
+        TokenNotFound
+        DecodeError
+    """
     try:
         access_token = get_token(request)
         decode = token_decode(access_token)
@@ -44,35 +60,16 @@ async def logout(
             await j.add_to_black_list(tokens['access_token'])
             await j.add_to_black_list(tokens['refresh_token'])
             await j.remove_token()
-            return {
-                "message": "logout success"
+            result = {
+                "message": "logout success",
+                "description": "Успешный выход из системы"
             }
-            
-    except jwt.exceptions.InvalidSignatureError as e:
-        response.status_code = status.HTTP_409_CONFLICT
-        return {
-            "message": str(e)
-        }
-    except NotFoundError as e:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {
-            "massage": "user not found"
-        }
-    except TokenInBlackList as e:
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return {
-            "massage": str(e)
-        }
-    except TokenNotFound as e:
-        response.status_code = status.HTTP_401_UNAUTHORIZED
-        return {
-            "massage": "Please auth"
-        }
-    except jwt.exceptions.ExpiredSignatureError as e:
-        response.status_code = status.HTTP_409_CONFLICT
-        return {
-            "massage": "Signature has expired"
-        }
+    except Exception as e:
+        err = default_error(e, item='UserAuth')
+        response.status_code = err[0]
+        result = err[1]
+    return result
+
 
 @route.get("/refresh")
 @inject
@@ -82,6 +79,15 @@ async def refresh(
     user_service: UserService = Depends(Provide[Container.user_service]),
     jwt_m: JwtManagement = Depends(Provide[Container.jwt]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    """_summary_
+
+    Ecxeptions:
+        InvalidSignatureError
+        NotFoundError
+        TokenInBlackList
+        TokenNotFound
+        ExpiredSignatureError
+    """
     try:
         access_token = get_token(request)
         decode = token_decode(access_token)
@@ -91,34 +97,13 @@ async def refresh(
             await j.get_tokens()
             await j.add_to_black_list(access_token)
             tokens = await j.tokens()
-            return tokens
-            
-    except jwt.exceptions.InvalidSignatureError as e:
-        response.status_code = status.HTTP_409_CONFLICT
-        return {
-            "message": str(e)
-        }
-    except NotFoundError as e:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {
-            "massage": "user not found"
-        }
-    except TokenInBlackList as e:
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        return {
-            "massage": str(e)
-        }
-    except TokenNotFound as e:
-        response.status_code = status.HTTP_401_UNAUTHORIZED
-        return {
-            "massage": "Please auth"
-        }
-    except jwt.exceptions.ExpiredSignatureError as e:
-        response.status_code = status.HTTP_409_CONFLICT
-        return {
-            "massage": "Signature has expired"
-        }
-    
+            result = tokens
+    except Exception as e:
+        err = default_error(e, item='UserAuth')
+        response.status_code = err[0]
+        result = err[1]
+    return result
+
 @route.post("/login")
 @inject
 async def login(
@@ -126,25 +111,30 @@ async def login(
     response: Response,
     user_service: UserService = Depends(Provide[Container.user_service]),
     jwt: JwtManagement = Depends(Provide[Container.jwt])):
+    """
+    Exceptions:
+        NotFoundError
+    """
     password = sha256(params.password.encode()).hexdigest()
     try:
         user = user_service.find_user_by_login(params.login)
-        await user_service.set_status(user.id, 18)
         await user_service.set_status(user.id, 15)
-    except NotFoundError as e:
+    except NotFoundError as e: # TODO: вынести в Exception
         response.status_code = status.HTTP_401_UNAUTHORIZED
         return {
-            "message": "Логин не верный" 
+            "message": "Invalid login",
+            "description": "Логин неверный"
         }
     if user.hashed_password is None:
         user.hashed_password = sha256(user.password.encode()).hexdigest()
     if password != user.hashed_password:
+        # TODO: вынести в Exception
         response.status_code = status.HTTP_401_UNAUTHORIZED
         return {
-            "message": "Пароль не верный" 
+            "message": "The password is incorrect",
+            "description": "Пароль неверный"
         }
     jwt_manager = await jwt.generate(user)
     async with jwt_manager as j:
         tokens = await j.tokens()
         return tokens
-    

@@ -84,6 +84,7 @@ class DepartmentsService:
             users.append(user)
         result['employees'] = users
         return result
+
     def get_by_id(self, id):
         return self._repository.get_by_id(id)
 
@@ -92,6 +93,7 @@ class DepartmentsService:
     
     def update(self, params: DepartmentParams, id: int):
         return self._repository.update(id, params)
+
     def delete(self, id):
         self._repository.delete_by_id(id)
 
