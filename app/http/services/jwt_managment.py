@@ -44,7 +44,7 @@ class Jwt:
         await self.check_black_list(token)
         await asyncio.sleep(0.5)
         # время жизни неделя
-        await self.redis.set(f"users:black_list:{token}", ex=(self.hour * 24) * 7)
+        await self.redis.set(name = f"users:black_list:{token}", value= 0, ex=(self.hour * 24) * 7)
 
     async def check_black_list(self, token: str):
         black_list = await self.redis.get(f"users:black_list:{token}")
