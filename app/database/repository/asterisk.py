@@ -35,11 +35,13 @@ class Asterisk():
     def get_by_user_login(self, username: str):
         with self.session_asterisk() as session:
             query = session.execute(f" select id from ps_auths where username = '{username}' ").first()
+            session.close()
             return  query
 
     def get_by_user_phone(self, phone: str):
         with self.session_asterisk() as session:
             query = session.execute(f" select id from ps_auths where id = '{phone}' ").first()
+            session.close()
             return  query
 
     def update_asterisk(self, id, params: AsteriskParams,  w = ""):
@@ -74,6 +76,7 @@ class Asterisk():
             flag = False
             if query is not None and query[0] == "online": 
                 flag = True
+            session.close()
             return flag
         
     def execute(self):
@@ -83,7 +86,6 @@ class Asterisk():
             while self.stack_multiple_query != []:
                 query = stack.pop()
                 session.execute(query)
-            session.commit()
             session.close()
 
 class ExceptionAsterisk(NotFoundError):
