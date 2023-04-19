@@ -286,6 +286,8 @@ class UserService:
         if user_permission == {}:
             user_permission = self._repository.get_role_permission(user.id, only_access)
         for role_id, params in user_permission.items():
+            if len(params['permissions']) == 0:
+                continue
             result_roles[role_id] = params
             result_roles[role_id]['permissions'] = list(params['permissions'].values())
         userDetail.roles = list(result_roles.values())

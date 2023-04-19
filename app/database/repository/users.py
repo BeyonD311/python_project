@@ -82,7 +82,21 @@ class UserRepository(SuperRepository):
             if user is None:
                 raise UserNotFoundError(login)
             return user
-
+    def get_by_id(self, id: int) -> User:
+        with self.session_factory() as session:
+            user: User = session.query(self.base_model).filter(self.base_model.id == id).first()
+            user.skills
+            user.position
+            user.department
+            user.skills
+            user.status 
+            user.image
+            for role in user.roles:
+                role.permissions
+            user.groups
+            user.groups
+            user.inner_phone
+            return user
     def get_users_position(self):
         with self.session_factory() as session:
             query = session.query(PositionModel).all()
