@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from .super import NotFoundError
 
-__all__ = ["Asterisk", "AsteriskParams", "ExceptionAsterisk"]
+__all__ = ["Asterisk", "AsteriskParams", "ExceptionAsterisk", "StatusHistoryParams"]
 
 class AsteriskParams(BaseModel):
     phone_number: str
@@ -15,6 +15,15 @@ class AsteriskParams(BaseModel):
     duration_conversation: float
     webrtc: str
     transport: str
+
+class StatusHistoryParams(BaseModel):
+    time_at: int
+    user_uuid: str
+    user_c: str
+    source: str
+    destination: str
+    code: str
+    call_time: str = None
 
 class Asterisk():
 
@@ -78,6 +87,16 @@ class Asterisk():
                 flag = True
             session.close()
             return flag
+    
+    def get_phones_by_user_uuid(self, uuid:str ):
+        with self.session_asterisk() as session:
+            query = session.execute(f"select id from ps_auths where uuid='{uuid}'").all()
+            session.commit()
+            return query
+
+
+    def set_status_history(self, params: StatusHistoryParams):
+        self.stack_multiple_query.append(f"CALL AddStatusHistory({params.time_at}, '{params.user_uuid}', '{params.user_c}', '{params.source}', '{params.destination}', '{params.code}', NULL)")
         
     def execute(self):
         session: Session
@@ -86,7 +105,7 @@ class Asterisk():
             while self.stack_multiple_query != []:
                 query = stack.pop()
                 session.execute(query)
-            session.close()
+            session.commit()
 
 class ExceptionAsterisk(NotFoundError):
     entity_name: str

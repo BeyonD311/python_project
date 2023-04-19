@@ -23,7 +23,7 @@ from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
 from typing import Callable
 from uuid import uuid4
-from .asterisk import Asterisk
+from .asterisk import Asterisk, StatusHistoryParams
 
 
 """ 
@@ -252,17 +252,33 @@ class UserRepository(SuperRepository):
             current.status_id = status_id
             current.status_at = datetime.now()
             current.status
+            current.inner_phone
             event_type="set_status"
             session.add(current)
             session.commit()
         status_id = current.status_id
-        if current.status_id == 10 or current.status_id == 9:
+        status_code = current.status.code
+        if current.status_id == 10:
             if self.session_asterisk.check_device_status(current.uuid):
                 status_id = 10
+                status_code = "ready"
             else:
                 status_id = 14
+                status_code = "unavailable"
         if current.status_id != 18:
             self.session_asterisk.save_status_asterisk(status_id, current.uuid)
+            inner_phone: InnerPhone
+            for inner_phone in current.inner_phone:
+                if inner_phone.is_default and inner_phone.is_registration:
+                    status_history_params = StatusHistoryParams(
+                        time_at=int(current.status_at.timestamp()),
+                        user_uuid=current.uuid,
+                        user_c=str(inner_phone.phone_number),
+                        source=0,
+                        destination=0,
+                        code=status_code
+                    )
+                    self.session_asterisk.set_status_history(status_history_params)
         self.session_asterisk.execute()
         return {
             "uuid": current.uuid,
