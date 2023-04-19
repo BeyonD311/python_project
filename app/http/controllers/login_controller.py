@@ -1,6 +1,4 @@
-import os
-import jwt
-import typing
+import os, jwt, typing, datetime
 from hashlib import sha256
 from fastapi import APIRouter, Depends, status, Response, Request
 from fastapi.security import HTTPBearer
@@ -31,14 +29,14 @@ def token_decode(token: str) -> typing.Mapping:
 async def logout(
     request: Request,
     response: Response,
-    user_servive: UserService = Depends(Provide[Container.user_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
     jwt_m: JwtManagement = Depends(Provide[Container.jwt]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     
     try:
         access_token = get_token(request)
         decode = token_decode(access_token)
-        user = user_servive.by_id(decode['azp'])
+        user = user_service.by_id(decode['azp'])
         jwt_gen = await jwt_m.generate(user)
         async with jwt_gen as j:
             tokens = await j.get_tokens() 
@@ -67,7 +65,7 @@ async def logout(
     except TokenNotFound as e:
         response.status_code = status.HTTP_401_UNAUTHORIZED
         return {
-            "massage": "Pleace auth"
+            "massage": "Please auth"
         }
     except jwt.exceptions.ExpiredSignatureError as e:
         response.status_code = status.HTTP_409_CONFLICT
@@ -80,13 +78,13 @@ async def logout(
 async def refresh(
     request: Request,
     response: Response,
-    user_servive: UserService = Depends(Provide[Container.user_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
     jwt_m: JwtManagement = Depends(Provide[Container.jwt]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
         access_token = get_token(request)
         decode = token_decode(access_token)
-        user = user_servive.by_id(decode['azp'])
+        user = user_service.by_id(decode['azp'])
         jwt_gen = await jwt_m.generate(user)
         async with jwt_gen as j:
             await j.get_tokens()
@@ -112,7 +110,7 @@ async def refresh(
     except TokenNotFound as e:
         response.status_code = status.HTTP_401_UNAUTHORIZED
         return {
-            "massage": "Pleace auth"
+            "massage": "Please auth"
         }
     except jwt.exceptions.ExpiredSignatureError as e:
         response.status_code = status.HTTP_409_CONFLICT
@@ -125,11 +123,12 @@ async def refresh(
 async def login(
     params: UserLoginParams,
     response: Response,
-    user_servive: UserService = Depends(Provide[Container.user_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
     jwt: JwtManagement = Depends(Provide[Container.jwt])):
     password = sha256(params.password.encode()).hexdigest()
     try:
-        user = user_servive.find_user_by_login(params.login)
+        user = user_service.find_user_by_login(params.login)
+        await user_service.set_status(user.id, 18)
     except NotFoundError as e:
         response.status_code = status.HTTP_401_UNAUTHORIZED
         return {
