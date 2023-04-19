@@ -27,5 +27,6 @@ class EventRoute(Enum):
     
 
 async def publisher(redis: Redis, channel: str, params: Params):
-    await redis.publish(channel, dumps(params))
+    r = await redis.publish(channel, dumps(params))
+    print(r)
     

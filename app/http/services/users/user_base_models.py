@@ -57,7 +57,6 @@ class UserDetailResponse(BaseModel):
     patronymic: str = None
     login: str
     fio: str
-    uuid: str = None
     inner_phone: int = None
     phone: str = None
     department: dict = None

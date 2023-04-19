@@ -1,4 +1,4 @@
-import jwt, os, json, logging, asyncio
+import jwt, os, json, asyncio
 from websockets.exceptions import ConnectionClosedError
 from fastapi import Depends, APIRouter, Response, Request, WebSocket
 from fastapi.security import HTTPBearer
@@ -6,6 +6,9 @@ from app.kernel.container import Container
 from dependency_injector.wiring import Provide, inject
 from app.http.services.users import UserService
 from app.http.services.helpers import default_error
+from app.http.services.logger_default import get_logger
+
+log = get_logger("status_controller.log")
 
 security = HTTPBearer()
 
@@ -64,7 +67,7 @@ async def update_status(
             "message": err[1]
         }
     
-@route.get("/asterisk")
+@route.get("/asterisk",  include_in_schema=True)
 @inject
 async def update_status_asterisk(
     status_cod: str, 
@@ -80,6 +83,7 @@ async def update_status_asterisk(
         **status_time** - время установки статуса 
     """
     try:
+        log.debug(f"Input params: status_cod = {status_cod}; uuid = {uuid}; status_time = {status_time}; caller = {caller}")
         await user_service.set_status_by_aster(uuid=uuid, status_code=status_cod, status_time=status_time, incoming_call=caller)
         return {
             "message": "set status"
@@ -91,7 +95,7 @@ async def update_status_asterisk(
             "message": err[1]
         }
 
-@route.websocket("/ws")
+@route.websocket("/ws", "user_status")
 @inject
 async def ws_channel_user_status(
     websocket: WebSocket,
@@ -127,3 +131,11 @@ async def ws_channel_user_status(
             "data": [],
             "message": "Данные не обнаружены "
         })
+
+@route.get("/fill",  include_in_schema=False)
+@inject
+async def fill(
+    user_service: UserService = Depends(Provide[Container.user_service])
+):
+    await user_service.add_status_to_redis()
+    await user_service.all()

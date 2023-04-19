@@ -23,6 +23,7 @@ from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
 from typing import Callable
 from uuid import uuid4
+from .asterisk import Asterisk
 
 
 """ 
@@ -42,8 +43,10 @@ class UserRepository(SuperRepository):
         global event_type
         event_type = None
         super().__init__(session_factory)
-        self.session_asterisk = session_asterisk
-
+        self.session_asterisk: Asterisk = Asterisk(session_asterisk)
+    def items(self):
+        with self.session_factory() as session:
+            return session.query(self.base_model).filter(self.base_model.id != 0).all()
     def get_all(self, params) -> dict[User]:
         with self.session_factory() as session:
             offset = 0
@@ -103,13 +106,13 @@ class UserRepository(SuperRepository):
                                   self.base_model.status_at.label("status_at"),
                                   StatusModel.alter_name.label("status_name"),
                                   StatusModel.color.label("status_color")
-                                  )\
+                                  ).distinct(self.base_model.id)\
                     .join(ImagesModel, ImagesModel.id == self.base_model.image_id, isouter=True)\
                     .join(StatusModel, StatusModel.id == self.base_model.status_id, isouter=True)\
                     .join(PositionModel, PositionModel.id == self.base_model.position_id, isouter=True)\
                     .join(HeadOfDepartment, HeadOfDepartment.head_of_department_id == self.base_model.id, isouter=True)\
                     .join(InnerPhone, and_(InnerPhone.user_id == self.base_model.id, InnerPhone.is_default == True, InnerPhone.is_registration == True), isouter=True)\
-                    .filter(self.base_model.department_id == department_id, self.base_model.status_id !=4)\
+                    .filter((self.base_model.department_id == department_id) | (HeadOfDepartment.department_id == department_id), self.base_model.status_id !=4)\
                     .filter((PositionModel.id == 1) | (HeadOfDepartment.is_active == True))\
                     .order_by(self.base_model.id).all()
             if result is None:
@@ -238,8 +241,17 @@ class UserRepository(SuperRepository):
             event_type="set_status"
             session.add(current)
             session.commit()
-        self.__save_status_asterisk(current) 
+        status_id = current.status_id
+        if current.status_id == 10 or current.status_id == 9:
+            if self.session_asterisk.check_device_status(current.uuid):
+                status_id = 10
+            else:
+                status_id = 14
+        if current.status_id != 18:
+            self.session_asterisk.save_status_asterisk(status_id, current.uuid)
+        self.session_asterisk.execute()
         return {
+            "uuid": current.uuid,
             "id": current.id,
             "status_id": current.status_id,
             "status_at": str(current.status_at),
@@ -248,30 +260,16 @@ class UserRepository(SuperRepository):
             "color": current.status.color,
             "alter_name": current.status.alter_name,
         }
-    def set_status_by_uuid(self, uuid, status_cod, status_time):
+    
+    async def set_status_by_uuid(self, uuid, status_id, status_time):
         global event_type
-        current = None
         with self.session_factory() as session:
-            current = session.query(self.base_model).filter(self.base_model.uuid == uuid).first()
-            if current is None:
-                raise NotFoundError("User not found")
-            status = session.query(StatusModel).filter(StatusModel.code == status_cod).first()
-            current.status_id = status.id
-            current.status_at = str(status_time)
-            current.status
+            sql = f"update users set status_id = {status_id}, status_at = '{str(status_time)}' where uuid = '{uuid}'"
             event_type="set_status"
-            session.add(current)
+            session.execute(sql)
             session.commit()
-        self.__save_status_asterisk(current)
-        return{
-            "id": current.id,
-            "status_id": current.status_id,
-            "status_at": str(current.status_at),
-            "status": current.status.name,
-            "code": current.status.behavior,
-            "color": current.status.color,
-            "alter_name": current.status.alter_name,
-        }
+        self.session_asterisk.save_status_asterisk(status_id,uuid)
+        self.session_asterisk.execute()
 
     def add(self, user_model: User) -> any:
         try:
@@ -342,12 +340,9 @@ class UserRepository(SuperRepository):
                 session.delete(phone)
             session.add(user)
             session.commit()   
-        with self.session_asterisk() as session:
-            if phones != []:
-                queries = self._delete_asterisk(",".join(phones))
-                for query in queries:
-                    session.execute(query)
-            session.commit()
+        if phones != []:
+            self.session_asterisk.delete_asterisk(",".join(phones))
+            self.session_asterisk.execute()
     
     def user_dismiss(self, user_id: int,  date_dismissal_at: datetime = None):
         user = self.get_by_id(user_id)
@@ -366,29 +361,29 @@ class UserRepository(SuperRepository):
                 session.delete(phone)
             session.add(user)
             session.commit()
-        with self.session_asterisk() as session:
-            if phones != []:
-                queries = self._delete_asterisk(",".join(phones))
-                for query in queries:
-                    session.execute(query)
-            session.commit()
+        if phones != []:
+            self.session_asterisk.delete_asterisk(",".join(phones))
+            self.session_asterisk.execute()
+
     async def user_get_time(self, user_id: int):
         with self.session_factory() as session:
             user = session.query(self.base_model).filter(self.base_model.id == user_id).first()
-            res = session.query(StatusHistoryModel).filter(StatusHistoryModel.user_id == user_id, StatusHistoryModel.update_at >= "2023-04-14").order_by(StatusHistoryModel.update_at.asc()).first()
-            if res is None:
-                res = datetime.now()
+            date_now = datetime.now().__format__("%Y-%m-%d 00:00:00")
+            time_kc = session.query(StatusHistoryModel).filter(StatusHistoryModel.user_id == user_id, StatusHistoryModel.status_id == 18, StatusHistoryModel.update_at >= date_now)\
+                .order_by(StatusHistoryModel.update_at.asc()).first()
+            if time_kc is None:
+                time_kc = datetime.now()
             else:
-                res = res.update_at
+                time_kc = time_kc.update_at
             result = {
-                "event": "CHANGE_STATUS",
-                "statusName": "",
-                "startTimeCurrentStatus": str(user.status_at),
-                "startTimeKC": str(res),
+                "event": "CONNECTION",
+                "status": "",
+                "status_at": str(user.status_at),
+                "startTimeKC": str(time_kc),
                 "color": ""
             }
             if user.status is not None:
-                result['statusName'] = user.status.alter_name
+                result['status'] = user.status.alter_name
                 result['color'] = user.status.color
             return result
         
@@ -451,9 +446,9 @@ class UserRepository(SuperRepository):
             field = field.asc()
         return field
     
-    def __save_status_asterisk(self, user: User):
+    def __save_status_asterisk(self, status_id, uuid):
         with self.session_asterisk() as session_asterisk:
-            query = f" update ps_auths set status = {user.status_id} where ps_auths.uuid = \"{user.uuid}\" "
+            query = f" update ps_auths set status = {status_id} where ps_auths.uuid = \"{uuid}\" "
             session_asterisk.execute(query)
             session_asterisk.commit()
 
@@ -482,7 +477,6 @@ def after_update_handler(mapper, connection: Connection, target: User):
         if status_id == 16 or status_id == 15:
             is_active = "false"
         connection.execute(f"insert into status_history (user_id,status_id,update_at,is_active) values ({user_id},{status_id},'{update_at}',{is_active})")
-
     if event_type != None:
         with connection.begin():
             status_current = connection.execute(f"select update_at, status_id, user_id from status_history where user_id = {target.id} and is_active = true").first()

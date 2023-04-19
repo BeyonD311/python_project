@@ -1,10 +1,9 @@
-import datetime
-import json
-import asyncio
+import datetime, json, asyncio
 from fastapi.websockets import WebSocket, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosedOK
 from aioredis.client import PubSub
 from hashlib import sha256
+from app.http.services.logger_default import get_logger
 from app.database import UserModel
 from app.database import UserRepository
 from app.database import NotFoundError
@@ -20,6 +19,9 @@ from app.http.services.users.user_base_models import UserPermission
 from app.http.services.event_channel import (
     subscriber, publisher, Params as PublisherParams, EventRoute
 )
+
+log = get_logger("UserService.log")
+
 class UserService:
     def __init__(self, user_repository: UserRepository, redis: RedisInstance) -> None:
         self._repository: UserRepository = user_repository
@@ -43,10 +45,13 @@ class UserService:
         return self._repository.get_users_position()
     
     def get_departments_employees(self, department_id):
-        department_headers, department_employees = [], []
+        department_headers, department_employees = {}, {}
         users = self._repository.get_users_department(department_id=department_id)
         for person in users:
-            (department_headers if person[5] == True else department_employees).append(person)
+            if person[5] == True:
+                department_headers[person[0]] = person
+            else:
+                department_employees[person[0]] = person
         result = {
             "management": department_headers,
             "supervisor": department_employees
@@ -69,10 +74,22 @@ class UserService:
     def find_user_by_login(self, login: str):
         return self._repository.get_by_login(login) 
 
-    def create_user(self, user: UserRequest) -> UserDetailResponse:
-        user:UserDetailResponse = self.__user_response(self._repository.add(self.__fill_fields(user)))
-        return user
+    async def create_user(self, user: UserRequest) -> UserDetailResponse:
+        user:UserDetailResponse = self._repository.add(self.__fill_fields(user))
+        user_param = {
+            "id": user.id
+        }
+        await self._redis.redis.set(f"user:uuid:{user.uuid}", json.dumps(user_param))
+        return self.__user_response(user)
     
+    async def all(self):
+        users = self._repository.items()
+        for user in users:
+            u = {
+                "id": user.id
+            }
+            await self._redis.redis.set(f"user:uuid:{user.uuid}", json.dumps(u))
+
     def update_user(self, id: int, user: UserRequest) -> any:
         if id == 0:
             raise NotFoundError(id)
@@ -96,7 +113,8 @@ class UserService:
         except Exception as e:
             event = "CHANGE_STATUS"
         params = PublisherParams(
-            user_id=status_params['id'],
+            user_id=user_id,
+            uuid=status_params['uuid'],
             status_id=status_params['status_id'],
             status_cod=status_params['code'],
             status_at=str(status_params['status_at']),
@@ -111,7 +129,7 @@ class UserService:
             try:
                 channel = f"user:status:{user_id}:c"
                 async for result in subscriber(pubsub, channel):
-                    if result == "1":
+                    if result == 1:
                         result = json.dumps(await self._repository.user_get_time(user_id))
                     await websocket.send_text(result)
             except ConnectionClosedOK as e:
@@ -120,30 +138,44 @@ class UserService:
             except WebSocketDisconnect as e:
                 print(str(e))
                 return
-
+    async def add_status_to_redis(self):
+        statuses = self._repository.get_all_status()
+        for status in statuses:
+            params = status.__dict__
+            del params['_sa_instance_state']
+            await self._redis.redis.set(f"status:code:{status.code}", json.dumps(params))
     async def set_status_by_aster(self, uuid: str, status_code: str, status_time: str, incoming_call: str = None):
         status_time = datetime.datetime.fromtimestamp(status_time)
-        status_params = self._repository.set_status_by_uuid(uuid=uuid,status_cod=status_code,status_time=status_time)
+        status = await self._redis.redis.get(f"status:code:{status_code}")
+        user_id = await self._redis.redis.get(f"user:uuid:{uuid}")
+        user_id = json.loads(user_id)
+        if status is None:
+            raise NotFoundError("status not found")
+        status = json.loads(status)
+        log.debug(f"uuid={uuid},status_id={status['id']},status_time={status_time}")
+        await self._repository.set_status_by_uuid(uuid=uuid,status_id=status['id'],status_time=status_time)
         enums = EventRoute
         event = None
-        if status_code == "hangup":
-            event = "HANGUP_CALL"
-        else:
-            try:
-                event = enums[status_params['code'].upper()].value
-            except Exception as e:
-                event = "CHANGE_STATUS"
+        try:
+            event = enums[status['behavior'].upper()].value
+        except Exception as e:
+            event = "CHANGE_STATUS"
         params = PublisherParams(
-            user_id=status_params['id'],
-            status_id=status_params['status_id'],
-            status_cod=status_params['code'],
-            status_at=str(status_params['status_at']),
-            status=status_params['alter_name'],
+            user_id=user_id['id'],
+            status_id=status['id'],
+            status_cod=status['code'],
+            status_at=str(status_time),
+            status=status['alter_name'],
             event=event,
-            color=status_params['color'],
+            color=status['color'],
             incoming_call=incoming_call
         )
         await self.__set_status_redis(params)
+        if params.status_cod == "precall":
+            await asyncio.sleep(0.1)
+            params.event = "CHANGE_STATUS"
+            print(params)
+            await self.__set_status_redis(params)
             
     def dismiss(self, id: int, date_dismissal_at: datetime.datetime = None):
         if date_dismissal_at == None:
@@ -178,6 +210,7 @@ class UserService:
         }
     async def get_users_status(self, users_id: list):
         result = {}
+        print(await self._repository.user_get_time(0))
         for user_id in users_id:
             status = await self._redis.redis.get(f"status.user.{user_id}")
             if status is not None:

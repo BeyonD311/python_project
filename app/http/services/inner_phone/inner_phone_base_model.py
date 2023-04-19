@@ -16,7 +16,7 @@ class InnerPhone(BaseModel):
     duration_conversation: time = "00:00:00"
     incoming_calls: int = 0
     comment: str = None
-    
+
 
 class RequestInnerPhone(BaseModel):
     user_id: int

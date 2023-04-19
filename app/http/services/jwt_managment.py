@@ -11,6 +11,7 @@ class Jwt:
         self.redis = redis
         self.user = user
         self.timestamp = 0
+        self.hour = 3600
 
     async def _refresh_token(self):
         timestamp = round(datetime.now().timestamp())
@@ -18,7 +19,7 @@ class Jwt:
             payload={
                 "azp": self.user.id,
                 "iat": timestamp,
-                "exp": timestamp + 86400
+                "exp": timestamp + (self.hour * 24)
             },
             key=os.getenv("SECRET_KEY"),
             algorithm="HS256"
@@ -28,17 +29,11 @@ class Jwt:
     async def _access_token(self):
         timestamp = round(datetime.now().timestamp())
         self.timestamp = timestamp + (10 * 60)
-        roles_result = {}
-        for role in self.user.roles:
-            roles_result[role.id] = {}
-            # for access in role.permission_model:
-            #     roles_result[role.id][access.module_id] = access.method_access
         access_token = jwt.encode(
             payload={
                 "azp": self.user.id,
                 "iat": timestamp,
                 "exp": timestamp + (10 * 60),
-                "rol": roles_result
             },
             key=os.getenv("SECRET_KEY"),
             algorithm="HS256"
@@ -47,8 +42,9 @@ class Jwt:
 
     async def add_to_black_list(self, token: str):
         await self.check_black_list(token)
-        await asyncio.sleep(1)
-        await self.redis.set(f"users:black_list:{token}", "0")
+        await asyncio.sleep(0.5)
+        # время жизни неделя
+        await self.redis.set(f"users:black_list:{token}", ex=(self.hour * 24) * 7)
 
     async def check_black_list(self, token: str):
         black_list = await self.redis.get(f"users:black_list:{token}")
@@ -63,17 +59,17 @@ class Jwt:
             "refresh_token": refresh.decode('utf-8'),
             "life_time": 10 * 60
         }
-        await self.redis.set(f"user:{self.user.id}", json.dumps(tokens))
+        await self.redis.set(f"user:token:{self.user.id}", json.dumps(tokens))
         return tokens
         
     async def get_tokens(self):
-        tokens = await self.redis.get(f"user:{self.user.id}")
+        tokens = await self.redis.get(f"user:token:{self.user.id}")
         if tokens is None:
             raise TokenNotFound
         return json.loads(tokens)
     
     async def remove_token(self):
-        await self.redis.delete(f"user:{self.user.id}")
+        await self.redis.delete(f"user:token:{self.user.id}")
 
     async def __aenter__(self):
         return self

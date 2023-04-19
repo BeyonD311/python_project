@@ -38,8 +38,10 @@ class Database:
             session.rollback()
             raise
         finally:
-            if session.event == "after_commit":
-                session.close()
+            session.close()
+            # if session.event == "after_commit":
+            #     print('commit-------------------------------')
+            #     session.close()
     def event_listner(self, session: Session):
         session.event = None
         @event.listens_for(session, "after_commit")
