@@ -63,6 +63,9 @@ class InnerPhones(SuperRepository):
                 session.delete(phone)
             session.commit()
             if len(phones_asterisk) > 0:
+                phones = self.session_asterisk.get_phones_by_user_uuid(user.uuid)
+                for phone in phones:
+                    phones_asterisk.append(str(phone.id))
                 self.session_asterisk.delete_asterisk(",".join(phones_asterisk))
                 self.session_asterisk.execute()
             for inner_phone in params.inner_phones:
