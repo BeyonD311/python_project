@@ -388,7 +388,7 @@ class UserRepository(SuperRepository):
             user.status_id = status.id
             user.employment_status = False
             for phone in user.inner_phone:
-                phones.append(phone.phone_number)
+                phones.append(str(phone.phone_number))
                 session.delete(phone)
             session.add(user)
             session.commit()
@@ -440,12 +440,6 @@ class UserRepository(SuperRepository):
             user.is_active = True
             session.add(user)
             session.commit()       
-
-    def _delete_asterisk(self, id):
-        aors = f" delete from ps_aors where id in ({id})"
-        auth = f" delete from ps_auths where id in ({id})"
-        endpoints = f" delete from ps_endpoints where id in ({id})"
-        return aors, auth, endpoints
     
     def __filter(self, query: Query, params) -> Query:
         if params.filter is not None:
@@ -477,20 +471,7 @@ class UserRepository(SuperRepository):
         else:
             field = field.asc()
         return field
-    
-    def __save_status_asterisk(self, status_id, uuid):
-        with self.session_asterisk() as session_asterisk:
-            query = f" update ps_auths set status = {status_id} where ps_auths.uuid = \"{uuid}\" "
-            session_asterisk.execute(query)
-            session_asterisk.commit()
 
-class StatusBehavior():
-    behavior = {
-        "dismiss": "",
-        "offline": "",
-        "break": "",
-        "ready": ""
-    }
 
 class UserNotFoundError(NotFoundError):
     entity_name: str = "User"
