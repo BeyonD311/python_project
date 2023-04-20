@@ -386,6 +386,7 @@ class UserRepository(SuperRepository):
             user.date_dismissal_at = date_dismissal_at
             user.status_at =  date_dismissal_at
             user.status_id = status.id
+            user.employment_status = False
             for phone in user.inner_phone:
                 phones.append(phone.phone_number)
                 session.delete(phone)
@@ -428,6 +429,7 @@ class UserRepository(SuperRepository):
                 user.date_dismissal_at = None
                 user.status_at =  datetime.now()
                 user.status_id = status.id
+                user.employment_status = True
                 session.add(user)
                 session.commit()
 
