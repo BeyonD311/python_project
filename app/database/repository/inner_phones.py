@@ -74,8 +74,8 @@ class InnerPhones(SuperRepository):
                     user_id = user.id,
                     phone_number = inner_phone.phone_number,
                     description = inner_phone.description,
-                    is_registration = inner_phone.registration,
-                    is_default = inner_phone.default,
+                    is_registration = inner_phone.is_registration,
+                    is_default = inner_phone.is_default,
                     login = inner_phone.login,
                     password = inner_phone.password,
                     duration_call = inner_phone.duration_call,
@@ -85,7 +85,7 @@ class InnerPhones(SuperRepository):
                 )
                 if inner_phone.id != 0:
                     phone.id = inner_phone.id
-                if inner_phone.registration and inner_phone.default and count_default == 0:
+                if inner_phone.is_registration and inner_phone.is_default and count_default == 0:
                     check_phone = self.session_asterisk.get_by_user_phone(inner_phone.phone_number)
                     if check_phone is not None:
                         raise PhoneFoundError(f"Телефон уже существует {inner_phone.phone_number}")
