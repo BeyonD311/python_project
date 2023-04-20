@@ -8,8 +8,8 @@ class InnerPhone(BaseModel):
     id: int = None
     phone_number: int
     description: str = None
-    registration: bool = False
-    default: bool = False
+    is_registration: bool = False
+    is_default: bool = False
     login: str
     password: str
     duration_call: time = "00:00:00"

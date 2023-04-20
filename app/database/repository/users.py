@@ -265,6 +265,8 @@ class UserRepository(SuperRepository):
             else:
                 status_id = 14
                 status_code = "unavailable"
+        if status_code.find("break") != -1:
+            status_id = 9
         if current.status_id != 18:
             self.session_asterisk.save_status_asterisk(status_id, current.uuid)
             inner_phone: InnerPhone
@@ -400,6 +402,7 @@ class UserRepository(SuperRepository):
         with self.session_factory() as session:
             user = session.query(self.base_model).filter(self.base_model.id == user_id).first()
             date_now = datetime.now().__format__("%Y-%m-%d 00:00:00")
+            # the beginning of the working day
             time_kc = session.query(StatusHistoryModel).filter(StatusHistoryModel.user_id == user_id, StatusHistoryModel.status_id == 18, StatusHistoryModel.update_at >= date_now)\
                 .order_by(StatusHistoryModel.update_at.asc()).first()
             if time_kc is None:
@@ -477,7 +480,7 @@ class UserNotFoundError(NotFoundError):
     entity_name: str = "User"
 
 # Обновляем таблицу status_history после обновления статусов
-""" @event.listens_for(User, 'after_update')
+@event.listens_for(User, 'after_update')
 def after_update_handler(mapper, connection: Connection, target: User):
     
     def update(time_at = None):
@@ -509,4 +512,4 @@ def after_update_handler(mapper, connection: Connection, target: User):
                 else:
                     time_at = str(td)
                 update(time_at)
-            add(target.id, target.status_id, target.status_at) """
+            add(target.id, target.status_id, target.status_at)

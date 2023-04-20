@@ -15,5 +15,8 @@ INSERT INTO public.status_users (id, "name",color,code,behavior,alter_name,life_
 	 (14,'Недоступен','disabled','unavailable','offline','Оффлайн',NULL),
 	 (15,'Нерабочее время','disabled','offline','offline','Оффлайн',NULL),
 	 (16,'Уволен','disabled','dismiss','dismiss','Уволен',NULL),
-	 (17,'Завершение разговора',NULL,'hangup','hangup',NULL,NULL);
-	 (18,'Авторизация в системе',NULL,'auth','auth',NULL,NULL);
+	 (17,'Завершение разговора',NULL,'hangup','hangup',NULL,NULL),
+	 (18,'Авторизация в системе',NULL,'auth','auth',NULL,NULL),
+	 (19,'Перерыв на обед','warning','break_lunch','break','Обед','01:00:00'),
+	 (20,'Перерыв на туалет','warning','break_toilet','break','Туалет','00:20:00'),
+	 (21,'Перерыв на обучение','warning','break_training','break','Обучение','00:45:00');
