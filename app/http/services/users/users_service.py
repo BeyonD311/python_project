@@ -114,7 +114,6 @@ class UserService:
             event = "CHANGE_STATUS"
         params = PublisherParams(
             user_id=user_id,
-            uuid=status_params['uuid'],
             status_id=status_params['status_id'],
             status_cod=status_params['code'],
             status_at=str(status_params['status_at']),
@@ -133,10 +132,10 @@ class UserService:
                         result = json.dumps(await self._repository.user_get_time(user_id))
                     await websocket.send_text(result)
             except ConnectionClosedOK as e:
-                print(str(e))
+                log.error(str(e))
                 return
             except WebSocketDisconnect as e:
-                print(str(e))
+                log.error(str(e))
                 return
     async def add_status_to_redis(self):
         statuses = self._repository.get_all_status()
