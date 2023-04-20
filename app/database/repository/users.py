@@ -477,7 +477,7 @@ class UserNotFoundError(NotFoundError):
     entity_name: str = "User"
 
 # Обновляем таблицу status_history после обновления статусов
-@event.listens_for(User, 'after_update')
+""" @event.listens_for(User, 'after_update')
 def after_update_handler(mapper, connection: Connection, target: User):
     
     def update(time_at = None):
@@ -509,4 +509,4 @@ def after_update_handler(mapper, connection: Connection, target: User):
                 else:
                     time_at = str(td)
                 update(time_at)
-            add(target.id, target.status_id, target.status_at)
+            add(target.id, target.status_id, target.status_at) """
