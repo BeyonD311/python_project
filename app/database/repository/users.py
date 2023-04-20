@@ -410,11 +410,15 @@ class UserRepository(SuperRepository):
             else:
                 time_kc = time_kc.update_at
             result = {
-                "event": "CONNECTION",
-                "status": "",
+                "user_id": user_id,
+                "status_id": user.status_id,
+                "status_cod": user.status.code,
                 "status_at": str(user.status_at),
-                "startTimeKC": str(time_kc),
-                "color": ""
+                "status": "",
+                "event":"CONNECTION",
+                "color": "",
+                "start_time_kc": str(time_kc),
+                "incoming_call": None
             }
             if user.status is not None:
                 result['status'] = user.status.alter_name
