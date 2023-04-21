@@ -15,6 +15,7 @@ class Params(BaseModel):
     incoming_call: str = None
     event: str = None
     start_time_kc: str = None
+    call_id: str = None
 
 class EventRoute(Enum):
     CALL = "NEW_CALL"

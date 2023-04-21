@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, Response
+from fastapi import APIRouter, Depends, status as FastApiStatus, Response
 from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
 from app.http.services.helpers import parse_params_num
@@ -39,7 +39,7 @@ def get_departments(
         }
         return department_service.get_employees(filter_params)
     except NotFoundError as e:
-        response.status_code = status.HTTP_400_BAD_REQUEST
+        response.status_code = FastApiStatus.HTTP_400_BAD_REQUEST
         return {
             "message": str(e)
         }
@@ -83,7 +83,7 @@ def delete_department(
     try:
         return     department_service.delete(id)
     except NotFoundError as e:
-        response.status_code = status.HTTP_400_BAD_REQUEST
+        response.status_code = FastApiStatus.HTTP_400_BAD_REQUEST
         return {
             "message": str(e)
         }

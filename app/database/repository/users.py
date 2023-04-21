@@ -245,11 +245,17 @@ class UserRepository(SuperRepository):
                 raise NotFoundError(f"Users not found {users_id}")
             return users
 
-    def set_status(self, user_id, status_id):
+    def set_status(self, user_id, status_id, call_id = None):
         global event_type
         current = None
+        
         with self.session_factory() as session:
             current = session.query(self.base_model).get(user_id)
+            if status_id == 10:
+                if self.session_asterisk.check_device_status(current.uuid):
+                    status_id = 10
+                else:
+                    status_id = 14
             current.status_id = status_id
             current.status_at = datetime.now()
             current.status
@@ -259,13 +265,9 @@ class UserRepository(SuperRepository):
             session.commit()
         status_id = current.status_id
         status_code = current.status.code
-        if current.status_id == 10:
-            if self.session_asterisk.check_device_status(current.uuid):
-                status_id = 10
-                status_code = "ready"
-            else:
-                status_id = 14
-                status_code = "unavailable"
+        if status_id == 15:
+            status_id = 14
+            status_code = "unavailable"
         if status_code.find("break") != -1:
             status_id = 9
         if current.status_id != 18:
