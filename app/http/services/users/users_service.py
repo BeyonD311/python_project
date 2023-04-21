@@ -115,7 +115,7 @@ class UserService:
         params = PublisherParams(
             user_id=user_id,
             status_id=status_params['status_id'],
-            status_cod=status_params['code'],
+            status_code=status_params['code'],
             status_at=str(status_params['status_at']),
             status=status_params['alter_name'],
             event=event,
@@ -162,7 +162,7 @@ class UserService:
         params = PublisherParams(
             user_id=user_id['id'],
             status_id=status['id'],
-            status_cod=status['code'],
+            status_code=status['code'],
             status_at=str(status_time),
             status=status['alter_name'],
             event=event,

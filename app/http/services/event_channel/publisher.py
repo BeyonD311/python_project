@@ -8,7 +8,7 @@ __all__ = ["Params", "publisher", "EventRoute"]
 class Params(BaseModel):
     user_id: int
     status_id: int
-    status_cod: str
+    status_code: str
     status_at: str
     status: str = None
     color: str = None
