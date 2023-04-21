@@ -231,7 +231,7 @@ class UserService:
                 status_params = json.loads(status)
                 result[user_id] = UserStatus(
                     status_id=status_params['status_id'],
-                    status_cod=status_params['status_cod'],
+                    status_cod=status_params['status_code'],
                     status_at=str(status_params['status_at']),
                     status=status_params['status'],
                     color=status_params['color'],
