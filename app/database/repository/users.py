@@ -245,7 +245,7 @@ class UserRepository(SuperRepository):
                 raise NotFoundError(f"Users not found {users_id}")
             return users
 
-    def set_status(self, user_id, status_id):
+    def set_status(self, user_id, status_id, call_id = None):
         global event_type
         current = None
         with self.session_factory() as session:
@@ -266,6 +266,9 @@ class UserRepository(SuperRepository):
             else:
                 status_id = 14
                 status_code = "unavailable"
+        if current.status_id == 15:
+            status_id = 14
+            status_code = "unavailable"
         if status_code.find("break") != -1:
             status_id = 9
         if current.status_id != 18:

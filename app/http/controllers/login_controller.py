@@ -38,6 +38,7 @@ async def logout(
         decode = token_decode(access_token)
         user = user_service.by_id(decode['azp'])
         jwt_gen = await jwt_m.generate(user)
+        await user_service.set_status(decode['azp'], 15)
         async with jwt_gen as j:
             tokens = await j.get_tokens() 
             await j.add_to_black_list(tokens['access_token'])

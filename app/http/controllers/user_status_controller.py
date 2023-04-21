@@ -47,6 +47,7 @@ async def update_status(
     response: Response, 
     request: Request, 
     user_id: int = None,
+    call_id: str = None,
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     """ Если параметр '**user_id** == null' то будет изменен статус текущего пользователя """
@@ -56,7 +57,7 @@ async def update_status(
             decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
             user_id = decode['azp']
         
-        await user_service.set_status(user_id,status_id=status_id)
+        await user_service.set_status(user_id,status_id=status_id, call_id=call_id)
         return {
             "message": "set status"
         }
@@ -76,6 +77,7 @@ async def update_status_asterisk(
     response: Response, 
     request: Request, 
     caller: str = None,
+    call_id: str = None,
     user_service: UserService = Depends(Provide[Container.user_service])):
     """ 
         **status_cod** - код статуса\n

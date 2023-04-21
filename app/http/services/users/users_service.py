@@ -104,7 +104,7 @@ class UserService:
     def get_all_status_users(self):
         return self._repository.get_all_status()
 
-    async def set_status(self, user_id: int, status_id: int):
+    async def set_status(self, user_id: int, status_id: int, call_id: str = None):
         status_params = self._repository.set_status(user_id=user_id, status_id=status_id)
         enums = EventRoute
         event = None
@@ -119,7 +119,8 @@ class UserService:
             status_at=str(status_params['status_at']),
             status=status_params['alter_name'],
             event=event,
-            color=status_params['color']
+            color=status_params['color'],
+            call_id=call_id
         )
         await self.__set_status_redis(params)
 
@@ -159,7 +160,7 @@ class UserService:
             params = status.__dict__
             del params['_sa_instance_state']
             await self._redis.redis.set(f"status:code:{status.code}", json.dumps(params))
-    async def set_status_by_aster(self, uuid: str, status_code: str, status_time: str, incoming_call: str = None):
+    async def set_status_by_aster(self, uuid: str, status_code: str, status_time: str, incoming_call: str = None, call_id: str = None):
         status_time = datetime.datetime.fromtimestamp(status_time)
         status = await self._redis.redis.get(f"status:code:{status_code}")
         user_id = await self._redis.redis.get(f"user:uuid:{uuid}")
@@ -183,7 +184,8 @@ class UserService:
             status=status['alter_name'],
             event=event,
             color=status['color'],
-            incoming_call=incoming_call
+            incoming_call=incoming_call,
+            call_id=call_id
         )
         await self.__set_status_redis(params)
         if params.status_cod == "precall":
