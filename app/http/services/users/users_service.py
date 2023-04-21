@@ -123,14 +123,29 @@ class UserService:
         )
         await self.__set_status_redis(params)
 
+    def convert_to_time(self, seconds: int) -> str:
+        h = seconds // 3600
+        m = seconds // 60
+        s = seconds % (24 * 3600)
+        s %= 3600
+        s %= 60
+        return str("%02d:%02d:%02d" % (h, m, s))
     async def redis_pub_sub(self, websocket: WebSocket, user_id: int):
             pubsub: PubSub = self._redis.redis.pubsub()
             try:
                 channel = f"user:status:{user_id}:c"
+                connect_info = await self._repository.user_get_time(user_id)
                 async for result in subscriber(pubsub, channel):
                     if result == 1:
-                        result = json.dumps(await self._repository.user_get_time(user_id))
-                    await websocket.send_text(result)
+                        result = connect_info.json()
+                    else:
+                        result = result
+                    result = json.loads(result)
+                    time_kc = datetime.datetime.now() - datetime.datetime.strptime(connect_info.start_time_kc, "%Y-%m-%d %H:%M:%S.%f")
+                    status_at = datetime.datetime.now() - datetime.datetime.strptime(result['status_at'], "%Y-%m-%d %H:%M:%S.%f")
+                    result['start_time_kc'] = self.convert_to_time(time_kc.seconds)
+                    result['status_at'] = self.convert_to_time(status_at.seconds)
+                    await websocket.send_json(result)
             except ConnectionClosedOK as e:
                 log.error(str(e))
                 return
@@ -173,7 +188,6 @@ class UserService:
         if params.status_cod == "precall":
             await asyncio.sleep(0.1)
             params.event = "CHANGE_STATUS"
-            print(params)
             await self.__set_status_redis(params)
             
     def dismiss(self, id: int, date_dismissal_at: datetime.datetime = None):

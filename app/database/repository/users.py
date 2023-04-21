@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 from typing import Callable
 from uuid import uuid4
 from .asterisk import Asterisk, StatusHistoryParams
+from app.http.services.event_channel import Params
 
 
 """ 
@@ -423,6 +424,7 @@ class UserRepository(SuperRepository):
             if user.status is not None:
                 result['status'] = user.status.alter_name
                 result['color'] = user.status.color
+            result = Params(**result)
             return result
         
     def user_recover(self, user_id: int):
