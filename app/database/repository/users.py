@@ -412,7 +412,7 @@ class UserRepository(SuperRepository):
             result = {
                 "user_id": user_id,
                 "status_id": user.status_id,
-                "status_cod": user.status.code,
+                "status_code": user.status.code,
                 "status_at": str(user.status_at),
                 "status": "",
                 "event":"CONNECTION",
