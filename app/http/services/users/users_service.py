@@ -124,10 +124,11 @@ class UserService:
         await self.__set_status_redis(params)
 
     def convert_to_time(self, seconds: int) -> str:
-        h = seconds // 3600
-        m = seconds // 60
         s = seconds % (24 * 3600)
+        h = s // 3600
         s %= 3600
+        m = s // 60
+        s = s % (24 * 3600)
         s %= 60
         return str("%02d:%02d:%02d" % (h, m, s))
     async def redis_pub_sub(self, websocket: WebSocket, user_id: int):
