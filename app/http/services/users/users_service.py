@@ -188,7 +188,7 @@ class UserService:
             call_id=call_id
         )
         await self.__set_status_redis(params)
-        if params.status_cod == "precall":
+        if params.status_code == "precall":
             await asyncio.sleep(0.1)
             params.event = "CHANGE_STATUS"
             await self.__set_status_redis(params)
