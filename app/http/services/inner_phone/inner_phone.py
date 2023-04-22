@@ -25,9 +25,9 @@ class InnerPhoneServices:
         for item in items:
             accounts.append(
                 Account(
-                    id=item.uuid,
+                    id=item.id,
                     name=item.login,
-                    userName=item.login,
+                    userName=item.phone_number,
                     domainName=asterisk_host,
                     login=item.login,
                     password=item.password,
@@ -40,6 +40,7 @@ class InnerPhoneServices:
     
     def get_by_user_id(self, user_id: int):
         result = []
+        print(user_id)
         for phone in self._repository.get_by_user_id(user_id):
             res = phone.__dict__
             result.append(InnerPhone(**res))

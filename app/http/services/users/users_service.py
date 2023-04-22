@@ -144,7 +144,11 @@ class UserService:
                         result = result
                     result = json.loads(result)
                     time_kc = datetime.datetime.now() - datetime.datetime.strptime(connect_info.start_time_kc, "%Y-%m-%d %H:%M:%S.%f")
-                    status_at = datetime.datetime.now() - datetime.datetime.strptime(result['status_at'], "%Y-%m-%d %H:%M:%S.%f")
+                    try:
+                        status_at = datetime.datetime.now() - datetime.datetime.strptime(result['status_at'], "%Y-%m-%d %H:%M:%S.%f")
+                    except Exception:
+                        status_at = datetime.datetime.now() - datetime.datetime.strptime(result['status_at'], "%Y-%m-%d %H:%M:%S")
+
                     result['start_time_kc'] = self.convert_to_time(time_kc.seconds)
                     result['status_at'] = self.convert_to_time(status_at.seconds)
                     await websocket.send_json(result)
@@ -161,7 +165,7 @@ class UserService:
             del params['_sa_instance_state']
             await self._redis.redis.set(f"status:code:{status.code}", json.dumps(params))
     async def set_status_by_aster(self, uuid: str, status_code: str, status_time: str, incoming_call: str = None, call_id: str = None):
-        status_time = datetime.datetime.fromtimestamp(status_time)
+        status_time = datetime.datetime.fromtimestamp(status_time).__format__("%Y-%m-%d %H:%M:%S.%f")
         status = await self._redis.redis.get(f"status:code:{status_code}")
         user_id = await self._redis.redis.get(f"user:uuid:{uuid}")
         user_id = json.loads(user_id)
@@ -180,7 +184,7 @@ class UserService:
             user_id=user_id['id'],
             status_id=status['id'],
             status_code=status['code'],
-            status_at=str(status_time),
+            status_at=status_time,
             status=status['alter_name'],
             event=event,
             color=status['color'],
@@ -188,7 +192,7 @@ class UserService:
             call_id=call_id
         )
         await self.__set_status_redis(params)
-        if params.status_cod == "precall":
+        if params.status_code == "precall":
             await asyncio.sleep(0.1)
             params.event = "CHANGE_STATUS"
             await self.__set_status_redis(params)

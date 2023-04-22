@@ -257,7 +257,7 @@ class UserRepository(SuperRepository):
                 else:
                     status_id = 14
             current.status_id = status_id
-            current.status_at = datetime.now()
+            current.status_at = str(datetime.now())
             current.status
             current.inner_phone
             event_type="set_status"
@@ -299,7 +299,7 @@ class UserRepository(SuperRepository):
     async def set_status_by_uuid(self, uuid, status_id, status_time):
         global event_type
         with self.session_factory() as session:
-            sql = f"update users set status_id = {status_id}, status_at = '{str(status_time)}' where uuid = '{uuid}'"
+            sql = f"update users set status_id = {status_id}, status_at = '{status_time}' where uuid = '{uuid}'" 
             event_type="set_status"
             session.execute(sql)
             session.commit()
@@ -505,7 +505,10 @@ def after_update_handler(mapper, connection: Connection, target: User):
         with connection.begin():
             status_current = connection.execute(f"select update_at, status_id, user_id from status_history where user_id = {target.id} and is_active = true").first()
             if type(target.status_at) == str:
-                target.status_at = datetime.strptime(target.status_at, "%Y-%m-%d %H:%M:%S")
+                try:
+                    target.status_at = datetime.strptime(target.status_at, "%Y-%m-%d %H:%M:%S.%f")
+                except:
+                    target.status_at = datetime.strptime(target.status_at, "%Y-%m-%d %H:%M:%S")
             time_at = None
             if status_current is not None:
                 date:datetime = status_current[0]
