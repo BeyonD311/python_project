@@ -144,6 +144,7 @@ class UserService:
                         result = result
                     result = json.loads(result)
                     time_kc = datetime.datetime.now() - datetime.datetime.strptime(connect_info.start_time_kc, "%Y-%m-%d %H:%M:%S.%f")
+                    # Проболема с датами(разный формат)
                     try:
                         status_at = datetime.datetime.now() - datetime.datetime.strptime(result['status_at'], "%Y-%m-%d %H:%M:%S.%f")
                     except Exception:
