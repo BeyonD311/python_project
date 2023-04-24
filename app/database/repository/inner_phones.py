@@ -6,6 +6,7 @@ from typing import Callable
 from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
 from .asterisk import Asterisk, AsteriskParams
+from re import search
 
 class InnerPhones(SuperRepository):
 
@@ -59,7 +60,9 @@ class InnerPhones(SuperRepository):
             phone: InnerPhone
             for phone in phones:
                 if phone.is_default:
-                    phones_asterisk.append(str(phone.phone_number))
+                    pattern = r'[^0-9\s]*'
+                    if search(pattern=pattern, string=str(phone.phone_number)) is None:
+                        phones_asterisk.append(str(phone.phone_number))
                 session.delete(phone)
             session.commit()
             if len(phones_asterisk) > 0:

@@ -231,7 +231,6 @@ class UserService:
         }
     async def get_users_status(self, users_id: list):
         result = {}
-        print(await self._repository.user_get_time(0))
         for user_id in users_id:
             status = await self._redis.redis.get(f"status.user.{user_id}")
             if status is not None:

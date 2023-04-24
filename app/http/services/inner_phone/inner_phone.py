@@ -21,7 +21,6 @@ class InnerPhoneServices:
         items = self.get_by_user_id(user_id=user_id)
         asterisk_host = self._repository.get_asterisk_host()
         asterisk_port = self._repository.get_asterisk_port()
-        print(items)
         for item in items:
             accounts.append(
                 Account(
@@ -40,7 +39,6 @@ class InnerPhoneServices:
     
     def get_by_user_id(self, user_id: int):
         result = []
-        print(user_id)
         for phone in self._repository.get_by_user_id(user_id):
             res = phone.__dict__
             result.append(InnerPhone(**res))
