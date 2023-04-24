@@ -162,6 +162,7 @@ class UserService:
     async def add_status_to_redis(self):
         statuses = self._repository.get_all_status()
         for status in statuses:
+            status.life_time = str(status.life_time)
             params = status.__dict__
             del params['_sa_instance_state']
             await self._redis.redis.set(f"status:code:{status.code}", json.dumps(params))
