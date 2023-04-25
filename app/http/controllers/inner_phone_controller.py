@@ -25,13 +25,17 @@ def get_user_inner_phones(
     HTTPBearerSecurity: HTTPBearer = Depends(security),
     inner_phone_service: InnerPhoneServices = Depends(Provide[Container.inner_phone_service])
 ):
+    """
+    Exceptions:
+        NotFoundError
+    """
     try:
-        return inner_phone_service.get_by_user_id(user_id=user_id)
-    except NotFoundError as e:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {
-            "message": str(e)
-        }
+        result = inner_phone_service.get_by_user_id(user_id=user_id)
+    except Exception as e:
+        err = default_error(e, item='InnerPhone')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.post('/')
 @inject
@@ -41,17 +45,21 @@ def add_inner_phone(
     HTTPBearerSecurity: HTTPBearer = Depends(security),
     inner_phone_service: InnerPhoneServices = Depends(Provide[Container.inner_phone_service])):
     """ 
-        Поле id у inner_phone должно быть 0 при создании, при обновлении текущий id
+        Поле id у inner_phone должно быть 0 при создании, при обновлении текущего id\n
+    Exceptions:
+        TODO: Add exceptions
     """
     try:
         inner_phone_service.add(params)
-        return {
-            "message": "Phone add"
+        result =  {
+            "message": "Phone added",
+            "description": "Внутренний номер успешно добавлен."
         }
     except Exception as e:
-        err = default_error(e)
+        err = default_error(e, item='InnerPhone')
         response.status_code = err[0]
-        return err[1]
+        result = err[1]
+    return result
 
 @route.put('/')
 @inject
@@ -61,17 +69,21 @@ def update_inner_phone(
     HTTPBearerSecurity: HTTPBearer = Depends(security),
     inner_phone_service: InnerPhoneServices = Depends(Provide[Container.inner_phone_service])):
     """ 
-        Поле id у inner_phone должно быть 0 при создании, при обновлении текущий id
+        Поле id у inner_phone должно быть 0 при создании, при обновлении текущий id\n
+    Exceptions:
+        NotFoundError
     """
     try:
         inner_phone_service.update(params)
-        return {
-            "message": "Phone update"
+        result = {
+            "message": "Phone has been updated.",
+            "description": "Внутренний номер успешно обновлён."
         }
     except Exception as e:
-        err = default_error(e)
+        err = default_error(e, item='InnerPhone')
         response.status_code = err[0]
-        return err[1]
+        result = err[1]
+    return result
 
 @route.delete('/')
 @inject
@@ -81,18 +93,23 @@ def delete_inner_phone(
     response: Response,
     HTTPBearerSecurity: HTTPBearer = Depends(security),
     inner_phone_service: InnerPhoneServices = Depends(Provide[Container.inner_phone_service])):
-    """ ** phones_id - пример phones_id=1,2,3 """
+    """ ** phones_id - пример phones_id=1,2,3\n
+    Exceptions:
+        NotFoundError
+    """
     try:
         inner_phone_service.delete(user_id, phones_id.split(","))
-        return {
-            "message": "Phone delete"
+        result = {
+            "message": "Phone has been deleted",
+            "description": "Внутренний номер успешно удалён."
         }
     except Exception as e:
-        err = default_error(e)
+        err = default_error(e, item='InnerPhone')
         response.status_code = err[0]
-        return {
+        result = {
             "message": err[1]
         }
+    return result
 
 
 @route.get("/settings")
@@ -103,12 +120,16 @@ def get_settings_by_user_id(
         inner_phone_service: InnerPhoneServices = Depends(Provide[Container.inner_phone_service]),
         HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
+    """
+    Exceptions:
+        NotFoundError
+    """
     token = request.headers.get('authorization').replace("Bearer ", "")
     decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
     try:
-        return inner_phone_service.get_settings_by_user_id(user_id=decode['azp'])
-    except NotFoundError as e:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {
-            "message": 'Not found settings for current user.'
-        }
+        result = inner_phone_service.get_settings_by_user_id(user_id=decode['azp'])
+    except Exception as e:
+        err = default_error(e, item='InnerPhone')
+        response.status_code = err[0]
+        result = err[1]
+    return result

@@ -8,6 +8,7 @@ class PositionRepository(SuperRepository):
 
     def get_all(self) -> Iterator[PositionModel]:
         return super().get_all()
+
     def get_by_id(self, id: int) -> PositionModel:
         return super().get_by_id(id)
 

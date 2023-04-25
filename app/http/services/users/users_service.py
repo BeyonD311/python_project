@@ -52,6 +52,11 @@ class UserService:
                 department_headers.append(person)
             else:
                 department_employees.append(person)
+            # TODO
+            # (department_headers if person[5] == True else department_employees).append(person)
+        if not department_headers and not department_employees:
+            decription = f"Отдел с ID={department_id} не существует."
+            raise NotFoundError(entity_id=department_id, entity_description=decription)
         result = {
             "management": department_headers,
             "supervisor": department_employees
@@ -110,7 +115,7 @@ class UserService:
         event = None
         try:
            event = enums[status_params['code'].upper()].value
-        except Exception as e:
+        except Exception as e:  # TODO: определить исключение
             event = "CHANGE_STATUS"
         params = PublisherParams(
             user_id=user_id,
@@ -159,6 +164,7 @@ class UserService:
             except WebSocketDisconnect as e:
                 log.error(str(e))
                 return
+
     async def add_status_to_redis(self):
         statuses = self._repository.get_all_status()
         for status in statuses:
@@ -166,6 +172,7 @@ class UserService:
             params = status.__dict__
             del params['_sa_instance_state']
             await self._redis.redis.set(f"status:code:{status.code}", json.dumps(params))
+
     async def set_status_by_aster(self, uuid: str, status_code: str, status_time: str, incoming_call: str = None, call_id: str = None):
         status_time = datetime.datetime.fromtimestamp(status_time).__format__("%Y-%m-%d %H:%M:%S.%f")
         status = await self._redis.redis.get(f"status:code:{status_code}")
@@ -198,7 +205,7 @@ class UserService:
             await asyncio.sleep(0.1)
             params.event = "CHANGE_STATUS"
             await self.__set_status_redis(params)
-            
+
     def dismiss(self, id: int, date_dismissal_at: datetime.datetime = None):
         if date_dismissal_at == None:
             date_dismissal_at = datetime.now()
@@ -206,13 +213,13 @@ class UserService:
         return {
             "message": f"User {id} dismiss : {date_dismissal_at}"
         }
-    
+
     def recover(self, id: int):
         self._repository.user_recover(id)
         return {
             "message": f"User {id} recover"
         }
-    
+
     def reset_password(self, id: int, password: str):
         params = {
             "id": id,
@@ -220,7 +227,6 @@ class UserService:
             "hashed_password": sha256(password.encode()).hexdigest()
         }
         self._repository.update_password(params=params)
-
         return {
             "message": "Password is update"
         }
@@ -230,6 +236,7 @@ class UserService:
         return {
             "message": "rights installation completed successfully"
         }
+
     async def get_users_status(self, users_id: list):
         result = {}
         for user_id in users_id:
@@ -330,4 +337,4 @@ class SkillService:
     def find(self, text:str):
         return self._repository.find_skill(text)
 
-__all__ = ('UserService', 'SkillsRepository') 
+__all__ = ('UserService', 'SkillsRepository')

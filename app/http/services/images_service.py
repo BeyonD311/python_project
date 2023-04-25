@@ -1,6 +1,6 @@
 import os
 from hashlib import md5
-from app.database import ImagesRepository
+from app.database import ImagesRepository, BadFileException
 from fastapi import UploadFile
 from pydantic import BaseModel
 
@@ -19,7 +19,7 @@ class ImagesServices():
             id=file.id,
             path=file.path
         )
-    
+
     def __save_file(self, image: UploadFile) -> str:
         chuck_size = 4000
         file_name = md5(image.filename.encode()).hexdigest()
@@ -35,14 +35,11 @@ class ImagesServices():
         image.close()
         file.close()
         return output_file
-    
+
     def __check_file(self, image: UploadFile):
         if image.content_type.find("image") == -1:
-            raise BadFileException(image.filename + " is not image ")
+            raise BadFileException(entity_id=image.filename, entity_description=f"Неверный формат файла: '{image.filename}'.")
 
-class BadFileException(Exception):
-    def __init__(self, file: str) -> None:
-        super().__init__(f"bad file: {file}")
 
 class ResponseUploadFile(BaseModel):
     message: str
