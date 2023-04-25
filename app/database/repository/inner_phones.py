@@ -74,7 +74,7 @@ class InnerPhones(SuperRepository):
                 phones = self.session_asterisk.get_phones_by_user_uuid(user.uuid)
                 for phone in phones:
                     phones_asterisk.append(str(phone.id))
-                self.session_asterisk.delete_asterisk(",".join(phones_asterisk))
+                self.session_asterisk.delete_sip_user_asterisk(",".join(phones_asterisk))
                 self.session_asterisk.execute()
             for inner_phone in params.inner_phones:
                 phone = InnerPhone(
@@ -99,7 +99,7 @@ class InnerPhones(SuperRepository):
                         description=f"Телефон уже существует {inner_phone.phone_number}"
                         raise PhoneFoundError(entity_description=description)
                     param = self.__params(user, phone, inner_phone)
-                    self.session_asterisk.create_insert_asterisk(param)
+                    self.session_asterisk.insert_sip_user_asterisk(param)
                     count_default += 1
                 session.add(phone)
             session.commit()
@@ -116,7 +116,7 @@ class InnerPhones(SuperRepository):
                 session.delete(phone)
                 session.commit()
         if phone_number != []:
-            self.session_asterisk.delete_asterisk(",".join(phone_number))
+            self.session_asterisk.delete_sip_user_asterisk(",".join(phone_number))
             self.session_asterisk.execute
     
     def __find_user(self, session: Session, user_id: int):

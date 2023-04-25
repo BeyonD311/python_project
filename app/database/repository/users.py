@@ -285,7 +285,7 @@ class UserRepository(SuperRepository):
         if status_code.find("break") != -1:
             status_id = 9
         if current.status_id != 18:
-            self.session_asterisk.save_status_asterisk(status_id, current.uuid)
+            self.session_asterisk.save_sip_status_asterisk(status_id, current.uuid)
             inner_phone: InnerPhone
             for inner_phone in current.inner_phone:
                 if inner_phone.is_default and inner_phone.is_registration:
@@ -317,7 +317,7 @@ class UserRepository(SuperRepository):
             event_type="set_status"
             session.execute(sql)
             session.commit()
-        self.session_asterisk.save_status_asterisk(status_id,uuid)
+        self.session_asterisk.save_sip_status_asterisk(status_id,uuid)
         self.session_asterisk.execute()
 
     def add(self, user_model: User) -> any:
@@ -390,7 +390,7 @@ class UserRepository(SuperRepository):
             session.add(user)
             session.commit()   
         if phones != []:
-            self.session_asterisk.delete_asterisk(",".join(phones))
+            self.session_asterisk.delete_sip_user_asterisk(",".join(phones))
             self.session_asterisk.execute()
     
     def user_dismiss(self, user_id: int, date_dismissal_at: datetime = None):
@@ -413,7 +413,7 @@ class UserRepository(SuperRepository):
                 session.add(user)
                 session.commit()
             if phones != []:
-                self.session_asterisk.delete_asterisk(",".join(phones))
+                self.session_asterisk.delete_sip_user_asterisk(",".join(phones))
                 self.session_asterisk.execute()
         except Exception as e:
             raise

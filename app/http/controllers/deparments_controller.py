@@ -41,21 +41,12 @@ def get_departments(
             "status": status,
             "phone": phone
         }
-<<<<<<< HEAD
-        return department_service.get_employees(filter_params)
-    except NotFoundError as e:
-        response.status_code = FastApiStatus.HTTP_400_BAD_REQUEST
-        return {
-            "message": str(e)
-        }
-=======
         result = department_service.get_employees(filter_params)
     except Exception as e:
         err = default_error(e, item='Departments')
         response.status_code = err[0]
         result = err[1]
     return result
->>>>>>> 43a3f8d (Added descriptions to exceptions messages)
 
 @route.post("/")
 @inject
@@ -108,18 +99,9 @@ def delete_department(
         NotFoundError
     """
     try:
-<<<<<<< HEAD
-        return     department_service.delete(id)
-    except NotFoundError as e:
-        response.status_code = FastApiStatus.HTTP_400_BAD_REQUEST
-        return {
-            "message": str(e)
-        }
-=======
         result = department_service.delete(id)
     except Exception as e:
         err = default_error(e, item='Departments')
         response.status_code = err[0]
         result = err[1]
     return result
->>>>>>> 43a3f8d (Added descriptions to exceptions messages)
