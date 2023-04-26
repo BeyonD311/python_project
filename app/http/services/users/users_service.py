@@ -8,7 +8,7 @@ from app.database import UserModel
 from app.database import UserRepository
 from app.database import NotFoundError
 from app.database import SkillsRepository
-from app.http.services.helpers import RedisInstance
+from app.http.services.helpers import RedisInstance, convert_second_to_time
 from app.http.services.users.user_base_models import UsersResponse
 from app.http.services.users.user_base_models import ResponseList
 from app.http.services.users.user_base_models import UserRequest
@@ -129,14 +129,6 @@ class UserService:
         )
         await self.__set_status_redis(params)
 
-    def convert_to_time(self, seconds: int) -> str:
-        s = seconds % (24 * 3600)
-        h = s // 3600
-        s %= 3600
-        m = s // 60
-        s = s % (24 * 3600)
-        s %= 60
-        return str("%02d:%02d:%02d" % (h, m, s))
     async def redis_pub_sub(self, websocket: WebSocket, user_id: int):
             pubsub: PubSub = self._redis.redis.pubsub()
             try:
@@ -155,8 +147,8 @@ class UserService:
                     except Exception:
                         status_at = datetime.datetime.now() - datetime.datetime.strptime(result['status_at'], "%Y-%m-%d %H:%M:%S")
 
-                    result['start_time_kc'] = self.convert_to_time(time_kc.seconds)
-                    result['status_at'] = self.convert_to_time(status_at.seconds)
+                    result['start_time_kc'] = convert_second_to_time(time_kc.seconds)
+                    result['status_at'] = convert_second_to_time(status_at.seconds)
                     await websocket.send_json(result)
             except ConnectionClosedOK as e:
                 log.error(str(e))

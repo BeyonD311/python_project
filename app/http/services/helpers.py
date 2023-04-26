@@ -1,10 +1,11 @@
 import re
+from datetime import time
 from aioredis import Redis
 from fastapi import status
 from fastapi.websockets import WebSocket
 from asyncio.queues import Queue
 
-__all__ = ["default_error", "message", "read_from_socket"]
+__all__ = ["default_error", "message", "read_from_socket", "convert_second_to_time", "convert_time_to_second"]
 
 class RedisInstance():
     def __init__(self, redis: Redis) -> None:
@@ -87,3 +88,15 @@ async def read_from_socket(websocket: WebSocket, queue: Queue):
     async for data in websocket.iter_json():
         print(data)
         queue.put_nowait(data)
+
+def convert_second_to_time(seconds: int) -> str:
+    s = seconds % (24 * 3600)
+    h = s // 3600
+    s %= 3600
+    m = s // 60
+    s = s % (24 * 3600)
+    s %= 60
+    return str("%02d:%02d:%02d" % (h, m, s))
+
+def convert_time_to_second(input_time: time) -> int:
+    return (input_time.hour * 60 + input_time.minute) * 60 + input_time.second

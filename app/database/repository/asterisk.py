@@ -3,6 +3,7 @@ from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from .super import NotFoundError
+from app.http.services.helpers import convert_time_to_second
 
 __all__ = ["Asterisk", "AsteriskParams", "ExceptionAsterisk", "StatusHistoryParams"]
 
@@ -32,6 +33,7 @@ class Asterisk():
     def __init__(self, session_asterisk: Callable[..., AbstractContextManager[Session]]) -> None:
         self.session_asterisk = session_asterisk
         self.stack_multiple_query = []
+
     def insert_sip_user_asterisk(self, params: AsteriskParams, w = ""):
         """ 
             Создание номера в asterisk(sip регистрация)
@@ -99,10 +101,51 @@ class Asterisk():
             session.commit()
             return query
 
+    def add_queue(self, params):
+        """ Добавление новых очередей """
+        queue_fields = self.__params_queue_fields()
+        queue_fields_values = self.__value_fields_queues(params)
+        query = f"insert into queues({queue_fields['base']}, {queue_fields['base_info']}, {queue_fields['config_calls']}, {queue_fields['script_ivr']}) "\
+            f"values({queue_fields_values['values_base']}, {queue_fields_values['values_base_info']}, {queue_fields_values['values_config_calls']}, {queue_fields_values['values_script_ivr']});"
+        self.stack_multiple_query.append(query)
+    
+    def get_queue_by_name(self, name: str):
+        queue_fields = self.__params_queue_fields()
+        query = f"select {queue_fields['base']}, {queue_fields['base_info']}, {queue_fields['config_calls']}, {queue_fields['script_ivr']} from queues"\
+                f"where name = {name} "
+        with self.session_asterisk() as session:
+            query = session.execute(query).first()
+            if query == None:
+                raise ExceptionAsterisk("Queue not found")
+            session.close()
+            return query
+    
+    def __params_queue_fields(self) -> dict:
+        """ Параметры таблицы queues для (GET, POST, UPDATE) """
+        return {
+            "base": "`name`,  `type_queue`, `queue_enabled` ",
+            "base_info": "`description`, `queue_code`, `queue_number`, `strategy`, `weight` ",
+            "config_calls": "`timeout`, `switch_number`, `timeout_talk`, `timeout_queue`, `maxlen` ",
+            "script_ivr": "`script_ivr_name`, `script_ivr_greeting`, `script_ivr_hyperscript`, `script_ivr_post_call`, `script_ivr_service_script` ",
+        }
+
+    def __value_fields_queues(self, params)->dict:
+        """ Значения полей из параметров """
+        return {
+            "values_base": f"'{params.name}', '{params.type}', {params.active}",
+            "values_base_info": f"'{params.base_info.name}', {params.base_info.queue_code}, {params.base_info.queue_number}, "\
+                           f"'{params.base_info.strategy}', {params.base_info.weight}",
+            "values_config_calls": f"{convert_time_to_second(params.config_call.timeout)} ,"\
+                       f"{params.config_call.switch_number}, {convert_time_to_second(params.config_call.timeout_talk)} ,"\
+                       f"{convert_time_to_second(params.config_call.timeout_queue)}, {params.config_call.max_len} ",
+            "values_script_ivr": f"'{params.script_ivr.name}', '{params.script_ivr.greeting}', '{params.script_ivr.hyperscript}', "\
+                            f"'{params.script_ivr.post_call}', '{params.script_ivr.service_script}'"
+        }
 
     def set_status_history(self, params: StatusHistoryParams):
+        """ Добовление истории статусов """
         self.stack_multiple_query.append(f"CALL AddStatusHistory({params.time_at}, '{params.user_uuid}', '{params.user_c}', '{params.source}', '{params.destination}', '{params.code}', NULL)")
-        
+    
     def execute(self):
         session: Session
         with self.session_asterisk() as session:
