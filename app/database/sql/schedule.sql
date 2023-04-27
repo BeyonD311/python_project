@@ -1,4 +1,5 @@
 CREATE TABLE IF NOT EXISTS schedule(
+    id bigint not null primary key auto_increment,
     queue_name VARCHAR(60) NOT NULL
     `beginning` DATE NOT NULL,
     `ending` DATE NOT NULL,

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status as FastApiStatus, Response
+from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
 from app.http.services.helpers import parse_params_num
@@ -56,8 +56,11 @@ def add_department(
     department_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     """
-    Exceptions:
-        ExistsException
+        Для создания корневого отдела 
+        {
+            "name": "test 123",
+            "source_department": 0
+        }
     """
     try:
         result = department_service.add(params=params)

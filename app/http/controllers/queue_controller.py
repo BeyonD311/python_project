@@ -32,5 +32,6 @@ async def add_create_queue(
     queue_service: QueueService = Depends(Provide[Container.queue_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
+    """ Создание очереди в asterisk """
     queue_service.add(params=params)
 
