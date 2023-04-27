@@ -23,7 +23,7 @@ route = APIRouter(
 
 security = HTTPBearer()
 
-@route.get("/user_image/{filename}", include_in_schema=True)  # TODO: временно для тестов, было include_in_schema=False
+@route.get("/user_image/{filename}", include_in_schema=False)
 def get_file(
     filename: str,
     response: Response):
