@@ -86,8 +86,6 @@ class UserRepository(SuperRepository):
 
     def get_by_id(self, id: int) -> User:
         description = f"Не найден пользователь с ID={id}."
-        if id == 0:
-            raise NotFoundError(entity_id=id, entity_description=description)
         try:
             with self.session_factory() as session:
                 user: User = session.query(self.base_model).filter(self.base_model.id == id).first()
