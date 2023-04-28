@@ -1,13 +1,15 @@
-import asyncio
 from pydantic import BaseModel
 from pydantic import Field
+from pydantic import validator
+from pydantic import ValidationError
 from datetime import time
+from typing import Any
 
-__all__ = ["BaseInfo", "ConfigCalls", "ScriptIVR", "RequestQueue", "RequestQueueMembers"]
+__all__ = ["BaseInfo", "ConfigCalls", "ScriptIVR", "RequestQueue", "RequestQueueMembers", "ResponseQueue", "ResponseQueueMembers", "GetAllQueue"]
 
 class BaseInfo(BaseModel):
     """ Общая информация """
-    name: str = Field('Кейс 1. Обзвон клиентов, которые заполнили лид-форму')
+    description: str = Field('Кейс 1. Обзвон клиентов, которые заполнили лид-форму', alias='base_info_name')
     queue_number: int = Field(980)
     queue_code: int = Field(4869)
     strategy: str = Field('Автоматически', alias='queue_operator_select_method')
@@ -38,7 +40,63 @@ class RequestQueue(BaseModel):
     config_call: ConfigCalls
     script_ivr: ScriptIVR
 
+class ResponseQueue(BaseModel):
+    """ Параметры для создания очереди """
+    uuid: str
+    name: str = Field('', alias='name_queue_operator')
+    type: str = Field('', alias='type')
+    active: bool
+    base_info: BaseInfo
+    config_call: ConfigCalls
+    script_ivr: ScriptIVR
+
+class User(BaseModel):
+    inner_phone: int
+    position: int
+
+
+class OuterLines(BaseModel):
+    name: str
+    is_selected: bool = False
+
+class ResponseQueueMembers(BaseModel):
+    operators: list[User] = []
+    supervisors: list[User] = []
+    numbers_lines: list[OuterLines] = []
+    
+
 class RequestQueueMembers(BaseModel):
-    operators: list[int]
-    supervisors: list[int]
-    numbers_lines: list[int]
+    operators: list[User] = Field([
+        User(inner_phone=1005, position=2),
+        User(inner_phone=1002, position=2)
+    ])
+    supervisors: list[User] = Field([
+        User(inner_phone=1001, position=1)
+    ])
+    numbers_lines: list[OuterLines]
+
+class Filter(BaseModel):
+    field: str
+    value: Any
+
+class GetAllQueue(BaseModel):
+    page: int
+    size: int
+    filter: list[Filter]
+    order_field: str
+    order_direction:str
+
+    @validator('order_direction')
+    def order_direction_match(cls, v) -> str:
+        """ Проверка направления сортировки """
+        if v.lower() != 'asc' or v.lower() != 'desc':
+            raise ValidationError("order_direction do not valid")
+        return v
+
+    @validator('order_field')
+    def order_field_match(cls, v) -> str:
+        """ Проверка полей """
+        fields = set("name", "status", "type")
+        if v.lower() not in fields:
+            raise ValidationError("order_field do not valid")
+        return v

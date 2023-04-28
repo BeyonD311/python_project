@@ -23,7 +23,9 @@ def default_error(error: Exception, item=None):
     )
     from jwt.exceptions import InvalidSignatureError, ExpiredSignatureError
     from jwt import DecodeError
-    from sqlalchemy.exc import IntegrityError
+    from sqlalchemy.exc import (
+        IntegrityError, DataError
+    )
     from websockets.exceptions import ConnectionClosedError
     from json.decoder import JSONDecodeError
 
@@ -62,6 +64,9 @@ def default_error(error: Exception, item=None):
         except:
             detail = "No Details for Error"
         return status.HTTP_409_CONFLICT, message(message=detail)
+    if isinstance(error, DataError):
+        detail = re.findall(r"\"(.*)\"", error.args[0])
+        return status.HTTP_400_BAD_REQUEST, message(message="Данные не корректны", description='', status="fail", data=[])
     if isinstance(error, ConnectionClosedError):
         return message(message="Данные не обнаружены", description='', status="fail", data=[])
     if isinstance(error, JSONDecodeError):

@@ -2,9 +2,12 @@ from fastapi import Depends, APIRouter, Response
 from fastapi.security import HTTPBearer
 from app.http.services.queue import QueueService
 from app.http.services.queue import RequestQueue
+from app.http.services.queue import RequestQueueMembers
+from app.http.services.queue import GetAllQueue
 from dependency_injector.wiring import inject
 from dependency_injector.wiring import Provide
 from app.kernel.container import Container
+from app.http.services.helpers import default_error
 
 route = APIRouter(
     prefix="/queue",
@@ -14,15 +17,35 @@ route = APIRouter(
 
 security = HTTPBearer()
 
-@route.get("/{name}")
+@route.get("/")
 @inject
-async def get_queue_by_name(
-    name: str,
+async def get_queue(
+    page: int,
+    size: int,
+    filter:str, 
+    order_field: str,
+    order_direction:str,
     response: Response,
     queue_service: QueueService = Depends(Provide[Container.queue_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
-    return queue_service.get_queue_by_name(name)
+    pass
+@route.get("/{uuid}")
+@inject
+async def get_queue_by_uuid(
+    uuid: str,
+    response: Response,
+    queue_service: QueueService = Depends(Provide[Container.queue_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
+):
+    result = {}
+    try:
+        return queue_service.get_queue_by_uuid(uuid)
+    except Exception as exception:
+        err = default_error(exception, item='Queue')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.post("")
 @inject
@@ -33,5 +56,53 @@ async def add_create_queue(
     HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
     """ Создание очереди в asterisk """
-    queue_service.add(params=params)
+    result = {}
+    try:
+        result = queue_service.add(params=params)
+    except Exception as exception:
+        err = default_error(exception, item='Queue')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
+@route.put("/{uuid}")
+@inject
+async def add_update_queue(
+    uuid: str,
+    params: RequestQueue,
+    response: Response,
+    queue_service: QueueService = Depends(Provide[Container.queue_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
+):
+    """ Создание очереди в asterisk """
+    result = {}
+    try:
+        result = queue_service.update(uuid=uuid,params=params)
+    except Exception as exception:
+        err = default_error(exception, item='Queue')
+        response.status_code = err[0]
+        result = err[1]
+    return result
+
+@route.get("/resources/{uuid}")
+@inject
+async def get_queue_members(
+    uuid: str,
+    response: Response,
+    queue_service: QueueService = Depends(Provide[Container.queue_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security),
+    operators: str = "",
+    supervisor: str = ""
+):
+    return queue_service.get_queue_members(uuid, operators, supervisor)
+
+@route.post("/resources/{uuid}")
+@inject
+async def save_queue_members(
+    uuid: str,
+    params: RequestQueueMembers,
+    response: Response, 
+    queue_service: QueueService = Depends(Provide[Container.queue_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
+):
+    return queue_service.save_queue_members(uuid, params)
