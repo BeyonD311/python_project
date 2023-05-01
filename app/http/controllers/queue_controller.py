@@ -63,6 +63,23 @@ async def get_queue_by_uuid(
         result = err[1]
     return result
 
+@route.get("/state/{uuid}")
+@inject
+async def get_queue_state(
+    uuid: str,
+    response: Response,
+    queue_service: QueueService = Depends(Provide[Container.queue_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
+):
+    result = {}
+    try:
+        result = queue_service.get_state_queue(uuid)
+    except Exception as exception:
+        err = default_error(exception, item='Queue')
+        response.status_code = err[0]
+        result = err[1]
+    return result
+
 @route.post("")
 @inject
 async def add_create_queue(

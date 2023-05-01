@@ -16,6 +16,9 @@ class QueueService:
         self._repository: PositionRepository = position_repository
         self._asterisk: Asterisk = asterisk
         self._redis: RedisInstance = redis
+
+    def get_state_queue(self, uuid):
+        return self._asterisk.get_state_queue(uuid)
     
     def get_queues(self, params: GetAllQueue):
         if params.page == 1:

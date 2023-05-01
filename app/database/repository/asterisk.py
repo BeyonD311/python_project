@@ -188,6 +188,18 @@ class Asterisk():
                     total_count=total,
                 )
             }
+    
+    def get_state_queue(self, uuid):
+        with self.session_asterisk() as session:
+            sql = "select q.uuid as `uuid`, queue_enabled as status, "\
+                "sum(if(qm.member_position = 2, 1, 0)) as operators, sum(if(qm.member_position = 1, 1, 0)) as supervisors "\
+                f"from queues q left join queue_members qm on qm.queue_name = q.name where uuid = '{uuid}'"
+            state_queue = session.execute(sql).first()
+            if state_queue is None:
+                raise NotFoundError()
+            session.close()
+            return state_queue
+
     def __total(self, session: Session, select_queue):
         total = session.execute(f"select count(*) as `count` from ({select_queue}) temp_c").first()
         if total is None:
