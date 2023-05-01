@@ -1,1 +1,2 @@
-from .queue import QueueService
+from .queue import *
+from .queue_base_model import *

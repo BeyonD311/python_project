@@ -22,4 +22,5 @@ class DepartmentsModel(Base):
             f"is_active={self.is_active}"\
             f"name={self.name})>"
 
+
 __all__ = ('Departments')  

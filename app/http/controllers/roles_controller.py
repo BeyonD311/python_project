@@ -42,11 +42,11 @@ async def get_role(
     ):
     try:
         return roles_model.get(id)
-    except NotFoundError:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {
-            "message": f"Not found role {id}"
-        }
+    except Exception as e:
+        err = default_error(e, source='Role')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.post("/")
 @inject
@@ -58,8 +58,8 @@ async def create_role(
     ):
     try:
         result = roles_model.create(params)
-    except RequestException as e:
-        err = default_error(e, item='Role')
+    except Exception as e:
+        err = default_error(e, source='Role')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -76,7 +76,7 @@ async def update_role(
     try:
         result = roles_model.update(params)
     except Exception as e:
-        err = default_error(e, item='Role')
+        err = default_error(e, source='Role')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -92,7 +92,7 @@ async def delete_role(
     try:
         result = roles_model.delete(id)
     except Exception as e:
-        err = default_error(e, item='Roles')
+        err = default_error(e, source='Roles')
         response.status_code = err[0]
         result = err[1]
     return result

@@ -74,79 +74,121 @@ class SuperRepository(ABC):
 
 
 class BaseException(Exception):
-    entity_name: str
+    message_err: str = "An unknown exception occurred."
+    description_err: str = "Неопределённое описание ошибки."
+    code_err: int = 500
 
-    def __init__(self, entity_id: int, entity_description: str = None) -> None:
+    def __init__(self,
+            item: str = None,
+            entity_id: int = None,
+            entity_message: str = None,
+            entity_description: str = None
+        ) -> None:
+        """Инициализация объекта исключения
+
+        :param item: значение, которое привело к ошибке, defaults to None
+        :type item: str, optional
+        :param entity_id: номер, который привел к ошибке, defaults to None
+        :type entity_id: int, optional
+        :param entity_message: логгируемое сообщение, defaults to None
+        :type entity_message: str, optional
+        :param entity_description: отображаемое сообщение, defaults to None
+        :type entity_description: str, optional
+        """
+
+        self.item = item
         self.entity_id = entity_id
-        if entity_description is not None:
-            self.entity_description = entity_description
-    
-    def __str__(self):
-        if self.entity_description is not None:
-            message = self.entity_description
-        else:
-            message = f"Error: {self.entity_id}"
-        return message
+        self.http_code = self.code_err
+        self.message = entity_message if entity_message is not None else self.message_err
+        self.description = entity_description if entity_description is not None else self.description_err
 
-    @property
-    def message(self):
-        result = {
-            "message": self.__str__(),
-            "description": self.entity_description
-        }
-        return result
+    def __str__(self):
+        return self.message
 
 
 class NotFoundError(BaseException):
-    entity_name: str
+    message_err: str = "Unable to find the resource"
+    code_err: int = 404
 
     def __init__(self, *args, **kwargs) -> None:
-        BaseException.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
+        if 'item' in kwargs:
+            self.message = f"{self.message_err} with value '{kwargs['item']}'"
+        elif 'entity_id' in kwargs:
+            self.message = f"{self.message_err} with id={kwargs['entity_id']}"
 
 
 class UserNotFoundError(NotFoundError):
-    entity_name: str = "User"
+    message_err: str = "User could not be found"
+    code_err: int = 404
 
     def __init__(self, *args, **kwargs) -> None:
-        BaseException.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
-class ExpectationError(NotFoundError):
+class ExpectationError(BaseException):
     """Не удаётся обработать данные в запросе.
     """
-    entity_name: str = "User"
+    message_err: str = ""
+    code_err = 417
 
     def __init__(self, *args, **kwargs) -> None:
-        BaseException.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
-class AccessException(NotFoundError):
+class AccessException(BaseException):
     """Недостаточно прав доступа.
     """
-    entity_name: str = "User"
+    message_err: str = "Access Forbidden."
+    code_err: int = 403
 
     def __init__(self, *args, **kwargs) -> None:
-        BaseException.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
+
+    def __str__(self) -> None:
+        super().__str__()
 
 
 class RequestException(BaseException):
     """Неверные параметры запроса.
     """
+    message_err: str = ""
+    code_err: int = 400
+
     def __init__(self, *args, **kwargs) -> None:
-        BaseException.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
-class BadFileException(BaseException):
+class BadFileException(RequestException):
     """Неверный формат загружаемого файла.
     """
-    entity_name: str = "Image"
+    message_err: str = "Invalid format of the uploaded file"
 
     def __init__(self, *args, **kwargs) -> None:
-        BaseException.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
+        if 'item' in kwargs:
+            self.message = f"{self.message_err} with name '{kwargs['item']}'"
+        elif 'entity_id' in kwargs:
+            self.message = f"{self.message_err} with id={kwargs['entity_id']}"
 
 
-class ExistsException(NotFoundError):
+class ExistsException(RequestException):
     """Поле или объект уже существует.
     """
+    message_err: str = "Resource already exists"
+
     def __init__(self, *args, **kwargs) -> None:
-        BaseException.__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
+        if 'item' in kwargs:
+            self.message = f"{self.message_err} with name '{kwargs['item']}'"
+        elif 'entity_id' in kwargs:
+            self.message = f"{self.message_err} with id={kwargs['entity_id']}"
+
+
+class UnauthorizedException(BaseException):
+    """Отсутствуют действительные учетные данные для проверки подлинности.
+    """
+    code_err = 401
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)

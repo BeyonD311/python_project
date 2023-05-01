@@ -6,9 +6,9 @@ from hashlib import sha256
 from app.http.services.logger_default import get_logger
 from app.database import UserModel
 from app.database import UserRepository
-from app.database import NotFoundError
+from app.database import NotFoundError, UserNotFoundError
 from app.database import SkillsRepository
-from app.http.services.helpers import RedisInstance
+from app.http.services.helpers import RedisInstance, convert_second_to_time
 from app.http.services.users.user_base_models import UsersResponse
 from app.http.services.users.user_base_models import ResponseList
 from app.http.services.users.user_base_models import UserRequest
@@ -47,6 +47,7 @@ class UserService:
     def get_departments_employees(self, department_id):
         department_headers, department_employees = [], []
         users = self._repository.get_users_department(department_id=department_id)
+        # TODO: перекрывается ошибка из get_users_department следующей - NotFoundError
         for person in users:
             if person[5] == True:
                 department_headers.append(person)
@@ -55,8 +56,12 @@ class UserService:
             # TODO
             # (department_headers if person[5] == True else department_employees).append(person)
         if not department_headers and not department_employees:
-            decription = f"Отдел с ID={department_id} не существует."
-            raise NotFoundError(entity_id=department_id, entity_description=decription)
+            description = f"Не найдено пользователей в департаменте с ID={department_id}."
+            raise NotFoundError(
+                entity_message=f"No users in department with id={department_id}",
+                entity_id=department_id,
+                entity_description=description
+            )
         result = {
             "management": department_headers,
             "supervisor": department_employees
@@ -97,13 +102,15 @@ class UserService:
 
     def update_user(self, id: int, user: UserRequest) -> any:
         if id == 0:
-            raise NotFoundError(id)
+            description = f"Не найден пользователь с ID={id}."
+            raise UserNotFoundError(entity_id=id, entity_description=description)
         user = self._repository.update(id,self.__fill_fields(user))
         return self.__user_response(user)
 
     def delete_user_by_id(self, user_id: int) -> None:
         if user_id == 0:
-            raise NotFoundError(user_id)
+            description = f"Не найден пользователь с ID={id}."
+            raise UserNotFoundError(entity_id=user_id, entity_description=description)
         return self._repository.soft_delete(user_id)
     
     def get_all_status_users(self):
@@ -115,7 +122,7 @@ class UserService:
         event = None
         try:
            event = enums[status_params['code'].upper()].value
-        except Exception as e:  # TODO: определить исключение
+        except Exception as e:  # TODO: определить тип исключений
             event = "CHANGE_STATUS"
         params = PublisherParams(
             user_id=user_id,
@@ -129,14 +136,6 @@ class UserService:
         )
         await self.__set_status_redis(params)
 
-    def convert_to_time(self, seconds: int) -> str:
-        s = seconds % (24 * 3600)
-        h = s // 3600
-        s %= 3600
-        m = s // 60
-        s = s % (24 * 3600)
-        s %= 60
-        return str("%02d:%02d:%02d" % (h, m, s))
     async def redis_pub_sub(self, websocket: WebSocket, user_id: int):
             pubsub: PubSub = self._redis.redis.pubsub()
             try:
@@ -155,8 +154,8 @@ class UserService:
                     except Exception:
                         status_at = datetime.datetime.now() - datetime.datetime.strptime(result['status_at'], "%Y-%m-%d %H:%M:%S")
 
-                    result['start_time_kc'] = self.convert_to_time(time_kc.seconds)
-                    result['status_at'] = self.convert_to_time(status_at.seconds)
+                    result['start_time_kc'] = convert_second_to_time(time_kc.seconds)
+                    result['status_at'] = convert_second_to_time(status_at.seconds)
                     await websocket.send_json(result)
             except ConnectionClosedOK as e:
                 log.error(str(e))
@@ -179,7 +178,8 @@ class UserService:
         user_id = await self._redis.redis.get(f"user:uuid:{uuid}")
         user_id = json.loads(user_id)
         if status is None:
-            raise NotFoundError("status not found")
+            description = f"Не найден статус"
+            raise NotFoundError(entity_message="status not found", entity_description=description)
         status = json.loads(status)
         log.debug(f"uuid={uuid},status_id={status['id']},status_time={status_time}")
         await self._repository.set_status_by_uuid(uuid=uuid,status_id=status['id'],status_time=status_time)
@@ -187,7 +187,7 @@ class UserService:
         event = None
         try:
             event = enums[status['behavior'].upper()].value
-        except Exception as e:
+        except Exception as e:  # TODO: определить тип исключений
             event = "CHANGE_STATUS"
         params = PublisherParams(
             user_id=user_id['id'],

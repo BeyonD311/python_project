@@ -63,7 +63,7 @@ async def update_status(
             "description": f"Новый статус ID={status_id} установлен."
         }
     except Exception as e:
-        err = default_error(e, item='UserService')
+        err = default_error(e, source='UserService')
         response.status_code = err[0]
         result = {
             "message": err[1]
@@ -93,7 +93,7 @@ async def update_status_asterisk(
             "message": "set status"
         }
     except Exception as e:
-        err = default_error(e, item='UserService')
+        err = default_error(e, source='UserService')
         response.status_code = err[0]
         result = {
             "message": err[1]
@@ -123,7 +123,7 @@ async def ws_channel_user_status(
                 fetch_task = asyncio.create_task(user_service.redis_pub_sub(websocket, data['user_id']))
         await asyncio.gather(read_from_socket(websocket), get_data_and_send())
     except Exception as e:
-        err = default_error(e, item='UserService')
+        err = default_error(e, source='UserService')
         await websocket.send_json(err[1])
 
 @route.get("/fill",  include_in_schema=False)

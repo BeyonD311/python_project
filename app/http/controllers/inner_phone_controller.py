@@ -6,8 +6,9 @@ from app.kernel.container import Container
 from dependency_injector.wiring import Provide, inject
 from app.http.services.inner_phone import RequestInnerPhone
 from app.http.services.inner_phone import InnerPhoneServices
-from app.database.repository import NotFoundError
 from app.http.services.helpers import default_error
+
+from sqlalchemy.exc import IntegrityError
 
 security = HTTPBearer()
 
@@ -32,7 +33,7 @@ def get_user_inner_phones(
     try:
         result = inner_phone_service.get_by_user_id(user_id=user_id)
     except Exception as e:
-        err = default_error(e, item='InnerPhone')
+        err = default_error(e, source='InnerPhone')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -44,19 +45,20 @@ def add_inner_phone(
     response: Response,
     HTTPBearerSecurity: HTTPBearer = Depends(security),
     inner_phone_service: InnerPhoneServices = Depends(Provide[Container.inner_phone_service])):
-    """ 
+    """
         Поле id у inner_phone должно быть 0 при создании, при обновлении текущего id\n
     Exceptions:
-        TODO: Add exceptions
+        NotFoundError
+        ExistsException
     """
     try:
-        inner_phone_service.add(params)
+        inner_phone_service.add(params)  # TODO: создаёт запись с одинаковым внут.номером
         result =  {
             "message": "Phone added",
             "description": "Внутренний номер успешно добавлен."
         }
     except Exception as e:
-        err = default_error(e, item='InnerPhone')
+        err = default_error(e, source='InnerPhone')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -80,7 +82,7 @@ def update_inner_phone(
             "description": "Внутренний номер успешно обновлён."
         }
     except Exception as e:
-        err = default_error(e, item='InnerPhone')
+        err = default_error(e, source='InnerPhone')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -104,7 +106,7 @@ def delete_inner_phone(
             "description": "Внутренний номер успешно удалён."
         }
     except Exception as e:
-        err = default_error(e, item='InnerPhone')
+        err = default_error(e, source='InnerPhone')
         response.status_code = err[0]
         result = {
             "message": err[1]
@@ -129,7 +131,7 @@ def get_settings_by_user_id(
     try:
         result = inner_phone_service.get_settings_by_user_id(user_id=decode['azp'])
     except Exception as e:
-        err = default_error(e, item='InnerPhone')
+        err = default_error(e, source='InnerPhone')
         response.status_code = err[0]
         result = err[1]
     return result

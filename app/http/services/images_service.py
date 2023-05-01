@@ -38,7 +38,10 @@ class ImagesServices():
 
     def __check_file(self, image: UploadFile):
         if image.content_type.find("image") == -1:
-            raise BadFileException(entity_id=image.filename, entity_description=f"Неверный формат файла: '{image.filename}'.")
+            raise BadFileException(
+                item=image.filename,
+                entity_description=f"Неверный формат файла: '{image.filename}'."
+            )
 
 
 class ResponseUploadFile(BaseModel):

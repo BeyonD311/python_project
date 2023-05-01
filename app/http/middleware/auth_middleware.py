@@ -5,10 +5,15 @@ from fastapi import status, responses, Depends
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.kernel.container import Container
 from app.http.services.access import Access
+from app.http.services.helpers import default_error
 from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
+from app.database import (
+        AccessException,
+        UnauthorizedException
+    )
 
 path_exception = ("auth", "docs", "openapi.json", "images")
-path_exception_aster = ("/users/status/asterisk", "/users/status/test", "/users/status/fill") 
+path_exception_aster = ("/users/status/asterisk", "/users/status/test", "/users/status/fill")
 
 user_path_exception = ("/users/status", "/users/current")
 
@@ -38,9 +43,13 @@ class Auth(BaseHTTPMiddleware):
             return await call_next(request)
         token = request.headers.get('authorization')
         if token is None:
-            return responses.JSONResponse(content= {
-                "messgae": "No auth"
-            },status_code=status.HTTP_401_UNAUTHORIZED)
+            return responses.JSONResponse(
+                content={
+                    "messgae": "No auth",
+                    "description": "Нет авторизации"
+                    },
+                status_code=status.HTTP_401_UNAUTHORIZED
+            )
         token = token.replace("Bearer ", "")
         try:
             generate = await redis()
@@ -66,22 +75,32 @@ class Auth(BaseHTTPMiddleware):
                         return await call_next(request)
             return responses.JSONResponse(
                 content={
-                    "messgae": "the module is not available, for this role"
+                    "message": "the module is not available, for this role",
+                    "description": "Запрещено для роли этого пользователя."
                 },
                 status_code=status.HTTP_423_LOCKED
             )
         except jwt.exceptions.ExpiredSignatureError as e:
             return responses.JSONResponse(
-                content={"messgae": str(e)},
+                content={
+                    "message": str(e),  # "Token Signature expired"
+                    "description": "Срок действия токена истек. Войдите в систему еще раз."
+                },
                 status_code=status.HTTP_401_UNAUTHORIZED
             )
         except TokenInBlackList as e:
             return responses.JSONResponse(
-                content={"messgae": str(e)},
+                content={
+                    "message": str(e),  # "Token blacklisted. Login again."
+                    "description": "Токен заблокирован. Войдите в систему еще раз."
+                },
                 status_code=status.HTTP_400_BAD_REQUEST
             )
         except jwt.DecodeError as e:
             return responses.JSONResponse(
-                content={"messgae": str(e)},  # "Invaid JWT generated."
+                content={
+                    "message": str(e),  # "Invaid JWT generated."
+                    "description": "Сгенерирован недопустимый JWT."
+                },
                 status_code=status.HTTP_401_UNAUTHORIZED
             )

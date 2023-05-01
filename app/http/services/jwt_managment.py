@@ -4,7 +4,7 @@ import json
 import asyncio
 from datetime import datetime
 from aioredis import Redis
-from app.database import UserModel
+from app.database import UserModel, UnauthorizedException
 
 class Jwt:
     def __init__(self, redis: Redis, user: UserModel = None) -> None:
@@ -83,12 +83,16 @@ class JwtManagement:
     async def generate(self, user: UserModel = None):
         return Jwt(self.redis, user)
     
-class TokenNotFound(Exception):
+class TokenNotFound(UnauthorizedException):
     def __init__(self) -> None:
-        super().__init__(f"Token not found")
+        message = "Token not found"
+        description = "Не найден токен авторизации"
+        super().__init__(entity_message=message, entity_description=description)
 
-class TokenInBlackList(Exception):
+class TokenInBlackList(UnauthorizedException):
     def __init__(self) -> None:
-        super().__init__("Token in black list")
+        message = "Token in black list"
+        description = "Токен заблокирован"
+        super().__init__(entity_message=message, entity_description=description)
 
 __all__ = ["JwtManagement"]

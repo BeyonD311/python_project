@@ -40,11 +40,13 @@ origins = [
     "http://localhost.tiangolo.com",
     "https://localhost.tiangolo.com",
     "http://localhost",
-    "http://localhost:8080",
+    "http://localhost:8010",
+    "http://10.3.0.48:8010",
+    "http://10.3.0.48:3001",
     "http://localhost:3000",
     "http://app"
 ]
-
+app.add_middleware(Auth)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
