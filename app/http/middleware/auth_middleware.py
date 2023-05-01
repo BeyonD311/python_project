@@ -66,22 +66,22 @@ class Auth(BaseHTTPMiddleware):
                         return await call_next(request)
             return responses.JSONResponse(
                 content={
-                    "messgae": "the module is not available, for this role"
+                    "message": "the module is not available, for this role"
                 },
                 status_code=status.HTTP_423_LOCKED
             )
         except jwt.exceptions.ExpiredSignatureError as e:
             return responses.JSONResponse(
-                content={"messgae": str(e)},
+                content={"message": str(e)},
                 status_code=status.HTTP_401_UNAUTHORIZED
             )
         except TokenInBlackList as e:
             return responses.JSONResponse(
-                content={"messgae": str(e)},
+                content={"message": str(e)},
                 status_code=status.HTTP_400_BAD_REQUEST
             )
         except jwt.DecodeError as e:
             return responses.JSONResponse(
-                content={"messgae": str(e)},  # "Invaid JWT generated."
+                content={"message": str(e)},  # "Invaid JWT generated."
                 status_code=status.HTTP_401_UNAUTHORIZED
             )

@@ -118,7 +118,7 @@ class Container(containers.DeclarativeContainer):
     )
     queue_service = providers.Factory(
         QueueService,
-        user_repository = user_repository,
+        position_repository = position_repository,
         asterisk = asterisk_repository,
         redis = redis_instance
     )

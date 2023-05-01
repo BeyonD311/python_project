@@ -1,0 +1,17 @@
+ALTER TABLE queues
+ADD `type_queue` VARCHAR(60),
+ADD `description` VARCHAR(120),
+ADD `queue_code` INTEGER,
+ADD `queue_number` INTEGER,
+ADD `queue_priority` VARCHAR(120),
+ADD `max_calls` INTEGER,
+ADD `exten` INTEGER,
+ADD `called_numbers` INTEGER,
+ADD `switch_number` INTEGER,
+ADD `bypassing_operators` INTEGER,
+ADD `script_ivr_name` VARCHAR(120),
+ADD `script_ivr_greeting` VARCHAR(120),
+ADD `script_ivr_hyperscript` VARCHAR(120),
+ADD `script_ivr_post_call` VARCHAR(120),
+ADD `script_ivr_service_script` VARCHAR(120),
+ADD `operator_select_queue` VARCHAR(120)
