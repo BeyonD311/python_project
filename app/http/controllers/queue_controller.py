@@ -80,6 +80,34 @@ async def get_queue_state(
         result = err[1]
     return result
 
+
+
+@route.get("/resources/{uuid}")
+@inject
+async def get_queue_members(
+    uuid: str,
+    response: Response,
+    queue_service: QueueService = Depends(Provide[Container.queue_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security),
+    operators: str = "",
+    supervisor: str = ""
+):
+    return queue_service.get_queue_members(uuid, operators, supervisor)
+
+
+
+@route.post("/resources/{uuid}")
+@inject
+async def save_queue_members(
+    uuid: str,
+    params: RequestQueueMembers,
+    response: Response, 
+    queue_service: QueueService = Depends(Provide[Container.queue_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
+):
+    return queue_service.save_queue_members(uuid, params)
+
+
 @route.post("")
 @inject
 async def add_create_queue(
@@ -117,25 +145,20 @@ async def add_update_queue(
         result = err[1]
     return result
 
-@route.get("/resources/{uuid}")
+@route.patch("/set_state/{uuid}")
 @inject
-async def get_queue_members(
+async def add_set_state_queue(
     uuid: str,
+    state: bool,
     response: Response,
-    queue_service: QueueService = Depends(Provide[Container.queue_service]),
-    HTTPBearerSecurity: HTTPBearer = Depends(security),
-    operators: str = "",
-    supervisor: str = ""
-):
-    return queue_service.get_queue_members(uuid, operators, supervisor)
-
-@route.post("/resources/{uuid}")
-@inject
-async def save_queue_members(
-    uuid: str,
-    params: RequestQueueMembers,
-    response: Response, 
     queue_service: QueueService = Depends(Provide[Container.queue_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
-    return queue_service.save_queue_members(uuid, params)
+    result = {}
+    try:
+        result = queue_service.set_state(uuid, state)
+    except Exception as exception:
+        err = default_error(exception, item='Queue')
+        response.status_code = err[0]
+        result = err[1]
+    return result

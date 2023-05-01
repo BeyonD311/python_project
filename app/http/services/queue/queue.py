@@ -19,6 +19,14 @@ class QueueService:
 
     def get_state_queue(self, uuid):
         return self._asterisk.get_state_queue(uuid)
+
+    def set_state(self, uuid: str, status: bool): 
+        self._asterisk.set_queue_state(uuid, status)
+        self._asterisk.execute()
+        return {
+            "message": "status add",
+            "description": "Статус обновлен"
+        }
     
     def get_queues(self, params: GetAllQueue):
         if params.page == 1:

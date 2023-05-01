@@ -226,6 +226,10 @@ class Asterisk():
             except Exception:
                 continue
         return res
+
+    def set_queue_state(self, uuid: str, status: bool):
+        sql = f"update queues set queue_enabled = {status} where uuid = '{uuid}'"
+        self.stack_multiple_query.append(sql)
     
     def add_queue_member(self, params, name_queue):
         for param in params:
