@@ -1,12 +1,23 @@
 from typing import Callable
+from math import ceil
 from uuid import uuid4
 from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from .super import NotFoundError, Pagination
+
 from app.http.services.helpers import convert_time_to_second
 
 __all__ = ["Asterisk", "AsteriskParams", "ExceptionAsterisk", "StatusHistoryParams"]
+
+
+# Параметры для фильтрации выборки
+queueFilter = {
+    "NAME": lambda n: "and LOWER(name) like '%"+n+"%'",
+    "STATUS": lambda status: "and status in (" + status + ")",
+    "TYPE": lambda type: "and LOWER(type) = '" + str(type).lower() + "'"
+}
+    
 
 class AsteriskParams(BaseModel):
     phone_number: str
@@ -31,6 +42,8 @@ class StatusHistoryParams(BaseModel):
     destination: str
     code: str
     call_time: str = None
+
+
 
 class Asterisk():
     """ 
@@ -151,12 +164,56 @@ class Asterisk():
 
     def get_all_queue(self, params):
         """ Получениые всех очередей """
-        select_queue = "select q.uuid as `uuid`, name, queue_enabled, type_queue, count(qm.member_position) as operators"\
-                        "from queues q"\
-                        "left join queue_members qm on qm.queue_name = q.name and qm.member_position = 2"\
-                        f"GROUP by q.name limit {params.limit}, {params.size}"
-        select_wrapper = f"select * from ({select_queue}) temp_queue where 1=1"
-        
+        select_queue = "select q.uuid as `uuid`, name, queue_enabled as status, type_queue as type, count(qm.member_position) as operators"\
+                        " from queues q"\
+                        " left join queue_members qm on qm.queue_name = q.name and qm.member_position = 2"\
+                        f" GROUP by q.name HAVING 1=1"
+        select_queue = select_queue + " " + self.__filter_queues(params.filter)
+        select_queue_limit = select_queue + f" limit {params.page}, {params.size}"
+        select_wrapper = f"select * from ({select_queue_limit}) temp_queue "
+        select_wrapper = select_wrapper + " " + self.__order_by_queues(params.order_field, params.order_direction)
+        if params.page == 0:
+            params.page = 1
+        with self.session_asterisk() as session:
+            query = session.execute(select_wrapper).all()
+            total = self.__total(session=session, select_queue=select_queue)
+            session.close()
+            total_page=ceil(total / params.size)
+            return {
+                "data": query,
+                "pagination": Pagination(
+                    page=params.page,
+                    total_page=total_page,
+                    size=params.size,
+                    total_count=total,
+                )
+            }
+    def __total(self, session: Session, select_queue):
+        total = session.execute(f"select count(*) as `count` from ({select_queue}) temp_c").first()
+        if total is None:
+            return 1
+        return total.count
+    def __order_by_queues(self, field: str, value: str) -> str:
+        """ Получение сортировки """
+        res = ""
+        available_fields = ["name", "status", "type", "operators"]
+        if field.lower() in available_fields:
+            res = 'order by `' + field.lower() + '`' + " "
+            if value.lower() == "asc":
+                res = res + "asc"
+            else:
+                res = res + "desc"
+        return res
+
+    def __filter_queues(self, params: list) -> str:
+        res = ""
+        for filter in params:
+            try:
+                action = queueFilter[filter.field]
+                res = res + " " + action(filter.value)
+            except Exception:
+                continue
+        return res
     
     def add_queue_member(self, params, name_queue):
         for param in params:

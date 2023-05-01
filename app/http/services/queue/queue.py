@@ -3,7 +3,7 @@ from app.http.services.helpers import convert_second_to_time
 from app.database import PositionRepository
 from app.http.services.helpers import RedisInstance
 from app.database.repository import Asterisk
-from .queue_base_model import (RequestQueue, ResponseQueue , ResponseQueueMembers, OuterLines, RequestQueueMembers)
+from .queue_base_model import (RequestQueue, ResponseQueue , ResponseQueueMembers, OuterLines, RequestQueueMembers, GetAllQueue)
 
 __all__ = ['QueueService']
 
@@ -17,6 +17,12 @@ class QueueService:
         self._asterisk: Asterisk = asterisk
         self._redis: RedisInstance = redis
     
+    def get_queues(self, params: GetAllQueue):
+        if params.page == 1:
+            params.page = 0
+        queues = self._asterisk.get_all_queue(params)
+        return queues
+
     def get_queue_members(self, uuid, fio_operators: str, fio_supervisor: str) -> ResponseQueueMembers:
         """ Получение занесенных участников очереди """
         queue_members = self._asterisk.get_queue_members(uuid)

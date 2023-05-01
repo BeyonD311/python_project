@@ -5,7 +5,7 @@ from pydantic import ValidationError
 from datetime import time
 from typing import Any
 
-__all__ = ["BaseInfo", "ConfigCalls", "ScriptIVR", "RequestQueue", "RequestQueueMembers", "ResponseQueue", "ResponseQueueMembers", "GetAllQueue"]
+__all__ = ["BaseInfo", "ConfigCalls", "ScriptIVR", "RequestQueue", "RequestQueueMembers", "ResponseQueue", "ResponseQueueMembers", "GetAllQueue", "Filter"]
 
 class BaseInfo(BaseModel):
     """ Общая информация """
@@ -82,21 +82,6 @@ class Filter(BaseModel):
 class GetAllQueue(BaseModel):
     page: int
     size: int
-    filter: list[Filter]
+    filter: list[Filter] = []
     order_field: str
     order_direction:str
-
-    @validator('order_direction')
-    def order_direction_match(cls, v) -> str:
-        """ Проверка направления сортировки """
-        if v.lower() != 'asc' or v.lower() != 'desc':
-            raise ValidationError("order_direction do not valid")
-        return v
-
-    @validator('order_field')
-    def order_field_match(cls, v) -> str:
-        """ Проверка полей """
-        fields = set("name", "status", "type")
-        if v.lower() not in fields:
-            raise ValidationError("order_field do not valid")
-        return v

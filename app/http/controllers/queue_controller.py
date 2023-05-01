@@ -4,6 +4,7 @@ from app.http.services.queue import QueueService
 from app.http.services.queue import RequestQueue
 from app.http.services.queue import RequestQueueMembers
 from app.http.services.queue import GetAllQueue
+from app.http.services.queue import Filter
 from dependency_injector.wiring import inject
 from dependency_injector.wiring import Provide
 from app.kernel.container import Container
@@ -17,19 +18,34 @@ route = APIRouter(
 
 security = HTTPBearer()
 
-@route.get("/")
+@route.get("")
 @inject
 async def get_queue(
-    page: int,
-    size: int,
-    filter:str, 
-    order_field: str,
-    order_direction:str,
     response: Response,
+    page: int = 1,
+    size: int = 10,
+    order_field: str  = "name",
+    order_direction:str = "desc",
+    filter:str = "", 
     queue_service: QueueService = Depends(Provide[Container.queue_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
-    pass
+    split_filter = filter.split(";")
+    params = GetAllQueue(
+        page=page,
+        size=size,
+        order_field=order_field,
+        order_direction=order_direction
+    )
+    for filter in split_filter:
+        split_params = filter.split("=")
+        if len(split_params) > 1:
+            params.filter.append(Filter(
+                field=split_params[0].upper(),
+                value=split_params[1]
+            ))
+
+    return queue_service.get_queues(params)
 @route.get("/{uuid}")
 @inject
 async def get_queue_by_uuid(
