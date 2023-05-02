@@ -8,7 +8,7 @@ from app.http.services.access import Access
 from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
 
 path_exception = ("auth", "docs", "openapi.json", "images")
-path_exception_aster = ("/users/status/asterisk", "/users/status/test", "/users/status/fill") 
+path_exception_aster = ("/users/status/asterisk", "/users/status/test", "/users/status/fill")
 
 user_path_exception = ("/users/status", "/users/current")
 
