@@ -257,7 +257,7 @@ class Asterisk():
             f"values({base}, {base_info}, {value_calls}, {script_value}, '{uuid}');"
         self.stack_multiple_query.append(query)
         res = params.dict()
-        res['uuid'] = uuid
+        res['uuid'] = str(uuid)
         return res
     
     def update_queue(self, uuid, params):
@@ -272,7 +272,7 @@ class Asterisk():
         update = ",".join(update)
         self.stack_multiple_query.append(f"update queues set {update} where uuid = '{uuid}'")
         res = params.dict()
-        res['uuid'] = uuid
+        res['uuid'] = str(uuid)
         return res
 
 
@@ -291,9 +291,9 @@ class Asterisk():
         """ Параметры таблицы queues для (GET, POST, UPDATE) """
         return {
             "base": "`name`,  `type_queue`, `queue_enabled` ",
-            "base_info": "`description`, `queue_code`, `queue_number`, `strategy`, `weight` ",
-            "config_calls": "`timeout`, `switch_number`, `timeout_talk`, `timeout_queue`, `maxlen` ",
-            "script_ivr": "`script_ivr_name`, `script_ivr_greeting`, `script_ivr_hyperscript`, `script_ivr_post_call`, `script_ivr_service_script` ",
+            "base_info": "`description`, `queue_code`, `exten`, `strategy`, `weight` ",
+            "config_calls": "`timeout`, `wrapuptime`, `timeout_talk`, `timeout_queue`, `maxlen` ",
+            "script_ivr": "`script_ivr_name`, `script_ivr_hyperscript` ",
         }
 
     def __value_fields_queues(self, params)->dict:
@@ -302,27 +302,24 @@ class Asterisk():
             Для update будет собираться автоматически
         """
         return {
-            "values_base": [f"'{params.name}'", f"'{params.type}'", f"{params.active}"],
+            "values_base": [f"'{params.name}'", f"'{params.type_queue}'", f"{params.queue_enabled}"],
             "values_base_info": [
                 f"'{params.base_info.description}'",
                 f"{params.base_info.queue_code}", 
-                f"{params.base_info.queue_number}",
+                f"{params.base_info.exten}",
                 f"'{params.base_info.strategy}'",
                 f"{params.base_info.weight}"
             ],
             "values_config_calls": [
                 f"{convert_time_to_second(params.config_call.timeout)}",
-                f"{params.config_call.switch_number}",
+                f"{convert_time_to_second(params.config_call.wrapuptime)}",
                 f"{convert_time_to_second(params.config_call.timeout_talk)}",
                 f"{convert_time_to_second(params.config_call.timeout_queue)}",
-                f"{params.config_call.max_len}"
+                f"{params.config_call.maxlen}"
             ],
             "values_script_ivr": [
                 f"'{params.script_ivr.name}'",
-                f"'{params.script_ivr.greeting}'",
-                f"'{params.script_ivr.hyperscript}'",
-                f"'{params.script_ivr.post_call}'",
-                f"'{params.script_ivr.service_script}'"
+                f"'{params.script_ivr.hyperscript}'"
             ]
         }
 
