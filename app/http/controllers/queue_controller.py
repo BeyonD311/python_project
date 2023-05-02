@@ -30,6 +30,12 @@ async def get_queue(
     queue_service: QueueService = Depends(Provide[Container.queue_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
+    """ 
+    описание полей \n
+        ** order_field - поле сортировки (name, status, type, operators)
+        ** order_direction - направление сортировки(asc,desc)
+        ** filter - должен содержать строку типа name=Название очереди;status=1,2;type=Название;
+    """
     split_filter = filter.split(";")
     params = GetAllQueue(
         page=page,
@@ -92,6 +98,11 @@ async def get_queue_members(
     operators: str = "",
     supervisor: str = ""
 ):
+    """ 
+        Получение доступных ресурсов
+        ** operators - фильтр по ФИО
+        ** supervisor - фильтр по ФИО
+    """
     return queue_service.get_queue_members(uuid, operators, supervisor)
 
 

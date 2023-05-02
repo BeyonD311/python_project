@@ -57,12 +57,12 @@ class Asterisk():
         """ 
             Создание номера в asterisk(sip регистрация)
         """
-        aors = f" insert into ps_aors(id, max_contacts) values({params.phone_number}{w}, 1) "
-        auth = f" insert into ps_auths(id, password, username, uuid,duration_call,duration_conversation, status) "\
-               f" values({params.phone_number}{w},'{params.password}','{params.login}','{params.uuid}', '{params.duration_call}',"\
+        aors =  f" insert into ps_aors(id, max_contacts) values({params.phone_number}{w}, 1) "
+        auth =  f" insert into ps_auths(id, password, username, uuid,duration_call,duration_conversation, status) "\
+                f" values({params.phone_number}{w},'{params.password}','{params.login}','{params.uuid}', '{params.duration_call}',"\
                 f" '{params.duration_conversation}', 10)"
         endpoints = f" insert into ps_endpoints (id, aors, auth, webrtc, transport) values "\
-                f"({params.phone_number}{w}, {params.phone_number}{w}, {params.phone_number}{w}, '{params.webrtc}', '{params.transport}') "
+                    f"({params.phone_number}{w}, {params.phone_number}{w}, {params.phone_number}{w}, '{params.webrtc}', '{params.transport}') "
         self.stack_multiple_query.append(aors)
         self.stack_multiple_query.append(auth)
         self.stack_multiple_query.append(endpoints)

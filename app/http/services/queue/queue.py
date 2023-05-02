@@ -56,7 +56,6 @@ class QueueService:
             out_line = OuterLines(
                 name=line.id
             )
-            print(outer_lines_selected)
             if line.id in outer_lines_selected:
                 out_line.is_selected = True
             result.numbers_lines.append(out_line)
