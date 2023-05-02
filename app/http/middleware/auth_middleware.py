@@ -8,7 +8,7 @@ from app.http.services.access import Access
 from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
 
 path_exception = ("auth", "docs", "openapi.json", "images")
-path_exception_aster = ("/users/status/asterisk", "/users/status/test", "/users/status/fill") 
+path_exception_aster = ("/users/status/asterisk", "/users/status/test", "/users/status/fill")
 
 user_path_exception = ("/users/status", "/users/current")
 
@@ -69,10 +69,9 @@ class Auth(BaseHTTPMiddleware):
             },status_code=status.HTTP_423_LOCKED)
         except jwt.exceptions.ExpiredSignatureError as e:
             return responses.JSONResponse(content= {
-                "messgae": str(e) 
+                "messgae": str(e)
             },status_code=status.HTTP_401_UNAUTHORIZED)
         except TokenInBlackList as e:
             return responses.JSONResponse(content= {
                 "messgae": str(e)
-            },status_code=status.HTTP_400_BAD_REQUEST) 
-    
+            },status_code=status.HTTP_400_BAD_REQUEST)

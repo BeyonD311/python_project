@@ -8,4 +8,5 @@ from .roles_permissions import RolesPermissionRepository
 from .skills import SkillsRepository
 from .images import ImagesRepository
 from .inner_phones import InnerPhones
+from .schedule import ScheduleRepository
 from .asterisk import *
