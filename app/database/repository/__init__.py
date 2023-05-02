@@ -1,5 +1,8 @@
 from .users import UserRepository
-from .super import NotFoundError
+from .super import (
+    BaseException, NotFoundError, UserNotFoundError, ExpectationError,
+    AccessException, RequestException, BadFileException, ExistsException
+)
 from .departments import DepartmentsRepository
 from .position import PositionRepository
 from .groups import GroupsRepository

@@ -1,7 +1,7 @@
 import math
 from datetime import datetime
 from pydantic import BaseModel
-from .super import SuperRepository, NotFoundError, Pagination
+from .super import SuperRepository, NotFoundError, Pagination, ExistsException
 from app.database.models import DepartmentsModel
 from app.database.models import InnerPhone
 from app.database.models import UserModel
@@ -9,6 +9,7 @@ from app.database.models import HeadOfDepartment
 from app.database.models import PositionModel
 from app.database.models import StatusModel
 from sqlalchemy import and_
+from sqlalchemy import or_
 from sqlalchemy.orm import Query
 from sqlalchemy.orm import Session
 from typing import Iterator
@@ -27,6 +28,8 @@ class Department(BaseModel):
     is_parent: bool
     employees: list = []
     child: list = []
+    head: list = []
+    deputy_head: list = []
 
 class UsersResponse(BaseModel):
     id: int = None
@@ -35,6 +38,22 @@ class UsersResponse(BaseModel):
     position: str = None
     is_head_of_department: bool = False
     status: dict = None
+
+def new_user_response(params) -> UsersResponse:
+    """ Создание UserResonse """
+    return UsersResponse(
+        id = params[4],
+        fio = params[5],
+        inner_phone = params[6],
+        position = params[12],
+        is_head_of_department=bool(params[8]),
+        status={
+            "id": params[11],
+            "status": params[10],
+            "status_id": params[7],
+            "color": params[9]
+        }
+    )
 
 class DepartmentsRepository(SuperRepository):
 
@@ -47,7 +66,7 @@ class DepartmentsRepository(SuperRepository):
                 return []
             return query
     
-    def get_employees(self, filter = None) -> Department:
+    def get_employees(self, filter = None) -> Department:  # TODO: DISTINCT users
         with self.session_factory() as session:
             query = session.query(
                 self.base_model.id.label("department_id"),
@@ -62,10 +81,11 @@ class DepartmentsRepository(SuperRepository):
                 StatusModel.name.label("status_name"),
                 StatusModel.id.label("status_id"),
                 PositionModel.name.label("position"),
-                InnerPhone.phone_number.label("user_inner_phone")
-                )\
+                InnerPhone.phone_number.label("user_inner_phone"),
+                HeadOfDepartment.deputy_head_id.label("deputy_head_id")
+            )\
             .join(UserModel, UserModel.department_id == self.base_model.id, isouter=True)\
-            .join(HeadOfDepartment, HeadOfDepartment.head_of_department_id == UserModel.id, isouter=True)\
+            .join(HeadOfDepartment, or_(HeadOfDepartment.head_of_department_id == UserModel.id, HeadOfDepartment.deputy_head_id == UserModel.id), isouter=True)\
             .join(StatusModel, StatusModel.id == UserModel.status_id, isouter=True)\
             .join(PositionModel, PositionModel.id == UserModel.position_id, isouter=True)\
             .join(InnerPhone, and_(InnerPhone.user_id == self.base_model.id, InnerPhone.is_default == True, InnerPhone.is_registration == True), isouter=True)
@@ -87,21 +107,12 @@ class DepartmentsRepository(SuperRepository):
                     if res[4] is not result[res[0]].employees:
                         if res[4] == 0:
                             continue
-                        result[res[0]].employees.append(
-                             UsersResponse(
-                            id = res[4],
-                            fio = res[5],
-                            inner_phone = res[6],
-                            position = res[12],
-                            is_head_of_department=bool(res[8]),
-                            status={
-                                "id": res[11],
-                                "status": res[10],
-                                "status_id": res[7],
-                                "color": res[9]
-                            }
-                        )
-                        )
+                        if bool(res[8]):
+                            result[res[0]].deputy_head.append(new_user_response(res))
+                        elif bool(res['deputy_head_id']):
+                            result[res[0]].head.append(new_user_response(res))
+                        else:
+                            result[res[0]].employees.append(new_user_response(res))
             #TODO возможно понадобиться для работы если нет то удалить
             """ Получем родителей рекурсивно """
             parents = set(parents)
@@ -122,10 +133,10 @@ class DepartmentsRepository(SuperRepository):
             for res in query:
                 if res[0] not in result:
                     result[res[0]] = Department(
-                        id = res[0],
-                        name = res[1],
-                        parent_department_id=res[2],
-                        is_parent=res[3]
+                            id = res[0],
+                            name = res[1],
+                            parent_department_id=res[2],
+                            is_parent=res[3]
                         )
             return result
         
@@ -135,7 +146,7 @@ class DepartmentsRepository(SuperRepository):
     def filter_params(self, query, filter) -> Query:
         filter_res = " and "
         params = []
-        if filter['fio'] != None:  
+        if filter['fio'] != None:
             fio = filter['fio']
             params.append(f"users.fio ilike '%{fio}%'")
             query = query.filter(UserModel.fio.ilike(f'%{fio}%'))
@@ -152,9 +163,9 @@ class DepartmentsRepository(SuperRepository):
             params.append(f"users.status_id in ({status})")
             query = query.filter(UserModel.status_id.in_(filter['status']))
         if filter['phone'] != None:
-            phone = filter['phone']
-            params.append(f"users.inner_phone ilike '%{phone}%'")
-            query = query.filter(UserModel.inner_phone.ilike(f'%{phone}%'))
+            phone = filter['phone'].replace(' ', ',').replace(',,', ',')
+            params.append(f"inner_phones.phone_number in ({phone})")
+            query = query.filter(InnerPhone.phone_number.in_(phone.split(',')))
         return query
 
     def __filter_params(self, filter):
@@ -172,8 +183,8 @@ class DepartmentsRepository(SuperRepository):
             status = ','.join(filter['status'])
             params.append(f"users.status_id in ({status})")
         if filter['phone'] != None:
-            phone = filter['phone']
-            params.append(f"users.phone ilike '%{phone}%'")
+            phone = filter['phone'].replace(' ', ',').replace(',,', ',')
+            params.append(f"inner_phones.phone_number in ({phone})")
         if len(params) > 0:
             return "where " + " and ".join(params)
         return ""
@@ -221,6 +232,7 @@ class DepartmentsRepository(SuperRepository):
                 name = params.name,
                 parent_department_id = params.source_department
             )
+
             session.add(department)
             session.commit()
 
@@ -276,19 +288,21 @@ class DepartmentsRepository(SuperRepository):
     def find_department_by_name(self, name: str, session):
         query = session.query(self.base_model).filter(self.base_model.name.ilike(f"%{name}%")).first()
         if query is not None:
-            raise NotFoundError("department exists")
+            description = f"Департамент с именем '{name}' уже существует."
+            raise ExistsException(entity_id=name, entity_description=description)
 
     def find_employee(self, department_id: int, session):
         result = {}
         query = session.query(UserModel).filter(UserModel.id != 0).filter(UserModel.department_id == department_id).all()
         for employee in query:
-                result[employee.user_id] = employee
+            result[employee.user_id] = employee
         return result
 
     def find_department_by_id(self, id, session) -> DepartmentsModel:
         query = session.query(self.base_model).filter(self.base_model.id == id).first()
         if query is None:
-            raise NotFoundError("department exists")
+            description = f"Департамента с ID={id} не существует."
+            raise NotFoundError(entity_id=id, entity_description=description)
         return query
     
     def __add_employee(self, params, session: Session ,id: int):
@@ -313,33 +327,45 @@ class DepartmentsRepository(SuperRepository):
                 session.delete(department)
         del departments
         if head_employees_department != None and params.director_user_id != None:
+            if not self.get_users(params, session):
+                description = f"Пользователя с ID={params.director_user_id} не существует."
+                raise NotFoundError(entity_id=id, entity_description=description)
             if params.director_user_id != head_employees_department.head_of_department_id:
                 head_employees_department.head_of_department_id = params.director_user_id
                 session.add(head_employees_department)
         elif head_employees_department == None and params.director_user_id != None:
+            if not self.get_users(params, session):
+                description = f"Пользователья с ID={params.director_user_id} не существует."
+                raise NotFoundError(entity_id=id, entity_description=description)
             session.add(HeadOfDepartment(
-                    department_id=id,
-                    head_of_department_id=params.director_user_id
-                ))
+                department_id=id,
+                head_of_department_id=params.director_user_id
+            ))
         for user_id in params.deputy_head_id:
             session.add(HeadOfDepartment(
                 department_id=id,
                 deputy_head_id=user_id
             ))
 
+
     def __query_employees(self, filter):
         query1 = self.__query_select_fields(False) + " " + self.__query_join(True) + " " + self.__filter_params(filter)
         query2 = self.__query_select_fields(True) + " " + self.__query_join() + " " + self.__filter_params(filter)
-        return f"select templ.department_id, templ.department_name, templ.department_parent, templ.is_parent, templ.user_id, templ.user_fio, templ.user_inner_phone, templ.status_at, templ.head_of_department_id, templ.status_color, templ.status_name, templ.status_id, position"\
+        return f"select templ.department_id, templ.department_name, templ.department_parent, templ.is_parent, templ.user_id,"\
+                " templ.user_fio, templ.user_inner_phone, templ.status_at, "\
+                " templ.head_of_department_id, templ.status_color, templ.status_name, templ.status_id, position, deputy_head_id"\
                 f"  from ({query1} union {query2}) templ where 1=1 "
         
 
     def __query_select_fields(self, fake = False):
         fields = ""
         if fake == False:
-            fields = f" head_of_departments.head_of_department_id AS head_of_department_id,"
-        else:
-            fields = f"int'0' AS head_of_department_id,"
+            fields = f" head_of_departments.head_of_department_id AS head_of_department_id,"\
+                    f" head_of_departments.deputy_head_id AS deputy_head_id,"
+        else:   
+            fields = f"int'0' AS head_of_department_id,"\
+                    f"int'0' AS deputy_head_id,"
+
         select = f"select departments.id AS department_id,"\
                 f"departments.name AS department_name,"\
                 f"departments.parent_department_id AS department_parent,"\

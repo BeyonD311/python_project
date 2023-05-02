@@ -1,4 +1,4 @@
-from .super import SuperRepository, NotFoundError
+from .super import SuperRepository
 from app.database.models import RolesPermission
 
 class RolesPermissionRepository(SuperRepository):
@@ -13,5 +13,6 @@ class RolesPermissionRepository(SuperRepository):
 
     def add():
         pass
+
     def update():
         pass

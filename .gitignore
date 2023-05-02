@@ -4,3 +4,5 @@ app/body_users.json
 /database
 status.txt
 /.idea
+.vscode
+error

@@ -1,10 +1,12 @@
 import re
+import json
 import jwt
 import os
 from fastapi import Depends, APIRouter, Response, status, Body, Request, HTTPException
 from datetime import datetime
 from dependency_injector.wiring import inject, Provide
 from app.kernel.container import Container
+from app.http.services.helpers import default_error
 from app.http.services.users import UserService
 from app.http.services.users import UserRequest
 from app.http.services.users import UsersFilter
@@ -12,9 +14,9 @@ from app.http.services.users import UserParams
 from app.http.services.departments import DepartmentsService
 from app.http.services.groups import GroupsService
 from app.http.services.users import SkillService, UserPermission
-from app.database import NotFoundError
+from app.database import ExpectationError, AccessException
 from fastapi.security import HTTPBearer
-from sqlalchemy.exc import IntegrityError
+
 
 security = HTTPBearer()
 
@@ -23,6 +25,7 @@ route = APIRouter(
     tags=['users'],
     responses={404: {"description": "Not found"}} 
 )
+
 
 @route.get("/departments")
 @inject
@@ -42,22 +45,16 @@ async def get_departments_user(
 
     Результат - вывод Супервизоров и руководителя отдела ("head_of_department": true)
 
-     описание полея \n
-     - departments_id - id отдела пользователя 
+     описание полей \n
+     - departments_id - id отдела пользователя
     '''
-
     try:
-        if departments_id == 0:
-            raise NotFoundError(departments_id)
-        return user_service.get_departments_employees(departments_id)
+        result = user_service.get_departments_employees(departments_id)
     except Exception as e:
-        print(e)
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {
-            "status": "fail",
-            "message": "Not found departments"
-        }
-    
+        err = default_error(e, item='Users Department')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.get("/groups")
 @inject
@@ -70,17 +67,32 @@ def get_all_groups(
 @inject
 def get_user_skill(
     skill: str,
+    response: Response,
     skill_service: SkillService = Depends(Provide[Container.skill_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
-    return skill_service.find(skill)
+    '''
+
+    Результат - вывод пользовательского навыка по его ID.
+
+     описание полей \n
+     - skill - id навыка пользователя
+    '''
+    try:
+        result = skill_service.find(skill)
+    except Exception as e:
+        err = default_error(e, item='Users Skill')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.post("/skill")
 @inject
-def get_user_skill(
+def create_user_skill(
     skill: str = Body(),
     skill_service: SkillService = Depends(Provide[Container.skill_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
-    return skill_service.add(text=skill)
+    result = skill_service.add(text=skill)
+    return result
 
 @route.get("/", status_code = 200)
 @inject
@@ -97,8 +109,8 @@ async def get_users(
     ):
     """ 
     описание полей \n
-        ** fileter - должен содержать строку типа fio=Фамилия имя отчестов;login=логин пользователя;status=id статуса;
-     """
+        ** filter - должен содержать строку типа fio=Фамилия имя отчество;login=логин пользователя;status=id статуса;
+    """
     if page == 1 or page <= 0:
         page = 0
     else:
@@ -112,7 +124,7 @@ async def get_users(
     if filter is not None:
         reg = r'([a-z]*)(=)([А-Яа-яa-zA-Z?\s\d\,]*)'
         user_filter = UsersFilter()
-        result = re.findall(reg,filter) 
+        result = re.findall(reg,filter)
         flag = False
         for r in result:
             if r[0] in user_filter.__dict__ and r[2] != "":
@@ -123,18 +135,22 @@ async def get_users(
                 user_filter.__setattr__(r[0], param)
         if flag:
             params.filter = user_filter
-    if hasattr(request.state,'for_user') and request.state.for_user['status']:
-        if request.state.for_user['user'].department_id is None:
-            response.status_code = status.HTTP_417_EXPECTATION_FAILED
-            return {
-                "status": "fail",
-                "message": "User Not found department"
-            }
-        if params.filter is None:
-            params.filter = UsersFilter()
-        params.filter.department = request.state.for_user['user'].department_id
-        del request.state.for_user['user']
-    return user_service.get_all(params=params) 
+    try:
+        if hasattr(request.state,'for_user') and request.state.for_user['status']:
+            # TODO: убрать raise
+            if request.state.for_user['user'].department_id is None:
+                description = f"Запрашиваемый пользователь не состоит ни в одном отделе."
+                raise ExpectationError(entity_id='', entity_description=description)
+            if params.filter is None:
+                params.filter = UsersFilter()
+            params.filter.department = request.state.for_user['user'].department_id
+            del request.state.for_user['user']
+        result = user_service.get_all(params=params)
+    except Exception as e:
+        err = default_error(e, item='Users')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.get("/position")
 @inject
@@ -146,46 +162,53 @@ async def user_position(
 @route.get("/current")
 @inject
 async def current_user(
+    response: Response,
     request: Request, 
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
-    """ Получение текущего пользователя """
+    """ Получение текущего пользователя\n
+    Exception:
+        NotFoundError
+    """
     token = request.headers.get('authorization').replace("Bearer ", "")
     decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
-    current = user_service.get_user_by_id(decode['azp'])
-    return current
+    try:
+        result = user_service.get_user_by_id(decode['azp'])
+    except Exception as e:
+        err = default_error(e, item='Users')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.get("/get_pass")
 @inject
 async def current_password(
-    response: Response, 
-    request: Request, 
+    response: Response,
+    request: Request,
     user_id: int = None,
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
-        if user_id == 0:
-            response.status_code = status.HTTP_404_NOT_FOUND
-            return 
-        if user_id == None:
-            token = request.headers.get('authorization').replace("Bearer ", "")
+        token = request.headers.get('authorization').replace("Bearer ", "")
+        if user_id == None:  # NOTE: Get own password
             decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
             user_id = decode['azp']
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
             request.state.for_user['user']
             if request.state.for_user['user'].id != user_id:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
+                raise AccessException(entity_id=user_id)
             del request.state.for_user['user']
         current = user_service.by_id(user_id)
-        return {
+        result = {
             "id": user_id,
             "password": current.password
         }
-    except NotFoundError as e:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {
-            "message": str(e)
-        }
+    except Exception as e:
+        err = default_error(e, item='Users')
+        response.status_code = err[0]
+        result = err[1]
+    return result
+
 @route.get("/{id}")
 @inject
 async def get_user_id(
@@ -195,21 +218,17 @@ async def get_user_id(
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
-    
     try:
-        if id == 0:
-            raise NotFoundError(id)
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
-            if request.state.for_user['user'].id != id:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
-        return user_service.get_user_by_id(id, False)
-    except NotFoundError as e:
-        print(e)
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {
-            "status": "fail",
-            "message": "Not found user"
-        }
+            slef_id = request.state.for_user['user'].id
+            if slef_id != id:
+                raise AccessException(entity_id=slef_id)
+        result = user_service.get_user_by_id(id, False)
+    except Exception as e:
+        err = default_error(e, item='Users')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.post("/")
 @inject
@@ -221,26 +240,14 @@ async def add_user(
     ):
     try:
         user = await user_service.create_user(user_request)
-        if type(user) == tuple:
-            response.status_code = status.HTTP_400_BAD_REQUEST
-            return {
-                "message": "Bad request"
-            }
         await user_service.set_status(user.id,user.status.status_id)
-        return user
-    except NotFoundError as e:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {
-            "message": str(e)
-        }
-    except IntegrityError as e:
-        errorInfo = e.orig.args
-        response.status_code = status.HTTP_400_BAD_REQUEST
-        pattern = r'(DETAIL:(?:[^\\n]*))'
-        match = re.findall(pattern=pattern, string=errorInfo[0])
-        return {
-            "message": match[0]
-        }
+        result = user
+    except Exception as e:
+        err = default_error(e, item='Users')
+        response.status_code = err[0]
+        result = err[1]
+    return result
+
 
 @route.patch("/permissions")
 @inject
@@ -252,14 +259,16 @@ async def user_set_permission(
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
-            if request.state.for_user['user'].id != id:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
-        return user_service.set_permission(params)
-    except IntegrityError as e:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {
-            "message": "Not found status"
-        }
+            slef_id = request.state.for_user['user'].id
+            if slef_id != id:
+                raise AccessException(entity_id=slef_id)
+        result = user_service.set_permission(params)
+    except Exception as e:
+        # TODO: response.status_code = status.HTTP_404_NOT_FOUND, "message": "Not found status"
+        err = default_error(e, item='Users Permission')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.patch("/update_password/{id}")
 @inject
@@ -270,8 +279,9 @@ async def update_password(
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     if hasattr(request.state,'for_user') and request.state.for_user['status']:
-        if request.state.for_user['user'].id != id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
+        slef_id = request.state.for_user['user'].id
+        if slef_id != id:
+            raise AccessException(entity_id=slef_id)
     return user_service.reset_password(id, password)
 
 @route.patch("/dismiss")
@@ -282,16 +292,16 @@ async def user_dismiss(
         date_dismissal_at: datetime = Body(default=None),
         user_service: UserService = Depends(Provide[Container.user_service]),
         HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    """
+        **date_dismissal_at** - формат времени (yyyy-mm-dd hh:mm:dd)
+    """
     try:
-        """ 
-            **date_dismissal_at** - формат времени (yyyy-mm-dd hh:mm:dd)
-        """
         return user_service.dismiss(id, date_dismissal_at)
-    except NotFoundError as e:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {
-            "message": str(e)
-        }
+    except Exception as e:
+        err = default_error(e, item='Users')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.patch("/recover/{id}")
 @inject
@@ -303,16 +313,17 @@ async def user_dismiss(
         HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
-            if request.state.for_user['user'].id != id:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
-        Res = user_service.recover(id)
+            slef_id = request.state.for_user['user'].id
+            if slef_id != id:
+                raise AccessException(entity_id=slef_id)
+        result = user_service.recover(id)
         await user_service.set_status(id,status_id=1)
-        return Res
-    except NotFoundError as e:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {
-            "message": str(e)
-        }
+    except Exception as e:
+        description = f"Пользователя с ID={id} не существует."
+        err = default_error(e, item='Users')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.put("/{id}")
 @inject
@@ -326,33 +337,35 @@ async def update_user(
     ):
     try:
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
-            if request.state.for_user['user'].id != id:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
+            slef_id = request.state.for_user['user'].id
+            if slef_id != id:
+                raise AccessException(entity_id=slef_id)
         user = user_service.update_user(id, params)
         return user
-    except NotFoundError as e:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {
-            "message": str(e)
-        }
+    except Exception as e:
+        description = f"Пользователя с ID={id} не существует."
+        err = default_error(e, item='Users')
+        response.status_code = err[0]
+        result = err[1]
+    return result
     
 @route.delete("/{id}")
 @inject
 async def user_delete(id: int, response: Response,request: Request, user_service: UserService = Depends(Provide[Container.user_service]),HTTPBearerSecurity: HTTPBearer = Depends(security)):
     try:
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
-            if request.state.for_user['user'].id != id:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Resource not available")
+            slef_id = request.state.for_user['user'].id
+            if slef_id != id:
+                raise AccessException(entity_id=slef_id)
         user_service.delete_user_by_id(id)
-        return {
-            "message": f"User is delete {id}"
+        description = "Пользователь с ID={id} успешно удалён."
+        result = {
+            "message": f"User is deleted {id}",
+            "description": description
         }
-    except NotFoundError as e:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {
-            "message": str(e)
-        }
-    
-
-
-
+    except Exception as e:
+        description = f"Пользователя с ID={id} не существует."
+        err = default_error(e, item='Users')
+        response.status_code = err[0]
+        result = err[1]
+    return result

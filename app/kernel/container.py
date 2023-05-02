@@ -11,6 +11,7 @@ from app.http.services.departments import DepartmentsService
 from app.http.services.images_service import ImagesServices
 from app.http.services.inner_phone import InnerPhoneServices
 from app.http.services.schedule.schedule import ScheduleService
+from app.http.services.queue import QueueService
 from .redis import init_redis_pool
 from app.http.services.jwt_managment import JwtManagement
 from app.http.services.helpers import RedisInstance
@@ -108,6 +109,10 @@ class Container(containers.DeclarativeContainer):
         asterisk_host=config.asterisk.host,
         asterisk_port=config.asterisk.port
     )
+    asterisk_repository = providers.Factory(
+        DatabaseCustom.Asterisk,
+        session_asterisk = asterisk.provided.session
+    )
     inner_phone_service = providers.Factory(
         InnerPhoneServices,
         inner_phone_repository=inner_phone_repository
@@ -119,4 +124,10 @@ class Container(containers.DeclarativeContainer):
     schedule_service = providers.Factory(
         ScheduleService,
         schedule_repository=schedule_repository
+    )
+    queue_service = providers.Factory(
+        QueueService,
+        position_repository = position_repository,
+        asterisk = asterisk_repository,
+        redis = redis_instance
     )

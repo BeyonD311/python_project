@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status as FastApiStatus, Response
+from fastapi import APIRouter, Depends, Response
 from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
 from app.http.services.helpers import parse_params_num
@@ -26,6 +26,10 @@ def get_departments(
     phone: str = None,
     department_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    """
+    Exceptions:
+        NotFoundError
+    """
     try:
         department = parse_params_num(department)
         position = parse_params_num(position)
@@ -37,12 +41,12 @@ def get_departments(
             "status": status,
             "phone": phone
         }
-        return department_service.get_employees(filter_params)
-    except NotFoundError as e:
-        response.status_code = FastApiStatus.HTTP_400_BAD_REQUEST
-        return {
-            "message": str(e)
-        }
+        result = department_service.get_employees(filter_params)
+    except Exception as e:
+        err = default_error(e, item='Departments')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.post("/")
 @inject
@@ -51,12 +55,20 @@ def add_department(
     response: Response,
     department_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    """
+        Для создания корневого отдела 
+        {
+            "name": "test 123",
+            "source_department": 0
+        }
+    """
     try:
-        return department_service.add(params=params)
+        result = department_service.add(params=params)
     except Exception as e:
-        res = default_error(e)
-        response.status_code = res[0]
-        return res[1]
+        err = default_error(e, item='Departments')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.put("/{id}")
 @inject
@@ -66,24 +78,33 @@ def update_department(
     response: Response,
     department_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    """
+    Exceptions:
+        NotFoundError
+    """
     try:
-        return department_service.update(params=params, id=id)
+        result = department_service.update(params=params, id=id)
     except Exception as e:
-        res = default_error(e)
-        response.status_code = res[0]
-        return res[1]
+        err = default_error(e, item='Departments')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.delete("/{id}")
 @inject
 def delete_department(
-    id:int,
+    id: int,
     response: Response,
     department_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    """
+    Exceptions:
+        NotFoundError
+    """
     try:
-        return     department_service.delete(id)
-    except NotFoundError as e:
-        response.status_code = FastApiStatus.HTTP_400_BAD_REQUEST
-        return {
-            "message": str(e)
-        }
+        result = department_service.delete(id)
+    except Exception as e:
+        err = default_error(e, item='Departments')
+        response.status_code = err[0]
+        result = err[1]
+    return result

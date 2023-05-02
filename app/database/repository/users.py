@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from uuid import uuid4
-from .super import SuperRepository, NotFoundError
+from .super import SuperRepository, NotFoundError, BaseException, UserNotFoundError
 from app.database import UserModel as User
 from app.database import RolesModel
 from app.database import GroupsModel
@@ -81,23 +81,29 @@ class UserRepository(SuperRepository):
         with self.session_factory() as session:
             user = session.query(self.base_model).filter(self.base_model.login == login).first()
             if user is None:
-                raise UserNotFoundError(login)
+                raise UserNotFoundError(entity_id=login)
             return user
+
     def get_by_id(self, id: int) -> User:
-        with self.session_factory() as session:
-            user: User = session.query(self.base_model).filter(self.base_model.id == id).first()
-            user.skills
-            user.position
-            user.department
-            user.skills
-            user.status 
-            user.image
-            for role in user.roles:
-                role.permissions
-            user.groups
-            user.groups
-            user.inner_phone
-            return user
+        description = f"Не найден пользователь с ID={id}."
+        try:
+            with self.session_factory() as session:
+                user: User = session.query(self.base_model).filter(self.base_model.id == id).first()
+                user.skills
+                user.position
+                user.department
+                user.skills
+                user.status 
+                user.image
+                for role in user.roles:
+                    role.permissions
+                user.groups
+                user.groups
+                user.inner_phone
+                return user
+        except AttributeError as e:
+            raise NotFoundError(entity_id=id, entity_description=description)
+
     def get_users_position(self):
         with self.session_factory() as session:
             query = session.query(PositionModel).all()
@@ -131,7 +137,7 @@ class UserRepository(SuperRepository):
                     .filter((PositionModel.id == 1) | (HeadOfDepartment.is_active == True))\
                     .order_by(self.base_model.id).all()
             if result is None:
-                raise UserNotFoundError(department_id)
+                raise UserNotFoundError(entity_id=department_id)
             return result
 
     def get_user_permission(self, user_id: int, only_access: bool = True)->dict:
@@ -180,42 +186,47 @@ class UserRepository(SuperRepository):
         with self.session_factory() as session:
             user = user_model
             current = session.query(self.base_model).filter(self.base_model.id == id).first()
-            if current is None:
-                raise IntegrityError("Пользователь не найден", "Пользователь не найден", "Пользователь не найден")
-            for param in user.__dict__:
-                if param == '_sa_instance_state' or param == 'id' or param == 'roles_id':
-                    continue
-                values = user.__dict__[param]
-                current.__setattr__(param, values)
-            current.skills_id = user.skills_id
-            current.roles_id = user.roles_id
-            current.group_id = user.group_id
-            if user.skills_id != []:
-                current.skills.clear()
-            current.roles.clear()
-            current.groups.clear()
-            current = self.item_add_or_update(current, session)
-            current.skills
-            current.position
-            current.department
-            current.skills
-            current.status 
-            current.image
-            for role in user.roles:
-                role.permissions
-            current.groups
-            for role in current.roles:
-                role.permissions
-            current.groups
-            current.inner_phone
-            
+            if current is not None:
+                for param in user.__dict__:
+                    if param == '_sa_instance_state' or param == 'id' or param == 'roles_id':
+                        continue
+                    values = user.__dict__[param]
+                    current.__setattr__(param, values)
+                current.skills_id = user.skills_id
+                current.roles_id = user.roles_id
+                current.group_id = user.group_id
+                if user.skills_id != []:
+                    current.skills.clear()
+                current.roles.clear()
+                current.groups.clear()
+                current = self.item_add_or_update(current, session)
+                current.skills
+                current.position
+                current.department
+                current.skills
+                current.status 
+                current.image
+                for role in user.roles:
+                    role.permissions
+                current.groups
+                for role in current.roles:
+                    role.permissions
+                current.groups
+                current.inner_phone
+            else:
+                raise IntegrityError(
+                    "Пользователь не найден",
+                    "Пользователь не найден",
+                    "Пользователь не найден"
+                )
             return current
 
     def set_permission(self, params):
         with self.session_factory() as session:
             user: User = session.query(self.base_model).filter(self.base_model.id == params.user_id).first()
             if user == None:
-                raise UserNotFoundError(f" Not found user by id: {params.user_id} ")
+                description = f"Не найден пользователь с ID={params.user_id}."
+                raise NotFoundError(entity_id=params.user_id, entity_description=description)
             user_permission = user.user_permission
             if len(user_permission) > 0:
                 [session.delete(p) for p in user.user_permission]
@@ -242,7 +253,8 @@ class UserRepository(SuperRepository):
         with self.session_factory() as session:
             users = session.query(self.base_model).filter(self.base_model.id.in_(users_id)).all()
             if len(users) < 1:
-                raise NotFoundError(f"Users not found {users_id}")
+                description = f"Не найден пользователь с ID={users_id}."
+                raise NotFoundError(entity_id=users_id, entity_description=description)
             return users
 
     def set_status(self, user_id, status_id, call_id = None):
@@ -271,7 +283,7 @@ class UserRepository(SuperRepository):
         if status_code.find("break") != -1:
             status_id = 9
         if current.status_id != 18:
-            self.session_asterisk.save_status_asterisk(status_id, current.uuid)
+            self.session_asterisk.save_sip_status_asterisk(status_id, current.uuid)
             inner_phone: InnerPhone
             for inner_phone in current.inner_phone:
                 if inner_phone.is_default and inner_phone.is_registration:
@@ -303,7 +315,7 @@ class UserRepository(SuperRepository):
             event_type="set_status"
             session.execute(sql)
             session.commit()
-        self.session_asterisk.save_status_asterisk(status_id,uuid)
+        self.session_asterisk.save_sip_status_asterisk(status_id,uuid)
         self.session_asterisk.execute()
 
     def add(self, user_model: User) -> any:
@@ -336,8 +348,8 @@ class UserRepository(SuperRepository):
                 user.groups
                 user.inner_phone
                 return user
-        except IntegrityError as e: 
-            raise(e)
+        except IntegrityError as e:
+            raise(e)  # FIXME
     def item_add_or_update(self, user: User, session):
         roles = session.query(RolesModel).filter(RolesModel.id.in_(user.roles_id)).all()
         groups = session.query(GroupsModel).filter(GroupsModel.id.in_(user.group_id)).all()
@@ -376,30 +388,33 @@ class UserRepository(SuperRepository):
             session.add(user)
             session.commit()   
         if phones != []:
-            self.session_asterisk.delete_asterisk(",".join(phones))
+            self.session_asterisk.delete_sip_user_asterisk(",".join(phones))
             self.session_asterisk.execute()
     
-    def user_dismiss(self, user_id: int,  date_dismissal_at: datetime = None):
-        user = self.get_by_id(user_id)
-        global event_type
-        event_type = 0
-        phones = []
-        with self.session_factory() as session:
-            status = session.query(StatusModel).filter(StatusModel.code == 'dismiss').first()
-            if status == None:
-                raise NotFoundError("Не найден статус увольнения")
-            user.date_dismissal_at = date_dismissal_at
-            user.status_at =  date_dismissal_at
-            user.status_id = status.id
-            user.employment_status = False
-            for phone in user.inner_phone:
-                phones.append(str(phone.phone_number))
-                session.delete(phone)
-            session.add(user)
-            session.commit()
-        if phones != []:
-            self.session_asterisk.delete_asterisk(",".join(phones))
-            self.session_asterisk.execute()
+    def user_dismiss(self, user_id: int, date_dismissal_at: datetime = None):
+        try:
+            user = self.get_by_id(user_id)
+            global event_type
+            event_type = 0
+            phones = []
+            with self.session_factory() as session:
+                status = session.query(StatusModel).filter(StatusModel.code == 'dismiss').first()
+                if status == None:
+                    raise NotFoundError(entity_id=user_id, entity_description="Не найден статус увольнения")
+                user.date_dismissal_at = date_dismissal_at
+                user.status_at =  date_dismissal_at
+                user.status_id = status.id
+                user.employment_status = False
+                for phone in user.inner_phone:
+                    phones.append(str(phone.phone_number))
+                    session.delete(phone)
+                session.add(user)
+                session.commit()
+            if phones != []:
+                self.session_asterisk.delete_sip_user_asterisk(",".join(phones))
+                self.session_asterisk.execute()
+        except Exception as e:
+            raise
 
     async def user_get_time(self, user_id: int):
         with self.session_factory() as session:
@@ -436,7 +451,7 @@ class UserRepository(SuperRepository):
             with self.session_factory() as session:
                 status = session.query(StatusModel).filter(StatusModel.code == 'offline').first()
                 if status == None:
-                    raise NotFoundError("Не найден статус увольнения")
+                    raise NotFoundError(entity_id=user_id, entity_description="Не найден статус увольнения")
                 user.date_dismissal_at = None
                 user.status_at =  datetime.now()
                 user.status_id = status.id
@@ -483,9 +498,6 @@ class UserRepository(SuperRepository):
             field = field.asc()
         return field
 
-
-class UserNotFoundError(NotFoundError):
-    entity_name: str = "User"
 
 # Обновляем таблицу status_history после обновления статусов
 @event.listens_for(User, 'after_update')
