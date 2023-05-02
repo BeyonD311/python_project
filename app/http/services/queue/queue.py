@@ -9,8 +9,6 @@ __all__ = ['QueueService']
 
 log = get_logger("QueueService.log")
 
-
-
 class QueueService:
     def __init__(self, position_repository: PositionRepository, asterisk: Asterisk, redis: RedisInstance) -> None:
         self._repository: PositionRepository = position_repository
@@ -73,41 +71,50 @@ class QueueService:
     def add(self, params: RequestQueue):
         res = self._asterisk.add_queue(params=params)
         self._asterisk.execute()
-        return res
+        return {
+            "message": "Create queue successful",
+            "description": "Очередь успешно создана",
+            "data":ResponseQueue(**res)
+        }
     
     def update(self, uuid:str, params: RequestQueue):
         res = self._asterisk.update_queue(uuid, params)
         self._asterisk.execute()
-        return res
+        return {
+            "message": "Update the queue successful",
+            "description": "Обновление очереди прошло успешно",
+            "data":ResponseQueue(**res)
+        }
 
     def get_queue_by_uuid(self, uuid: str):
         """ Получение очереди по uuid4 """
         queue = self._asterisk.get_queue_by_uuid(uuid)
+        return self.__queue_filed_result(queue)
+    
+    def __queue_filed_result(self, queue) -> ResponseQueue:
+        """ Преобразование ответа """
         res = {
-            "name_queue_operator": queue.name,
-            "type": queue.type_queue,
-            "active": queue.queue_enabled,
-            "uuid": queue.uuid,
+            "name_queue_operator": queue['name'],
+            "type": queue['type_queue'],
+            "active": queue['queue_enabled'],
+            "uuid": queue['uuid'],
             "base_info": {
-                "base_info_name": queue.description,
-                "queue_number": queue.queue_number,
-                "queue_code": queue.queue_code,
-                "queue_operator_select_method": queue.strategy,
-                "queue_weight": queue.weight
+                "description": queue['description'],
+                "exten": queue['exten'],
+                "queue_code": queue['queue_code'],
+                "strategy": queue['strategy'],
+                "weight": queue['weight']
             },
             "config_call": {
-                "continue_one_dialer": convert_second_to_time(queue.timeout),
-                "switch_number": queue.switch_number,
-                "duration_talks": convert_second_to_time(queue.timeout_talk),
-                "duration_call": convert_second_to_time(queue.timeout_queue),
-                "simul_incoming_calls": queue.maxlen
+                "timeout": queue['timeout'],
+                "wrapuptime": queue['wrapuptime'],
+                "timeout_talk": queue['timeout_talk'],
+                "timeout_queue": queue['timeout_queue'],
+                "maxlen": queue['maxlen']
             },
             "script_ivr": {
-                "script_name": queue.script_ivr_name,
-                "greeting": queue.script_ivr_greeting,
-                "hyperscript": queue.script_ivr_hyperscript,
-                "post_call": queue.script_ivr_post_call,
-                "service_script": queue.script_ivr_service_script,
+                "name": queue['script_ivr_name'],
+                "hyperscript": queue['script_ivr_hyperscript'],
             }
         }
         return ResponseQueue(**res)
