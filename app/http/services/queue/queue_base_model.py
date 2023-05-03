@@ -21,7 +21,7 @@ class ConfigCalls(BaseModel):
     wrapuptime: time = Field('00:00:56', alias='post_call_processing')
     timeout_talk: time = Field('00:02:56', alias='duration_talks')
     timeout_queue: time = Field('00:00:56', alias='max_queue_time')
-    maxlen: int = Field(4, alias='simul_incoming_calls')
+    maxlen: int = Field(4, alias='max_waiting_in_line')
     class Config:
         allow_population_by_field_name = True
 
