@@ -6,3 +6,9 @@ asterisk:
   port: "${ASTERISK_PORT}"
 jwt:
   secret: "${SECRET_KEY}"
+ssh:
+  user: "10.3.0.48"
+  pass: "LexP@ssw0rd_1"
+hyperscript:
+  uri: ""
+  port: ""

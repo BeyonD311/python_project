@@ -477,6 +477,8 @@ class UserRepository(SuperRepository):
                 query = query.filter(self.base_model.login == params.filter.login)
             if params.filter.department != None:
                 query = query.filter(self.base_model.department_id == params.filter.department)
+            if params.filter.position != None:
+                query = query.filter(self.base_model.position_id == params.filter.position)
         return query
 
     def __sort(self, query: Query, params):

@@ -100,7 +100,8 @@ class UsersFilter(BaseModel):
     fio: str = None
     login: str = None
     status: list[int] = None
-    department: int = None 
+    department: int = None
+    position: int = None
 
 class UserParams(BaseModel):
     page: int
