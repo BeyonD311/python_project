@@ -3,7 +3,39 @@ from pydantic import Field
 from datetime import time
 from typing import Any
 
-__all__ = ["BaseInfo", "ConfigCalls", "ScriptIVR", "RequestQueue", "RequestQueueMembers", "ResponseQueue", "ResponseQueueMembers", "GetAllQueue", "Filter"]
+__all__ = [
+    "BaseInfo", 
+    "ConfigCalls", 
+    "ScriptIVR", 
+    "RequestQueue", 
+    "RequestQueueMembers", 
+    "ResponseQueue", 
+    "ResponseQueueMembers", 
+    "GetAllQueue", 
+    "Filter",
+    "ConstField",
+    "HyperScriptParams",
+    "DefaultParams",
+]
+
+
+class ConstField(BaseModel):
+    type: str
+    name: str
+    description: str
+
+class HyperScriptParams(BaseModel):
+    uuid_form: str = Field('', alias='uuid')
+    name: str
+    class Config:
+        allow_population_by_field_name = True
+
+class DefaultParams(BaseModel):
+    strategy: list[ConstField] = Field([], alias='queue_operator_select_method')
+    hyperscript: list[HyperScriptParams] = []
+    ivrs: list = []
+    class Config:
+        allow_population_by_field_name = True
 
 class BaseInfo(BaseModel):
     """ Общая информация """
@@ -14,6 +46,7 @@ class BaseInfo(BaseModel):
     weight: int = Field(49050, alias='queue_weight')
     class Config:
         allow_population_by_field_name = True
+
 
 class ConfigCalls(BaseModel):
     """ Настройки звонков """

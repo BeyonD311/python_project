@@ -126,8 +126,11 @@ class Asterisk():
             sql = "select id from ps_auths where uuid is null "\
                     "and id not in ( "\
                     "select SUBSTRING_INDEX(phone, '/', -1) phone from queues q "\
-                    "join queue_phones qp on qp.queue_name = q.name "\
-                    f"where uuid != '{uuid}' )"
+                    "join queue_phones qp on qp.queue_name = q.name "
+            if uuid is not None:    
+                sql = sql + f" where uuid != '{uuid}' "
+            sql = sql + " )"
+            print(sql)
             query = session.execute(sql).all()
             session.close()
             return query
@@ -169,7 +172,7 @@ class Asterisk():
                         " left join queue_members qm on qm.queue_name = q.name and qm.member_position = 2"\
                         f" GROUP by q.name HAVING 1=1"
         select_queue = select_queue + " " + self.__filter_queues(params.filter)
-        select_queue_limit = select_queue + f" limit {params.page}, {params.size}"
+        select_queue_limit = select_queue + f" limit {params.page * params.size}, {params.size}"
         select_wrapper = f"select * from ({select_queue_limit}) temp_queue "
         select_wrapper = select_wrapper + " " + self.__order_by_queues(params.order_field, params.order_direction)
         if params.page == 0:
