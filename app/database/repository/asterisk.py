@@ -70,12 +70,14 @@ class Asterisk():
     def get_by_user_login(self, username: str):
         with self.session_asterisk() as session:
             query = session.execute(f" select id from ps_auths where username = '{username}' ").first()
+            session.commit()
             session.close()
             return  query
 
     def get_by_user_phone(self, phone: str):
         with self.session_asterisk() as session:
             query = session.execute(f" select id from ps_auths where id = '{phone}' ").first()
+            session.commit()
             session.close()
             return  query
 
@@ -111,6 +113,7 @@ class Asterisk():
             flag = False
             if query is not None and query[0] == "online": 
                 flag = True
+            session.commit()
             session.close()
             return flag
     
@@ -118,6 +121,7 @@ class Asterisk():
         with self.session_asterisk() as session:
             query = session.execute(f"select id from ps_auths where uuid='{uuid}'").all()
             session.commit()
+            session.close()
             return query
     
     def get_outer_lines(self, uuid: str):
@@ -132,6 +136,7 @@ class Asterisk():
             sql = sql + " )"
             print(sql)
             query = session.execute(sql).all()
+            session.commit()
             session.close()
             return query
 
@@ -139,6 +144,7 @@ class Asterisk():
         """ Получение внешних линий у выбранной очереди """
         with self.session_asterisk() as session:
             query = session.execute(f"select qp.phone from queues q join queue_phones qp on qp.queue_name = q.name where q.uuid = '{uuid}'").all()
+            session.commit()
             session.close()
             res = set()
             for select_out_line in query:
