@@ -37,16 +37,16 @@ app = FastAPI(debug=True)
 app.container = container
 
 origins = [
-    "http://localhost.tiangolo.com",
     "https://localhost.tiangolo.com",
     "http://localhost",
     "http://localhost:8010",
     "http://10.3.0.48:8010",
     "http://10.3.0.48:3001",
     "http://localhost:3000",
+    "http://127.0.0.1:3000"
     "http://app"
 ]
-app.add_middleware(Auth)
+# app.add_middleware(Auth)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -54,8 +54,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.add_middleware(Auth)
 
 modules = import_modules_controller(container) 
 

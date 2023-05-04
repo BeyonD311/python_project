@@ -12,7 +12,7 @@ from sqlalchemy.exc import IntegrityError
 security = HTTPBearer()
 
 route = APIRouter(
-    prefix='/schedules',
+    prefix="/queue/schedules",
     tags=['schedules'],
     responses={404: {'description': 'Not found'}}
 )

@@ -6,3 +6,13 @@ asterisk:
   port: "${ASTERISK_PORT}"
 jwt:
   secret: "${SECRET_KEY}"
+asterisk_ssh:
+  host: "10.3.0.48"
+  port: 22
+  password: "LexP@ssw0rd_1"
+  user: "root"
+  paths:
+    ivr: "/etc/asterisk/queue_ivrs/"
+
+hyperscript:
+  uri: "${HYPERSCRIPT_HOST}:${HYPERSCRIPT_PORT}"
