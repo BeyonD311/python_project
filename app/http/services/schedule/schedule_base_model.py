@@ -9,12 +9,22 @@ class ScheduleBase(BaseModel):
     ending: date
     active: Optional[bool] = None
     stop_queue: Optional[str] = None
-    period_schedule: Dict[str, list[list[time, time]]] = None
+    period_schedule: Dict[int, list[list[time, time]]] = None
+    holiday: Optional[bool] = None
+
+    @validator('ending')
+    def validate_ending(cls, v, values):
+        if 'beginning' in values and v < values['beginning']:
+            raise ValueError('Ending date cannot be earlier than beginning date')
+        return v
 
     @validator('period_schedule')
     def validate_period_schedule(cls, v: dict):
         if v is not None:
             for day, periods in v.items():
+                if day not in (0, 1, 2, 3, 4, 5, 6):
+                    raise ValueError('Keys must be integer from 0 to 6')
+
                 for period in periods:
                     if len(period) == 2:
                         if period[0] > period[1]:
@@ -34,5 +44,15 @@ class ScheduleRead(ScheduleBase):
     id: int
 
 
-class ScheduleUpdate(ScheduleRead):
+class ScheduleUpdate(ScheduleBase):
     pass
+
+
+class Order(BaseModel):
+    field: str
+    direction: str
+
+
+class Pagination(BaseModel):
+    page: int
+    size: int
