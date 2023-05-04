@@ -107,8 +107,8 @@ class QueueService:
         }
     
     def get_queues(self, params: GetAllQueue):
-        if params.page == 1:
-            params.page = 0
+        if params.page == 0:
+            params.page = 1
         queues = self._asterisk.get_all_queue(params)
         return queues
 
