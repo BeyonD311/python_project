@@ -11,7 +11,7 @@ from .queue_base_model import (
     ResponseQueueMembers, OuterLines, 
     RequestQueueMembers, GetAllQueue, 
     ConstField, HyperScriptParams,
-    DefaultParams
+    DefaultParams, User, OuterLines
     )
 
 __all__ = ['QueueService']
@@ -135,8 +135,10 @@ class QueueService:
     
     def save_queue_members(self, uuid: str , params: RequestQueueMembers):
         queue = self._asterisk.get_queue_by_uuid(uuid)
-        self._asterisk.add_queue_member(params=[*params.operators,*params.supervisors],name_queue=queue.name)
-        self._asterisk.add_queue_phones(params=params.numbers_lines, name_queue=queue.name)
+        operators = [User(inner_phone=o, position=2) for o in params.operators]
+        supervisors = [User(inner_phone=o, position=1) for o in params.supervisors]
+        self._asterisk.add_queue_member(params=[*operators,*supervisors],name_queue=queue.name)
+        self._asterisk.add_queue_phones(params=[OuterLines(name=x, is_selected=True)for x in params.numbers_lines], name_queue=queue.name)
         self._asterisk.delete_queue_members(uuid)
         self._asterisk.delete_queue_phones(uuid)
         self._asterisk.execute()
