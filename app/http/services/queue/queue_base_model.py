@@ -16,6 +16,8 @@ __all__ = [
     "ConstField",
     "HyperScriptParams",
     "DefaultParams",
+    "User",
+    "OuterLines"
 ]
 
 
@@ -79,7 +81,7 @@ class ResponseQueue(BaseModel):
     uuid: str = Field()
     name: str = Field('', alias='name_queue_operator')
     type_queue: str = Field('', alias='type')
-    queue_enabled: bool = Field('', alias='active')
+    queue_enabled: bool = Field(False, alias='active')
     base_info: BaseInfo
     config_call: ConfigCalls
     script_ivr: ScriptIVR
@@ -102,14 +104,9 @@ class ResponseQueueMembers(BaseModel):
     
 
 class RequestQueueMembers(BaseModel):
-    operators: list[User] = Field([
-        User(inner_phone=1005, position=2),
-        User(inner_phone=1002, position=2)
-    ])
-    supervisors: list[User] = Field([
-        User(inner_phone=1001, position=1)
-    ])
-    numbers_lines: list[OuterLines]
+    operators: list[int] = Field([1005,1002])
+    supervisors: list[int] = Field([1001])
+    numbers_lines: list[str]
 
 class Filter(BaseModel):
     field: str
