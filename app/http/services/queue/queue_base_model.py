@@ -17,7 +17,8 @@ __all__ = [
     "HyperScriptParams",
     "DefaultParams",
     "User",
-    "OuterLines"
+    "OuterLines",
+    "IvrParams"
 ]
 
 
@@ -25,17 +26,23 @@ class ConstField(BaseModel):
     type: str
     name: str
     description: str
+    id: str
 
 class HyperScriptParams(BaseModel):
     uuid_form: str = Field('', alias='uuid')
     name: str
+    id: str = None
     class Config:
         allow_population_by_field_name = True
+
+class IvrParams(BaseModel):
+    id: str
+    name: str
 
 class DefaultParams(BaseModel):
     strategy: list[ConstField] = Field([], alias='queue_operator_select_method')
     hyperscript: list[HyperScriptParams] = []
-    ivrs: list = []
+    ivrs: list[IvrParams] = []
     class Config:
         allow_population_by_field_name = True
 

@@ -11,7 +11,7 @@ from .queue_base_model import (
     ResponseQueueMembers, OuterLines, 
     RequestQueueMembers, GetAllQueue, 
     ConstField, HyperScriptParams,
-    DefaultParams, User, OuterLines
+    DefaultParams, User, OuterLines, IvrParams
     )
 
 __all__ = ['QueueService']
@@ -44,36 +44,43 @@ class StrategyParams(QueueConstParams):
     """ Параметры поля strategy """
     _params = {
         "ringall": ConstField(
+            id="ringall",
             type="ringall",
             name="звонить всем",
             description="вызываются все пользователи одновременно, пока кто-нибудь не ответит"
         ),
         "leastrecent": ConstField(
+            id="leastrecent",
             type="leastrecent",
             name="недавний",
             description="вызвать оператора дольше всех не принимавшего вызовы."
         ),
         "fewestcalls": ConstField(
+            id="fewestcalls",
             type="fewestcalls",
             name="наименьшее количество звонков",
             description="вызвать оператора принявшего меньше всего вызовов."
         ),
         "random": ConstField(
+            id="random",
             type="random",
             name="случайный",
             description="распределить вызовы случайным образом."
         ),
         "rrmemory": ConstField(
+            id="rrmemory",
             type="rrmemory",
             name="по кругу",
             description="по кругу (round robin), после агента отвечавшего крайним."
         ),
         "linear": ConstField(
+            id="linear",
             type="linear",
             name="по порядку",
             description="вызывать начиная с первого в порядке перечисления. Динамические агенты, будут вызываться в порядке добавления."
         ),
         "wrandom": ConstField(
+            id="wrandom",
             type="wrandom",
             name="звонит случайный интерфейс",
             description="звонит случайный интерфейс, но использует штраф этого участника в качестве веса (weight) при расчете метрики."
@@ -181,7 +188,11 @@ class QueueService:
                 "message": "hyper script fail request",
                 "description": "Запрос не 200"
             })
-        params.hyperscript = [HyperScriptParams(**p) for p in request.json()['data']]
+        for hyperscript_params in request.json()['data']:
+            hyperscript_params['id'] = hyperscript_params['uuid_form']
+            covertParams = HyperScriptParams(**hyperscript_params)
+            params.hyperscript.append(covertParams)
+            
         ivrs = await self._redis.redis.get("ivrs")
         if ivrs is None:
             self.ssh.exec("ls /etc/asterisk/queue_ivrs/")
@@ -189,6 +200,7 @@ class QueueService:
             await self._redis.redis.set("ivrs", json.dumps(ivrs), ex=3600)
         else:
             ivrs = json.loads(ivrs)
+        ivrs = [IvrParams(id=ivr,name=ivr) for ivr in ivrs]
         params.ivrs = ivrs
         return params
 

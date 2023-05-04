@@ -8,7 +8,7 @@ services:
       dockerfile: docker/app/Dockerfile
     volumes:
       - "./:/app/"
-    links:
+    depends_on:
       - db
       - redis
     ports:
