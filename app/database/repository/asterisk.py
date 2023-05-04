@@ -178,11 +178,9 @@ class Asterisk():
                         " left join queue_members qm on qm.queue_name = q.name and qm.member_position = 2"\
                         f" GROUP by q.name HAVING 1=1"
         select_queue = select_queue + " " + self.__filter_queues(params.filter)
-        select_queue_limit = select_queue + f" limit {params.page * params.size}, {params.size}"
+        select_queue_limit = select_queue + f" limit {(params.page - 1) * params.size}, {params.size}"
         select_wrapper = f"select * from ({select_queue_limit}) temp_queue "
         select_wrapper = select_wrapper + " " + self.__order_by_queues(params.order_field, params.order_direction)
-        if params.page == 0:
-            params.page = 1
         with self.session_asterisk() as session:
             query = session.execute(select_wrapper).all()
             total = self.__total(session=session, select_queue=select_queue)
