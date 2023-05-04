@@ -142,7 +142,9 @@ class QueueService:
         self._asterisk.delete_queue_members(uuid)
         self._asterisk.delete_queue_phones(uuid)
         self._asterisk.execute()
-        
+        return {
+            "message": "resources add"
+        }
 
     def add(self, params: RequestQueue):
         res = self._asterisk.add_queue(params=params)

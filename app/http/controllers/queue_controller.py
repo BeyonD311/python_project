@@ -122,8 +122,14 @@ async def save_queue_members(
     queue_service: QueueService = Depends(Provide[Container.queue_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
-    return queue_service.save_queue_members(uuid, params)
-
+    result = {}
+    try:
+        result = queue_service.save_queue_members(uuid, params)
+    except Exception as exception:
+        err = default_error(exception, item='Queue')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.post("")
 @inject
