@@ -15,6 +15,7 @@ from app.http.services.queue import QueueService
 from .redis import init_redis_pool
 from app.http.services.jwt_managment import JwtManagement
 from app.http.services.helpers import RedisInstance
+from app.http.services.ssh import Ssh
 
 
 class Container(containers.DeclarativeContainer):
@@ -125,9 +126,20 @@ class Container(containers.DeclarativeContainer):
         ScheduleService,
         schedule_repository=schedule_repository
     )
+
+    ssh = providers.Factory(
+        Ssh,
+         host = config.asterisk_ssh.host,  
+         port = config.asterisk_ssh.port,  
+         user = config.asterisk_ssh.user,
+         password = config.asterisk_ssh.password
+    )
+
     queue_service = providers.Factory(
         QueueService,
         position_repository = position_repository,
         asterisk = asterisk_repository,
-        redis = redis_instance
+        redis = redis_instance,
+        hyperscript_uri = config.hyperscript.uri,
+        ssh=ssh
     )

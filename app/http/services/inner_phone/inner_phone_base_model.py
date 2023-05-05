@@ -40,7 +40,7 @@ class Options(BaseModel):
     codecs_video: str = Field('', alias='codecsVideo')
     codecs_video_disable_rtx: bool = Field(False, alias='codecsVideoDisableRTX')
     log_level: str = Field('error', alias='logLevel')
-    default_transfer_phone: bool = Field(True, alias='defaultTransferPhone')
+    default_transfer_phone: bool = Field(False, alias='defaultTransferPhone')
 
 
 class Account(BaseModel):

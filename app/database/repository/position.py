@@ -19,7 +19,10 @@ class PositionRepository(SuperRepository):
 
     def get_users_by_position(self, id: int, fio: str) -> PositionModel:
         with self.session_factory() as session:
-            users = session.query(UserModel).filter(UserModel.position_id == id, UserModel.fio.ilike(f"%{fio}%")).order_by(UserModel.id.asc()).all()
+            users = session.query(UserModel).filter(UserModel.position_id == id)
+            if fio != "":
+                users = users.filter(UserModel.fio.ilike(f"%{fio}%"))
+            users = users.order_by(UserModel.id.asc()).all()
             result = []
             session.commit()
             user: UserModel

@@ -29,8 +29,6 @@ async def redis(jwt_m: JwtManagement = Depends(Provide[Container.jwt])):
 
 class Auth(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
-        if request.method.lower() == "options":
-            return await call_next(request)
         path = str(request.get("path")).split("/")
         if  path[1] in path_exception:
             return await call_next(request)
