@@ -171,6 +171,14 @@ class QueueService:
             "data":ResponseQueue(**res)
         }
 
+    def delete(self, uuid:str):
+        self._asterisk.delete_queue(uuid)
+        self._asterisk.execute()
+        return {
+            "message": "delete oueue",
+            "description": "Очередь успешно удалена"
+        }
+
     def get_queue_by_uuid(self, uuid: str):
         """ Получение очереди по uuid4 """
         queue = self._asterisk.get_queue_by_uuid(uuid)

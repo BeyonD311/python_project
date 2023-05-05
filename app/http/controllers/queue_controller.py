@@ -185,3 +185,20 @@ async def add_set_state_queue(
         response.status_code = err[0]
         result = err[1]
     return result
+
+@route.delete("/{uuid}")
+@inject
+async def delete_queue(
+    uuid: str,
+    response: Response,
+    queue_service: QueueService = Depends(Provide[Container.queue_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
+):
+    result = {}
+    try:
+        result = queue_service.delete(uuid)
+    except Exception as exception:
+        err = default_error(exception, item='Queue')
+        response.status_code = err[0]
+        result = err[1]
+    return result
