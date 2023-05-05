@@ -11,7 +11,7 @@ from .queue_base_model import (
     ResponseQueueMembers, OuterLines, 
     RequestQueueMembers, GetAllQueue, 
     ConstField, HyperScriptParams,
-    DefaultParams, User, OuterLines, IvrParams
+    DefaultParams, User, OuterLines, IvrParams, QueueStatus
     )
 
 __all__ = ['QueueService']
@@ -179,6 +179,11 @@ class QueueService:
             "description": "Очередь успешно удалена"
         }
 
+    def get_status(self, uuids: list):
+        statuses = self._asterisk.get_status_queue(uuids)
+        if len(statuses) > 0:
+            statuses = [QueueStatus(**uuid) for uuid in statuses]
+        return statuses
     def get_queue_by_uuid(self, uuid: str):
         """ Получение очереди по uuid4 """
         queue = self._asterisk.get_queue_by_uuid(uuid)
