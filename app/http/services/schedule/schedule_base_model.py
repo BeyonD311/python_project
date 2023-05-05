@@ -12,6 +12,11 @@ class ScheduleBase(BaseModel):
     period_schedule: Dict[int, list[list[time, time]]] = None
     holiday: Optional[bool] = None
 
+    @validator('queue_name')
+    def validate_queue_name(cls, v: str):
+        r = v.replace(" ", "_")
+        return r
+
     @validator('ending')
     def validate_ending(cls, v, values):
         if 'beginning' in values and v < values['beginning']:
