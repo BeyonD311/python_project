@@ -47,9 +47,6 @@ def default_error(error: Exception, item=None):
         return status.HTTP_403_FORBIDDEN, message(message="Resource not available")
     if isinstance(error, NotFoundError):
         return status.HTTP_404_NOT_FOUND, message(message=f"Not found {item}.", description=err_description)
-    # TODO: Обработать IntegrityError для ошибки NOT_FOUND
-    # if isinstance(error, IntegrityError):
-    #     return status.HTTP_404_NOT_FOUND, message(message=f"Not found {item}.", description=err_description)
     if isinstance(error, InvalidSignatureError):
         return status.HTTP_409_CONFLICT, message(message=error)
     if isinstance(error, ExpiredSignatureError):
@@ -60,7 +57,9 @@ def default_error(error: Exception, item=None):
     if isinstance(error, IntegrityError):
         # TODO: добавить поле description
         try:
-            detail = error.args[0].split('\n')[1].replace('"',"'")
+            detail = re.findall(r'((\d*\,?)(\".*[^\)]))', error.args[0])
+            detail = re.findall(r'[\w\s]*\'[\w]*\'', detail[0][0])
+            detail = detail[0]
         except:
             detail = "No Details for Error"
         return status.HTTP_409_CONFLICT, message(message=detail)

@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 from pydantic import Field
+from pydantic import ValidationError
+from pydantic import validator
 from datetime import time
 from typing import Any
 
@@ -55,7 +57,11 @@ class BaseInfo(BaseModel):
     weight: int = Field(49050, alias='queue_weight')
     class Config:
         allow_population_by_field_name = True
-
+    @validator('exten')
+    def valid_exten(cls, v:int):
+        if (v // 100) < 1 or (v // 1000) > 0:
+            raise ValidationError("Номер должен состоять 3 цифр")
+        return v
 
 class ConfigCalls(BaseModel):
     """ Настройки звонков """
@@ -82,9 +88,13 @@ class RequestQueue(BaseModel):
     base_info: BaseInfo
     config_call: ConfigCalls
     script_ivr: ScriptIVR
+    @validator('name')
+    def convert_name(cls, v:str):
+        v = v.replace(" ", "_")
+        return v.lower()
 
 class ResponseQueue(BaseModel):
-    """ Параметры для создания очереди """
+    """ Параметры для ответа очереди """
     uuid: str = Field()
     name: str = Field('', alias='name_queue_operator')
     type_queue: str = Field('', alias='type')

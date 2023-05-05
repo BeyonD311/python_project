@@ -170,6 +170,10 @@ class Asterisk():
         query = "delete from queue_phones "\
                 f"where queue_name = ( select name from queues q where uuid = '{uuid}');"
         self.stack_multiple_query.append(query)
+    
+    def delete_queue(self, uuid: str):
+        query = f"delete from queues where uuid = '{uuid}'"
+        self.stack_multiple_query.append(query)
 
     def get_all_queue(self, params):
         """ Получениые всех очередей """
