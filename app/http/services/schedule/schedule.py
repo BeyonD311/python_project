@@ -53,3 +53,12 @@ class ScheduleService:
 
     def update_status(self, schedule_id: int, status: bool):
         return self._repository.update_status(schedule_id=schedule_id, status=status)
+
+    def turn_on_queue(self, queue_name: str):
+        self._repository.set_queue_status(queue_name=queue_name, value=True)
+
+    def turn_off_queue(self, queue_name: str):
+        self._repository.set_queue_status(queue_name=queue_name, value=False)
+
+    def get_all_queue_names(self):
+        return self._repository.get_all_queues_names()

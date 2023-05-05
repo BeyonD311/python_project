@@ -5,7 +5,7 @@ FROM python:3.10.8-alpine
 
 WORKDIR /app
 
-RUN apk update && \ 
+RUN apk update && \
 apk add --virtual build-deps gcc python3-dev musl-dev && \
 apk add postgresql-dev
 

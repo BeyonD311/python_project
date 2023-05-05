@@ -3,7 +3,7 @@ version: '3.9'
 services:
   app:
     container_name: project-app
-    build: 
+    build:
       context: .
       dockerfile: docker/app/Dockerfile
     volumes:
@@ -17,14 +17,16 @@ services:
       - project
   redis:
     container_name: project-redis
-    build: 
+    build:
       context: .
       dockerfile: docker/redis/Dockerfile
     networks:
       - project
+    ports:
+      - "6379:6379"
   db:
     container_name: project-db
-    build: 
+    build:
       context: .
       dockerfile: docker/db/Dockerfile
     environment:
@@ -38,7 +40,7 @@ services:
       - ./database/migration:/docker-entrypoint-initdb.d
       - ./database_pg:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U project -d project"]
+      test: [ "CMD-SHELL", "pg_isready -U project -d project" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -52,6 +54,29 @@ services:
     networks:
       - project
 
-networks: 
+  celery_worker:
+    build:
+      context: .
+      dockerfile: docker/app/celery/worker/Dockerfile
+    volumes:
+      - "./:/app/"
+    depends_on:
+      - redis
+    networks:
+      - project
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: docker/app/celery/beat/Dockerfile
+    volumes:
+      - "./:/app/"
+    depends_on:
+      - redis
+    networks:
+      - project
+
+
+networks:
   project:
     driver: "bridge"

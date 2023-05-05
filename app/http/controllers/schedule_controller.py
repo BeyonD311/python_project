@@ -27,7 +27,7 @@ async def get_all(
         page: int = 1,
         size: int = 10,
         schedule_service: ScheduleService = Depends(Provide[Container.schedule_service]),
-        HTTPBearerSecurity: HTTPBearer = Depends(security)
+        # HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
     return schedule_service.get_all_by_queue_name(queue_name=queue_name,
                                                   pagination=Pagination(page=page, size=size),
@@ -101,7 +101,7 @@ async def update(
         update_data: ScheduleUpdate,
         response: Response,
         schedule_service: ScheduleService = Depends(Provide[Container.schedule_service]),
-        HTTPBearerSecurity: HTTPBearer = Depends(security)
+        # HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
     try:
         schedule_service.update(schedule_id=schedule_id, update_data=update_data)
@@ -128,7 +128,7 @@ async def update_status(
         schedule_status: bool,
         response: Response,
         schedule_service: ScheduleService = Depends(Provide[Container.schedule_service]),
-        HTTPBearerSecurity: HTTPBearer = Depends(security)
+        # HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
     try:
         schedule_service.update_status(schedule_id=schedule_id, status=schedule_status)

@@ -4,9 +4,6 @@ from dependency_injector.wiring import register_loader_containers
 from starlette.middleware.cors import CORSMiddleware
 from app.http.middleware.auth_middleware import Auth
 import os
-
-
-
 find_dotenv()
 load_dotenv()   
 
@@ -57,7 +54,7 @@ app.add_middleware(
 
 app.add_middleware(Auth)
 
-modules = import_modules_controller(container) 
+modules = import_modules_controller(container)
 
 for route_name in modules:
     app.include_router(modules[route_name])

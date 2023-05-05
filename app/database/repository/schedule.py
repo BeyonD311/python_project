@@ -131,3 +131,16 @@ class ScheduleRepository:
                     'WHERE queue_name = :queue_name;'
             result = session.execute(text(query), {'queue_name': queue_name})
             return result.scalar()
+
+    def set_queue_status(self, queue_name: str, value: bool):
+        with self.session_asterisk() as session:
+            query = 'UPDATE queues SET queue_enabled  = :value ' \
+                    'WHERE name = :name'
+
+            session.execute(text(query), {'name': queue_name, 'value': value})
+            session.commit()
+
+    def get_all_queues_names(self):
+        with self.session_asterisk() as session:
+            query = 'SELECT name FROM queues'
+            return session.execute(text(query)).fetchall()
