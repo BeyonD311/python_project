@@ -297,7 +297,14 @@ class Asterisk():
                 raise ExceptionAsterisk("Queue not found")
             session.close()
             return query
-    
+    def get_status_queue(self, uuids: list):
+        """ Получение статусов для long polling """
+        uuids = ['"' + uuid + '"' for uuid in uuids]
+        uuids = ",".join(uuids)
+        sql = f"select uuid, queue_enabled from queues where uuid in ({uuids})"
+        with self.session_asterisk() as session:
+            result = session.execute(sql).all() 
+            return result
     def __params_queue_fields(self) -> dict:
         """ Параметры таблицы queues для (GET, POST, UPDATE) """
         return {

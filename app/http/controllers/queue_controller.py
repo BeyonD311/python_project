@@ -113,6 +113,28 @@ async def get_queue_state(
         result = err[1]
     return result
 
+@route.get("/statuses/{uuids}")
+@inject
+async def get_queue_statuses(
+    uuids: str,
+    response: Response,
+    queue_service: QueueService = Depends(Provide[Container.queue_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
+):
+    """
+      Статусы для очереди\n
+        uuid через запятую
+     """
+    result = {}
+    try:
+        uuids = uuids.split(",")
+        result = queue_service.get_status(uuids)
+    except Exception as exception:
+        err = default_error(exception, item='Queue')
+        response.status_code = err[0]
+        result = err[1]
+    return result
+
 @route.post("/resources/{uuid}")
 @inject
 async def save_queue_members(

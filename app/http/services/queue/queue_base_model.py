@@ -20,7 +20,8 @@ __all__ = [
     "DefaultParams",
     "User",
     "OuterLines",
-    "IvrParams"
+    "IvrParams",
+    "QueueStatus"
 ]
 
 
@@ -45,6 +46,12 @@ class DefaultParams(BaseModel):
     strategy: list[ConstField] = Field([], alias='queue_operator_select_method')
     hyperscript: list[HyperScriptParams] = []
     ivrs: list[IvrParams] = []
+    class Config:
+        allow_population_by_field_name = True
+
+class QueueStatus(BaseModel):
+    queue_enabled: bool = Field(False, alias='status')
+    uuid: str
     class Config:
         allow_population_by_field_name = True
 
