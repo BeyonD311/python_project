@@ -29,6 +29,7 @@ async def get_all(
         schedule_service: ScheduleService = Depends(Provide[Container.schedule_service]),
         HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
+    queue_name = queue_name.replace(" ", "_")
     return schedule_service.get_all_by_queue_name(queue_name=queue_name,
                                                   pagination=Pagination(page=page, size=size),
                                                   order=Order(field=order_field, direction=order_direction))
