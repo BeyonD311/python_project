@@ -12,7 +12,7 @@ apk add postgresql-dev
 # COPY --chown=app-python:app-python . .
 
 COPY . .
-
+RUN chmod -R 755 './docker/app/run.sh'
 RUN python -m pip install --upgrade pip && \
 pip install --no-cache-dir --disable-pip-version-check --no-warn-script-location --requirement  requirements.txt
 

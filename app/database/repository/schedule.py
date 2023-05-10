@@ -134,7 +134,7 @@ class ScheduleRepository:
 
     def set_queue_status(self, queue_name: str, value: bool):
         with self.session_asterisk() as session:
-            query = 'UPDATE queues SET queue_enabled  = :value ' \
+            query = 'UPDATE queues SET queue_schedule  = :value ' \
                     'WHERE name = :name'
 
             session.execute(text(query), {'name': queue_name, 'value': value})
