@@ -19,17 +19,20 @@ class ScheduleService:
 
     def create(self, schedule: ScheduleCreate):
         inclusions_count = self._repository.get_count_of_inclusions(beginning=schedule.beginning,
-                                                                    ending=schedule.ending)
+                                                                    ending=schedule.ending,
+                                                                    queue_name=schedule.queue_name)
         if inclusions_count:
             raise ValueError(f'This schedule overlaps with existing')
         return self._repository.add(schedule_data=schedule)
 
     def update(self, schedule_id: int, update_data: ScheduleUpdate):
         inclusions_count = self._repository.get_count_of_inclusions(beginning=update_data.beginning,
-                                                                    ending=update_data.ending)
+                                                                    ending=update_data.ending,
+                                                                    queue_name=update_data.queue_name)
         is_include = self._repository.is_updated_has_self_inclusion(beginning=update_data.beginning,
                                                                     ending=update_data.ending,
-                                                                    update_id=schedule_id)
+                                                                    update_id=schedule_id,
+                                                                    queue_name=update_data.queue_name)
         if is_include:
             inclusions_count -= 1
         if inclusions_count:

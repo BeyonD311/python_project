@@ -110,17 +110,17 @@ class ScheduleRepository:
                             AND NOW() BETWEEN beginning AND ending;''')
             return session.execute(query, {'queue_name': queue_name}).all()
 
-    def get_count_of_inclusions(self, beginning: str, ending: str):
+    def get_count_of_inclusions(self, beginning: str, ending: str, queue_name: str):
         with self.session_asterisk() as session:
-            query = '''SELECT COUNT(*) FROM schedule WHERE (beginning <= :ending) AND (:beginning <= ending);'''
-            result = session.execute(text(query), {'beginning': beginning, 'ending': ending})
+            query = '''SELECT COUNT(*) FROM schedule WHERE (beginning <= :ending) AND (:beginning <= ending) AND queue_name = :queue_name;'''
+            result = session.execute(text(query), {'beginning': beginning, 'ending': ending, 'queue_name': queue_name})
             return result.scalar()
 
-    def is_updated_has_self_inclusion(self, beginning: str, ending: str, update_id: int):
+    def is_updated_has_self_inclusion(self, beginning: str, ending: str, update_id: int, queue_name):
         with self.session_asterisk() as session:
-            query = '''SELECT COUNT(*) FROM schedule WHERE (beginning <= :ending) AND (:beginning <= ending)
+            query = '''SELECT COUNT(*) FROM schedule WHERE (beginning <= :ending) AND (:beginning <= ending) AND queue_name = :queue_name
                                                                 AND id = :update_id;'''
-            result = session.execute(text(query), {'beginning': beginning, 'ending': ending, 'update_id': update_id})
+            result = session.execute(text(query), {'beginning': beginning, 'ending': ending, 'update_id': update_id, 'queue_name': queue_name})
             r = result.scalar()
             print(r)
             return bool(r)
@@ -134,7 +134,7 @@ class ScheduleRepository:
 
     def set_queue_status(self, queue_name: str, value: bool):
         with self.session_asterisk() as session:
-            query = 'UPDATE queues SET queue_enabled  = :value ' \
+            query = 'UPDATE queues SET queue_schedule  = :value ' \
                     'WHERE name = :name'
 
             session.execute(text(query), {'name': queue_name, 'value': value})
