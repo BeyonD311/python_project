@@ -13,7 +13,7 @@ apk add postgresql-dev
 
 COPY . .
 
-RUN chmod +x '/app/docker/app/run.sh'
+RUN chmod 777 ./run.sh
 
 RUN python -m pip install --upgrade pip && \
 pip install --no-cache-dir --disable-pip-version-check --no-warn-script-location --requirement  requirements.txt
@@ -21,4 +21,4 @@ pip install --no-cache-dir --disable-pip-version-check --no-warn-script-location
 RUN pip install redis
 RUN pip install --no-cache-dir flower
 
-CMD /app/docker/app/run.sh
+CMD ["sh", "./run.sh"]
