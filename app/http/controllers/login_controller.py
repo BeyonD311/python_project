@@ -119,7 +119,7 @@ async def login(
     try:
         user = user_service.find_user_by_login(params.login)
         await user_service.set_status(user.id, 15)
-    except NotFoundError as e: # TODO: вынести в Exception
+    except NotFoundError:
         response.status_code = status.HTTP_401_UNAUTHORIZED
         return {
             "message": "Invalid login",
@@ -128,7 +128,6 @@ async def login(
     if user.hashed_password is None:
         user.hashed_password = sha256(user.password.encode()).hexdigest()
     if password != user.hashed_password:
-        # TODO: вынести в Exception
         response.status_code = status.HTTP_401_UNAUTHORIZED
         return {
             "message": "The password is incorrect",

@@ -1,5 +1,4 @@
-import jwt, os, json, asyncio
-from websockets.exceptions import ConnectionClosedError
+import jwt, os, asyncio
 from fastapi import Depends, APIRouter, Response, Request, WebSocket
 from fastapi.security import HTTPBearer
 from app.kernel.container import Container

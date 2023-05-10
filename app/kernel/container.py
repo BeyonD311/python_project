@@ -10,16 +10,18 @@ from app.http.services.roles import RolesServices
 from app.http.services.departments import DepartmentsService
 from app.http.services.images_service import ImagesServices
 from app.http.services.inner_phone import InnerPhoneServices
+from app.http.services.schedule.schedule import ScheduleService
 from app.http.services.queue import QueueService
 from .redis import init_redis_pool
 from app.http.services.jwt_managment import JwtManagement
 from app.http.services.helpers import RedisInstance
+from app.http.services.ssh import Ssh
 
 
 class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(modules=['app.http.middleware.auth_middleware'])
     config = providers.Configuration(yaml_files=[Path('config.yml')])
-    db = providers.Singleton(Database, db_url=config.db.uri) 
+    db = providers.Singleton(Database, db_url=config.db.uri)
     asterisk = providers.Singleton(Database, db_url=config.asterisk.uri)
     # Service Provider
     redis_pool = providers.Resource(
@@ -38,28 +40,28 @@ class Container(containers.DeclarativeContainer):
     user_repository = providers.Factory(
         DatabaseCustom.UserRepository,
         session_factory=db.provided.session,
-        session_asterisk=asterisk.provided.session 
-    ) 
+        session_asterisk=asterisk.provided.session
+    )
     skills_repository = providers.Factory(
         DatabaseCustom.SkillsRepository,
         session_factory=db.provided.session,
-    ) 
+    )
     roles_permission = providers.Factory(
         DatabaseCustom.RolesPermissionRepository,
         session_factory=db.provided.session
     )
     roles_permission_service = providers.Factory(
         RolesPermission,
-        roles_repository = roles_permission
-    ) 
+        roles_repository=roles_permission
+    )
     user_service = providers.Factory(
-        UserService, 
-        user_repository = user_repository,
-        redis = redis_instance,
+        UserService,
+        user_repository=user_repository,
+        redis=redis_instance,
     )
     skill_service = providers.Factory(
-        SkillService, 
-        skill_repository = skills_repository
+        SkillService,
+        skill_repository=skills_repository
     )
     dependencies_repository = providers.Factory(
         DatabaseCustom.DepartmentsRepository,
@@ -116,9 +118,28 @@ class Container(containers.DeclarativeContainer):
         InnerPhoneServices,
         inner_phone_repository=inner_phone_repository
     )
+    schedule_repository = providers.Factory(
+        DatabaseCustom.ScheduleRepository,
+        session_asterisk=asterisk.provided.session
+    )
+    schedule_service = providers.Factory(
+        ScheduleService,
+        schedule_repository=schedule_repository
+    )
+
+    ssh = providers.Factory(
+        Ssh,
+         host = config.asterisk_ssh.host,  
+         port = config.asterisk_ssh.port,  
+         user = config.asterisk_ssh.user,
+         password = config.asterisk_ssh.password
+    )
+
     queue_service = providers.Factory(
         QueueService,
         position_repository = position_repository,
         asterisk = asterisk_repository,
-        redis = redis_instance
+        redis = redis_instance,
+        hyperscript_uri = config.hyperscript.uri,
+        ssh=ssh
     )

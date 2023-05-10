@@ -46,7 +46,9 @@ def default_error(error: Exception, source=None):
     # TODO: вынести из функции все конкретные проверки 
     if name_err == "IntegrityError":
         try:
-            detail = error.args[0].split('\n')[1].replace('"',"'")
+            detail = re.findall(r'((\d*\,?)(\".*[^\)]))', error.args[0])
+            detail = re.findall(r'[\w\s]*\'[\w]*\'', detail[0][0])
+            detail = detail[0]
         except:
             detail = "No Details for Error"
         description = "Ошибка целостности БД"

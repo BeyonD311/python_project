@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import Depends, APIRouter, Response
 from fastapi.security import HTTPBearer
 from app.http.services.queue import QueueService
@@ -30,6 +31,12 @@ async def get_queue(
     queue_service: QueueService = Depends(Provide[Container.queue_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
+    """ 
+    описание полей \n
+        ** order_field - поле сортировки (name, status, type, operators)
+        ** order_direction - направление сортировки(asc,desc)
+        ** filter - должен содержать строку типа name=Название очереди;status=1,2;type=Название;
+    """
     split_filter = filter.split(";")
     params = GetAllQueue(
         page=page,
@@ -46,6 +53,32 @@ async def get_queue(
             ))
 
     return queue_service.get_queues(params)
+
+@route.get("/params")
+@inject
+async def get_queue_params(
+    queue_service: QueueService = Depends(Provide[Container.queue_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
+):
+    params = await queue_service.get_default_params()
+    return params
+
+@route.get("/resources")
+@inject
+async def get_queue_members(
+    queue_service: QueueService = Depends(Provide[Container.queue_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security),
+    uuid: str = None, 
+    operators: str = "",
+    supervisor: str = ""
+):
+    """ 
+        Получение доступных ресурсов
+        ** operators - фильтр по ФИО
+        ** supervisor - фильтр по ФИО
+    """
+    return queue_service.get_queue_members(uuid, operators, supervisor)
+
 @route.get("/{uuid}")
 @inject
 async def get_queue_by_uuid(
@@ -80,20 +113,27 @@ async def get_queue_state(
         result = err[1]
     return result
 
-
-@route.get("/resources/{uuid}")
+@route.get("/statuses/{uuids}")
 @inject
-async def get_queue_members(
-    uuid: str,
+async def get_queue_statuses(
+    uuids: str,
     response: Response,
     queue_service: QueueService = Depends(Provide[Container.queue_service]),
-    HTTPBearerSecurity: HTTPBearer = Depends(security),
-    operators: str = "",
-    supervisor: str = ""
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
-    return queue_service.get_queue_members(uuid, operators, supervisor)
-
-
+    """
+      Статусы для очереди\n
+        uuid через запятую
+     """
+    result = {}
+    try:
+        uuids = uuids.split(",")
+        result = queue_service.get_status(uuids)
+    except Exception as exception:
+        err = default_error(exception, item='Queue')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.post("/resources/{uuid}")
 @inject
@@ -104,8 +144,14 @@ async def save_queue_members(
     queue_service: QueueService = Depends(Provide[Container.queue_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
-    return queue_service.save_queue_members(uuid, params)
-
+    result = {}
+    try:
+        result = queue_service.save_queue_members(uuid, params)
+    except Exception as exception:
+        err = default_error(exception, item='Queue')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.post("")
 @inject
@@ -158,6 +204,23 @@ async def add_set_state_queue(
         result = queue_service.set_state(uuid, state)
     except Exception as exception:
         err = default_error(exception, source='Queue')
+        response.status_code = err[0]
+        result = err[1]
+    return result
+
+@route.delete("/{uuid}")
+@inject
+async def delete_queue(
+    uuid: str,
+    response: Response,
+    queue_service: QueueService = Depends(Provide[Container.queue_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
+):
+    result = {}
+    try:
+        result = queue_service.delete(uuid)
+    except Exception as exception:
+        err = default_error(exception, item='Queue')
         response.status_code = err[0]
         result = err[1]
     return result

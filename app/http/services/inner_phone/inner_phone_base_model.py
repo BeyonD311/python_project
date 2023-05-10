@@ -1,5 +1,5 @@
 from datetime import time
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator, ValidationError
 
 __all__ = ["InnerPhone", "RequestInnerPhone", "Settings", "Account", "Design", "Options"]
 
@@ -16,6 +16,11 @@ class InnerPhone(BaseModel):
     duration_conversation: time = "00:00:00"
     incoming_calls: int = 0
     comment: str = None
+    @validator('phone_number')
+    def validation_phone_number(cls, v:int):
+        if (v // 1000) < 1 or (v // 10000) > 0:
+            raise ValidationError("Номер должен состоять из 4 цифр")
+        return v
 
 
 class RequestInnerPhone(BaseModel):
@@ -40,7 +45,7 @@ class Options(BaseModel):
     codecs_video: str = Field('', alias='codecsVideo')
     codecs_video_disable_rtx: bool = Field(False, alias='codecsVideoDisableRTX')
     log_level: str = Field('error', alias='logLevel')
-    default_transfer_phone: bool = Field(True, alias='defaultTransferPhone')
+    default_transfer_phone: bool = Field(False, alias='defaultTransferPhone')
 
 
 class Account(BaseModel):

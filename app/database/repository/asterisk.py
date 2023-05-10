@@ -57,12 +57,12 @@ class Asterisk():
         """ 
             Создание номера в asterisk(sip регистрация)
         """
-        aors = f" insert into ps_aors(id, max_contacts) values({params.phone_number}{w}, 1) "
-        auth = f" insert into ps_auths(id, password, username, uuid,duration_call,duration_conversation, status) "\
-               f" values({params.phone_number}{w},'{params.password}','{params.login}','{params.uuid}', '{params.duration_call}',"\
+        aors =  f" insert into ps_aors(id, max_contacts) values({params.phone_number}{w}, 1) "
+        auth =  f" insert into ps_auths(id, password, username, uuid,duration_call,duration_conversation, status) "\
+                f" values({params.phone_number}{w},'{params.password}','{params.login}','{params.uuid}', '{params.duration_call}',"\
                 f" '{params.duration_conversation}', 10)"
         endpoints = f" insert into ps_endpoints (id, aors, auth, webrtc, transport) values "\
-                f"({params.phone_number}{w}, {params.phone_number}{w}, {params.phone_number}{w}, '{params.webrtc}', '{params.transport}') "
+                    f"({params.phone_number}{w}, {params.phone_number}{w}, {params.phone_number}{w}, '{params.webrtc}', '{params.transport}') "
         self.stack_multiple_query.append(aors)
         self.stack_multiple_query.append(auth)
         self.stack_multiple_query.append(endpoints)
@@ -70,12 +70,14 @@ class Asterisk():
     def get_by_user_login(self, username: str):
         with self.session_asterisk() as session:
             query = session.execute(f" select id from ps_auths where username = '{username}' ").first()
+            session.commit()
             session.close()
             return  query
 
     def get_by_user_phone(self, phone: str):
         with self.session_asterisk() as session:
             query = session.execute(f" select id from ps_auths where id = '{phone}' ").first()
+            session.commit()
             session.close()
             return  query
 
@@ -111,6 +113,7 @@ class Asterisk():
             flag = False
             if query is not None and query[0] == "online": 
                 flag = True
+            session.commit()
             session.close()
             return flag
     
@@ -118,6 +121,7 @@ class Asterisk():
         with self.session_asterisk() as session:
             query = session.execute(f"select id from ps_auths where uuid='{uuid}'").all()
             session.commit()
+            session.close()
             return query
     
     def get_outer_lines(self, uuid: str):
@@ -126,9 +130,13 @@ class Asterisk():
             sql = "select id from ps_auths where uuid is null "\
                     "and id not in ( "\
                     "select SUBSTRING_INDEX(phone, '/', -1) phone from queues q "\
-                    "join queue_phones qp on qp.queue_name = q.name "\
-                    f"where uuid != '{uuid}' )"
+                    "join queue_phones qp on qp.queue_name = q.name "
+            if uuid is not None:    
+                sql = sql + f" where uuid != '{uuid}' "
+            sql = sql + " )"
+            print(sql)
             query = session.execute(sql).all()
+            session.commit()
             session.close()
             return query
 
@@ -136,6 +144,7 @@ class Asterisk():
         """ Получение внешних линий у выбранной очереди """
         with self.session_asterisk() as session:
             query = session.execute(f"select qp.phone from queues q join queue_phones qp on qp.queue_name = q.name where q.uuid = '{uuid}'").all()
+            session.commit()
             session.close()
             res = set()
             for select_out_line in query:
@@ -161,6 +170,10 @@ class Asterisk():
         query = "delete from queue_phones "\
                 f"where queue_name = ( select name from queues q where uuid = '{uuid}');"
         self.stack_multiple_query.append(query)
+    
+    def delete_queue(self, uuid: str):
+        query = f"delete from queues where uuid = '{uuid}'"
+        self.stack_multiple_query.append(query)
 
     def get_all_queue(self, params):
         """ Получениые всех очередей """
@@ -169,11 +182,9 @@ class Asterisk():
                         " left join queue_members qm on qm.queue_name = q.name and qm.member_position = 2"\
                         f" GROUP by q.name HAVING 1=1"
         select_queue = select_queue + " " + self.__filter_queues(params.filter)
-        select_queue_limit = select_queue + f" limit {params.page}, {params.size}"
+        select_queue_limit = select_queue + f" limit {(params.page - 1) * params.size}, {params.size}"
         select_wrapper = f"select * from ({select_queue_limit}) temp_queue "
         select_wrapper = select_wrapper + " " + self.__order_by_queues(params.order_field, params.order_direction)
-        if params.page == 0:
-            params.page = 1
         with self.session_asterisk() as session:
             query = session.execute(select_wrapper).all()
             total = self.__total(session=session, select_queue=select_queue)
@@ -258,7 +269,7 @@ class Asterisk():
             f"values({base}, {base_info}, {value_calls}, {script_value}, '{uuid}');"
         self.stack_multiple_query.append(query)
         res = params.dict()
-        res['uuid'] = uuid
+        res['uuid'] = str(uuid)
         return res
     
     def update_queue(self, uuid, params):
@@ -273,7 +284,7 @@ class Asterisk():
         update = ",".join(update)
         self.stack_multiple_query.append(f"update queues set {update} where uuid = '{uuid}'")
         res = params.dict()
-        res['uuid'] = uuid
+        res['uuid'] = str(uuid)
         return res
 
 
@@ -288,14 +299,21 @@ class Asterisk():
                 raise ExceptionAsterisk(item=uuid, entity_description=description)
             session.close()
             return query
-    
+    def get_status_queue(self, uuids: list):
+        """ Получение статусов для long polling """
+        uuids = ['"' + uuid + '"' for uuid in uuids]
+        uuids = ",".join(uuids)
+        sql = f"select uuid, queue_enabled from queues where uuid in ({uuids})"
+        with self.session_asterisk() as session:
+            result = session.execute(sql).all() 
+            return result
     def __params_queue_fields(self) -> dict:
         """ Параметры таблицы queues для (GET, POST, UPDATE) """
         return {
             "base": "`name`,  `type_queue`, `queue_enabled` ",
-            "base_info": "`description`, `queue_code`, `queue_number`, `strategy`, `weight` ",
-            "config_calls": "`timeout`, `switch_number`, `timeout_talk`, `timeout_queue`, `maxlen` ",
-            "script_ivr": "`script_ivr_name`, `script_ivr_greeting`, `script_ivr_hyperscript`, `script_ivr_post_call`, `script_ivr_service_script` ",
+            "base_info": "`description`, `queue_code`, `exten`, `strategy`, `weight` ",
+            "config_calls": "`timeout`, `wrapuptime`, `timeout_talk`, `timeout_queue`, `maxlen` ",
+            "script_ivr": "`script_ivr_name`, `script_ivr_hyperscript` ",
         }
 
     def __value_fields_queues(self, params)->dict:
@@ -304,27 +322,24 @@ class Asterisk():
             Для update будет собираться автоматически
         """
         return {
-            "values_base": [f"'{params.name}'", f"'{params.type}'", f"{params.active}"],
+            "values_base": [f"'{params.name}'", f"'{params.type_queue}'", f"{params.queue_enabled}"],
             "values_base_info": [
                 f"'{params.base_info.description}'",
                 f"{params.base_info.queue_code}", 
-                f"{params.base_info.queue_number}",
+                f"{params.base_info.exten}",
                 f"'{params.base_info.strategy}'",
                 f"{params.base_info.weight}"
             ],
             "values_config_calls": [
                 f"{convert_time_to_second(params.config_call.timeout)}",
-                f"{params.config_call.switch_number}",
+                f"{convert_time_to_second(params.config_call.wrapuptime)}",
                 f"{convert_time_to_second(params.config_call.timeout_talk)}",
                 f"{convert_time_to_second(params.config_call.timeout_queue)}",
-                f"{params.config_call.max_len}"
+                f"{params.config_call.maxlen}"
             ],
             "values_script_ivr": [
                 f"'{params.script_ivr.name}'",
-                f"'{params.script_ivr.greeting}'",
-                f"'{params.script_ivr.hyperscript}'",
-                f"'{params.script_ivr.post_call}'",
-                f"'{params.script_ivr.service_script}'"
+                f"'{params.script_ivr.hyperscript}'"
             ]
         }
 
