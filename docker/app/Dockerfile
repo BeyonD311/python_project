@@ -13,12 +13,12 @@ apk add postgresql-dev
 
 COPY . .
 
+RUN chmod +x '/app/docker/app/run.sh'
+
 RUN python -m pip install --upgrade pip && \
 pip install --no-cache-dir --disable-pip-version-check --no-warn-script-location --requirement  requirements.txt
 
 RUN pip install redis
 RUN pip install --no-cache-dir flower
-
-# CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0"]
 
 CMD /app/docker/app/run.sh

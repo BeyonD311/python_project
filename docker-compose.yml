@@ -54,28 +54,6 @@ services:
     networks:
       - project
 
-  # celery_worker:
-  #   build:
-  #     context: .
-  #     dockerfile: docker/app/celery/worker/Dockerfile
-  #   volumes:
-  #     - "./:/app/"
-  #   depends_on:
-  #     - redis
-  #   networks:
-  #     - project
-
-  # celery_beat:
-  #   build:
-  #     context: .
-  #     dockerfile: docker/app/celery/beat/Dockerfile
-  #   volumes:
-  #     - "./:/app/"
-  #   depends_on:
-  #     - redis
-  #   networks:
-  #     - project
-
 
 networks:
   project:
