@@ -16,4 +16,9 @@ COPY . .
 RUN python -m pip install --upgrade pip && \
 pip install --no-cache-dir --disable-pip-version-check --no-warn-script-location --requirement  requirements.txt
 
-CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0"]
+RUN pip install redis
+RUN pip install --no-cache-dir flower
+
+# CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0"]
+
+CMD /app/docker/app/run.sh

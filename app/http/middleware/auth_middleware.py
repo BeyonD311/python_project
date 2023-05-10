@@ -5,12 +5,7 @@ from fastapi import status, responses, Depends
 from starlette.middleware.base import BaseHTTPMiddleware
 from app.kernel.container import Container
 from app.http.services.access import Access
-from app.http.services.helpers import default_error
 from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
-from app.database import (
-        AccessException,
-        UnauthorizedException
-    )
 
 path_exception = ("auth", "docs", "openapi.json", "images")
 path_exception_aster = ("/users/status/asterisk", "/users/status/test", "/users/status/fill")

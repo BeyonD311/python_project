@@ -4,8 +4,8 @@ import json
 import asyncio
 from datetime import datetime
 from aioredis import Redis
-from app.database import UserModel, UnauthorizedException
-
+from app.database.repository.super import UnauthorizedException
+from app.database import UserModel
 class Jwt:
     def __init__(self, redis: Redis, user: UserModel = None) -> None:
         self.redis = redis
