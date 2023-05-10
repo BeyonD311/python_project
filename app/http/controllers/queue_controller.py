@@ -91,7 +91,7 @@ async def get_queue_by_uuid(
     try:
         return queue_service.get_queue_by_uuid(uuid)
     except Exception as exception:
-        err = default_error(exception, item='Queue')
+        err = default_error(exception, source='Queue')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -108,7 +108,7 @@ async def get_queue_state(
     try:
         result = queue_service.get_state_queue(uuid)
     except Exception as exception:
-        err = default_error(exception, item='Queue')
+        err = default_error(exception, source='Queue')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -166,7 +166,7 @@ async def add_create_queue(
     try:
         result = queue_service.add(params=params)
     except Exception as exception:
-        err = default_error(exception, item='Queue')
+        err = default_error(exception, source='Queue')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -185,7 +185,7 @@ async def add_update_queue(
     try:
         result = queue_service.update(uuid=uuid,params=params)
     except Exception as exception:
-        err = default_error(exception, item='Queue')
+        err = default_error(exception, source='Queue')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -203,7 +203,7 @@ async def add_set_state_queue(
     try:
         result = queue_service.set_state(uuid, state)
     except Exception as exception:
-        err = default_error(exception, item='Queue')
+        err = default_error(exception, source='Queue')
         response.status_code = err[0]
         result = err[1]
     return result

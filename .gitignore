@@ -5,4 +5,5 @@ app/body_users.json
 status.txt
 /.idea
 .vscode
-error
+!/openvpn-repo-pkg-key.pub
+celerybeat-schedule

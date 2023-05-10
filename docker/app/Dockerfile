@@ -5,7 +5,7 @@ FROM python:3.10.8-alpine
 
 WORKDIR /app
 
-RUN apk update && \ 
+RUN apk update && \
 apk add --virtual build-deps gcc python3-dev musl-dev && \
 apk add postgresql-dev
 
@@ -13,7 +13,12 @@ apk add postgresql-dev
 
 COPY . .
 
+RUN chmod +x '/app/docker/app/run.sh'
+
 RUN python -m pip install --upgrade pip && \
 pip install --no-cache-dir --disable-pip-version-check --no-warn-script-location --requirement  requirements.txt
 
-CMD ["uvicorn", "main:app", "--reload", "--host", "0.0.0.0"]
+RUN pip install redis
+RUN pip install --no-cache-dir flower
+
+CMD /app/docker/app/run.sh

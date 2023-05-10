@@ -20,7 +20,7 @@ class RolesRepository(SuperRepository):
             current_role = self.__query_all(session).filter(RolesModel.id == id).all()
             if current_role == []:
                 description = f"Не найдена роль с ID={id}"
-                raise NotFoundError(f"Role not found {id}", entity_description=description)
+                raise NotFoundError(entity_id=id, entity_description=description)
             return self.__parse_role(modules=modules,roles=current_role)
 
     def get_all_modules(self):

@@ -51,7 +51,7 @@ async def get_departments_user(
     try:
         result = user_service.get_departments_employees(departments_id)
     except Exception as e:
-        err = default_error(e, item='Users Department')
+        err = default_error(e, source='Users Department')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -80,7 +80,7 @@ def get_user_skill(
     try:
         result = skill_service.find(skill)
     except Exception as e:
-        err = default_error(e, item='Users Skill')
+        err = default_error(e, source='Users Skill')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -137,17 +137,17 @@ async def get_users(
             params.filter = user_filter
     try:
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
-            # TODO: убрать raise
             if request.state.for_user['user'].department_id is None:
+                # TODO: проверить исключение и корректность description
                 description = f"Запрашиваемый пользователь не состоит ни в одном отделе."
-                raise ExpectationError(entity_id='', entity_description=description)
+                raise ExpectationError(entity_description=description)
             if params.filter is None:
                 params.filter = UsersFilter()
             params.filter.department = request.state.for_user['user'].department_id
             del request.state.for_user['user']
         result = user_service.get_all(params=params)
     except Exception as e:
-        err = default_error(e, item='Users')
+        err = default_error(e, source='Users')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -167,7 +167,7 @@ async def current_user(
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     """ Получение текущего пользователя\n
-    Exception:
+    Exceptions:
         NotFoundError
     """
     token = request.headers.get('authorization').replace("Bearer ", "")
@@ -175,7 +175,7 @@ async def current_user(
     try:
         result = user_service.get_user_by_id(decode['azp'])
     except Exception as e:
-        err = default_error(e, item='Users')
+        err = default_error(e, source='Users')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -188,6 +188,10 @@ async def current_password(
     user_id: int = None,
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    """ Получение пароля текущего пользователя\n
+    Exceptions:
+        AccessException
+    """
     try:
         token = request.headers.get('authorization').replace("Bearer ", "")
         if user_id == None:  # NOTE: Get own password
@@ -196,7 +200,9 @@ async def current_password(
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
             request.state.for_user['user']
             if request.state.for_user['user'].id != user_id:
-                raise AccessException(entity_id=user_id)
+                # TODO проверить исключение
+                description: str = "Недостаточно прав доступа."
+                raise AccessException(entity_id=user_id, entity_description=description)
             del request.state.for_user['user']
         current = user_service.by_id(user_id)
         result = {
@@ -204,7 +210,7 @@ async def current_password(
             "password": current.password
         }
     except Exception as e:
-        err = default_error(e, item='Users')
+        err = default_error(e, source='Users')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -218,14 +224,19 @@ async def get_user_id(
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
+    """ Получение пользователя по id.\n
+    Exceptions:
+        NotFoundError
+    """
     try:
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
             slef_id = request.state.for_user['user'].id
             if slef_id != id:
-                raise AccessException(entity_id=slef_id)
+                description: str = "Недостаточно прав доступа."
+                raise AccessException(entity_id=slef_id, entity_description=description)
         result = user_service.get_user_by_id(id, False)
     except Exception as e:
-        err = default_error(e, item='Users')
+        err = default_error(e, source='Users')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -238,12 +249,16 @@ async def add_user(
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)
     ):
+    """ Создание пользователя\n
+    Exceptions:
+        NotFoundError
+    """
     try:
         user = await user_service.create_user(user_request)
         await user_service.set_status(user.id,user.status.status_id)
         result = user
     except Exception as e:
-        err = default_error(e, item='Users')
+        err = default_error(e, source='Users')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -257,15 +272,21 @@ async def user_set_permission(
     params: UserPermission,
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    """ Изменить уровни доступа пользователя\n
+    Exceptions:
+        NotFoundError
+        AccessException
+    """
     try:
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
             slef_id = request.state.for_user['user'].id
             if slef_id != id:
-                raise AccessException(entity_id=slef_id)
+                # TODO проверить исключение
+                description: str = "Недостаточно прав доступа."
+                raise AccessException(entity_id=slef_id, entity_description=description)
         result = user_service.set_permission(params)
     except Exception as e:
-        # TODO: response.status_code = status.HTTP_404_NOT_FOUND, "message": "Not found status"
-        err = default_error(e, item='Users Permission')
+        err = default_error(e, source='Users Permission')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -278,10 +299,17 @@ async def update_password(
     request: Request,
     user_service: UserService = Depends(Provide[Container.user_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    """ Изменить пароль пользователя\n
+    Exceptions:
+        NotFoundError
+        AccessException
+    """
     if hasattr(request.state,'for_user') and request.state.for_user['status']:
         slef_id = request.state.for_user['user'].id
         if slef_id != id:
-            raise AccessException(entity_id=slef_id)
+            # TODO проверить исключение
+            description: str = "Недостаточно прав доступа."
+            raise AccessException(entity_id=slef_id, entity_description=description)
     return user_service.reset_password(id, password)
 
 @route.patch("/dismiss")
@@ -298,7 +326,7 @@ async def user_dismiss(
     try:
         return user_service.dismiss(id, date_dismissal_at)
     except Exception as e:
-        err = default_error(e, item='Users')
+        err = default_error(e, source='Users')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -315,12 +343,14 @@ async def user_dismiss(
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
             slef_id = request.state.for_user['user'].id
             if slef_id != id:
-                raise AccessException(entity_id=slef_id)
+                # TODO проверить исключение
+                description: str = "Недостаточно прав доступа."
+                raise AccessException(entity_id=slef_id, entity_description=description)
         result = user_service.recover(id)
         await user_service.set_status(id,status_id=1)
     except Exception as e:
         description = f"Пользователя с ID={id} не существует."
-        err = default_error(e, item='Users')
+        err = default_error(e, source='Users')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -339,12 +369,13 @@ async def update_user(
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
             slef_id = request.state.for_user['user'].id
             if slef_id != id:
-                raise AccessException(entity_id=slef_id)
-        user = user_service.update_user(id, params)
-        return user
+                description: str = "Недостаточно прав доступа."
+                raise AccessException(entity_id=slef_id, entity_description=description)
+        # TODO: Отловить 422 Error: Unprocessable Entity ("msg": "value is not a valid type", "type": "type_error")
+        result = user_service.update_user(id, params)
     except Exception as e:
         description = f"Пользователя с ID={id} не существует."
-        err = default_error(e, item='Users')
+        err = default_error(e, source='Users')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -356,7 +387,8 @@ async def user_delete(id: int, response: Response,request: Request, user_service
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
             slef_id = request.state.for_user['user'].id
             if slef_id != id:
-                raise AccessException(entity_id=slef_id)
+                description: str = "Недостаточно прав доступа."
+                raise AccessException(entity_id=slef_id, entity_description=description)
         user_service.delete_user_by_id(id)
         description = "Пользователь с ID={id} успешно удалён."
         result = {
@@ -365,7 +397,7 @@ async def user_delete(id: int, response: Response,request: Request, user_service
         }
     except Exception as e:
         description = f"Пользователя с ID={id} не существует."
-        err = default_error(e, item='Users')
+        err = default_error(e, source='Users')
         response.status_code = err[0]
         result = err[1]
     return result

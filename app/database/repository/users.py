@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 from uuid import uuid4
-from .super import SuperRepository, NotFoundError, BaseException, UserNotFoundError
+from .super import SuperRepository, NotFoundError, UserNotFoundError
 from app.database import UserModel as User
 from app.database import RolesModel
 from app.database import GroupsModel
@@ -24,7 +24,6 @@ from sqlalchemy.orm import Session
 from typing import Callable
 from uuid import uuid4
 from .asterisk import Asterisk, StatusHistoryParams
-from app.http.services.event_channel import Params
 
 
 """ 
@@ -81,11 +80,14 @@ class UserRepository(SuperRepository):
         with self.session_factory() as session:
             user = session.query(self.base_model).filter(self.base_model.login == login).first()
             if user is None:
-                raise UserNotFoundError(entity_id=login)
+                description = f"Не найден пользователь с логином '{login}'."
+                raise NotFoundError(item=login, entity_description=description)
             return user
 
     def get_by_id(self, id: int) -> User:
         description = f"Не найден пользователь с ID={id}."
+        if id == 0:
+            raise NotFoundError(entity_id=id, entity_description=description)
         try:
             with self.session_factory() as session:
                 user: User = session.query(self.base_model).filter(self.base_model.id == id).first()
@@ -93,7 +95,7 @@ class UserRepository(SuperRepository):
                 user.position
                 user.department
                 user.skills
-                user.status 
+                user.status
                 user.image
                 for role in user.roles:
                     role.permissions
@@ -112,6 +114,7 @@ class UserRepository(SuperRepository):
             return query
 
     def get_users_department(self, department_id):
+        self.find_department_by_id(department_id, session=session)
         with self.session_factory() as session:
             result = session.query(self.base_model.id,
                                   self.base_model.inner_phone,
@@ -136,8 +139,9 @@ class UserRepository(SuperRepository):
                     .filter((self.base_model.department_id == department_id) | (HeadOfDepartment.department_id == department_id), self.base_model.status_id !=4)\
                     .filter((PositionModel.id == 1) | (HeadOfDepartment.is_active == True))\
                     .order_by(self.base_model.id).all()
-            if result is None:
-                raise UserNotFoundError(entity_id=department_id)
+            if result is None:  # TODO: если нет отделов в запросе, то в result лежит пустой список, тогда условие на None не выполняется, а если изменить на "if not result:" - выполняется, но как для существующих пустых департаментов, так и для несуществующих.
+                decription = f"Не существует отдел с ID={department_id}."
+                raise NotFoundError(entity_id=department_id, entity_description=decription)
             return result
 
     def get_user_permission(self, user_id: int, only_access: bool = True)->dict:
@@ -204,7 +208,7 @@ class UserRepository(SuperRepository):
                 current.position
                 current.department
                 current.skills
-                current.status 
+                current.status
                 current.image
                 for role in user.roles:
                     role.permissions
@@ -214,7 +218,7 @@ class UserRepository(SuperRepository):
                 current.groups
                 current.inner_phone
             else:
-                raise IntegrityError(
+                raise IntegrityError(  # TODO: параметры IntegrityError
                     "Пользователь не найден",
                     "Пользователь не найден",
                     "Пользователь не найден"
@@ -257,19 +261,13 @@ class UserRepository(SuperRepository):
                 raise NotFoundError(entity_id=users_id, entity_description=description)
             return users
 
-    def set_status(self, user_id, status_id, call_id = None):
+    def set_status(self, user_id, status_id):
         global event_type
         current = None
-        
         with self.session_factory() as session:
             current = session.query(self.base_model).get(user_id)
-            if status_id == 10:
-                if self.session_asterisk.check_device_status(current.uuid):
-                    status_id = 10
-                else:
-                    status_id = 14
             current.status_id = status_id
-            current.status_at = str(datetime.now())
+            current.status_at = datetime.now()
             current.status
             current.inner_phone
             event_type="set_status"
@@ -277,13 +275,17 @@ class UserRepository(SuperRepository):
             session.commit()
         status_id = current.status_id
         status_code = current.status.code
-        if status_id == 15:
-            status_id = 14
-            status_code = "unavailable"
+        if current.status_id == 10:
+            if self.session_asterisk.check_device_status(current.uuid):
+                status_id = 10
+                status_code = "ready"
+            else:
+                status_id = 14
+                status_code = "unavailable"
         if status_code.find("break") != -1:
             status_id = 9
         if current.status_id != 18:
-            self.session_asterisk.save_sip_status_asterisk(status_id, current.uuid)
+            self.session_asterisk.save_sip_status_asterisk(status_id, current.uuid)  # TODO rename to 'save_status_asterisk'
             inner_phone: InnerPhone
             for inner_phone in current.inner_phone:
                 if inner_phone.is_default and inner_phone.is_registration:
@@ -311,11 +313,11 @@ class UserRepository(SuperRepository):
     async def set_status_by_uuid(self, uuid, status_id, status_time):
         global event_type
         with self.session_factory() as session:
-            sql = f"update users set status_id = {status_id}, status_at = '{status_time}' where uuid = '{uuid}'" 
+            sql = f"update users set status_id = {status_id}, status_at = '{str(status_time)}' where uuid = '{uuid}'"
             event_type="set_status"
             session.execute(sql)
             session.commit()
-        self.session_asterisk.save_sip_status_asterisk(status_id,uuid)
+        self.session_asterisk.save_status_asterisk(status_id,uuid)
         self.session_asterisk.execute()
 
     def add(self, user_model: User) -> any:
@@ -349,7 +351,8 @@ class UserRepository(SuperRepository):
                 user.inner_phone
                 return user
         except IntegrityError as e:
-            raise(e)  # FIXME
+            raise(e)
+
     def item_add_or_update(self, user: User, session):
         roles = session.query(RolesModel).filter(RolesModel.id.in_(user.roles_id)).all()
         groups = session.query(GroupsModel).filter(GroupsModel.id.in_(user.group_id)).all()
@@ -388,7 +391,7 @@ class UserRepository(SuperRepository):
             session.add(user)
             session.commit()   
         if phones != []:
-            self.session_asterisk.delete_sip_user_asterisk(",".join(phones))
+            self.session_asterisk.delete_asterisk(",".join(phones))
             self.session_asterisk.execute()
     
     def user_dismiss(self, user_id: int, date_dismissal_at: datetime = None):
@@ -411,7 +414,7 @@ class UserRepository(SuperRepository):
                 session.add(user)
                 session.commit()
             if phones != []:
-                self.session_asterisk.delete_sip_user_asterisk(",".join(phones))
+                self.session_asterisk.delete_asterisk(",".join(phones))
                 self.session_asterisk.execute()
         except Exception as e:
             raise
@@ -428,20 +431,15 @@ class UserRepository(SuperRepository):
             else:
                 time_kc = time_kc.update_at
             result = {
-                "user_id": user_id,
-                "status_id": user.status_id,
-                "status_code": user.status.code,
-                "status_at": str(user.status_at),
+                "event": "CONNECTION",
                 "status": "",
-                "event":"CONNECTION",
-                "color": "",
-                "start_time_kc": str(time_kc),
-                "incoming_call": None
+                "status_at": str(user.status_at),
+                "startTimeKC": str(time_kc),
+                "color": ""
             }
             if user.status is not None:
                 result['status'] = user.status.alter_name
                 result['color'] = user.status.color
-            result = Params(**result)
             return result
         
     def user_recover(self, user_id: int):
@@ -519,10 +517,7 @@ def after_update_handler(mapper, connection: Connection, target: User):
         with connection.begin():
             status_current = connection.execute(f"select update_at, status_id, user_id from status_history where user_id = {target.id} and is_active = true").first()
             if type(target.status_at) == str:
-                try:
-                    target.status_at = datetime.strptime(target.status_at, "%Y-%m-%d %H:%M:%S.%f")
-                except:
-                    target.status_at = datetime.strptime(target.status_at, "%Y-%m-%d %H:%M:%S")
+                target.status_at = datetime.strptime(target.status_at, "%Y-%m-%d %H:%M:%S")
             time_at = None
             if status_current is not None:
                 date:datetime = status_current[0]

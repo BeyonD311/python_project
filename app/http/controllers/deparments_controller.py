@@ -1,8 +1,7 @@
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, status, Response
 from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
 from app.http.services.helpers import parse_params_num
-from app.database import NotFoundError
 from app.kernel import Container
 from app.http.services.departments import DepartmentsService, DepartmentParams
 from app.http.services.helpers import default_error
@@ -43,7 +42,7 @@ def get_departments(
         }
         result = department_service.get_employees(filter_params)
     except Exception as e:
-        err = default_error(e, item='Departments')
+        err = default_error(e, source='Departments')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -56,16 +55,13 @@ def add_department(
     department_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     """
-        Для создания корневого отдела 
-        {
-            "name": "test 123",
-            "source_department": 0
-        }
+    Exceptions:
+        ExistsException
     """
     try:
         result = department_service.add(params=params)
     except Exception as e:
-        err = default_error(e, item='Departments')
+        err = default_error(e, source='Departments')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -85,7 +81,7 @@ def update_department(
     try:
         result = department_service.update(params=params, id=id)
     except Exception as e:
-        err = default_error(e, item='Departments')
+        err = default_error(e, source='Departments')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -104,7 +100,7 @@ def delete_department(
     try:
         result = department_service.delete(id)
     except Exception as e:
-        err = default_error(e, item='Departments')
+        err = default_error(e, source='Departments')
         response.status_code = err[0]
         result = err[1]
     return result
