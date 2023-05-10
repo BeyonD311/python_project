@@ -65,7 +65,7 @@ async def logout(
                 "description": "Успешный выход из системы"
             }
     except Exception as e:
-        err = default_error(e, item='UserAuth')
+        err = default_error(e, source='UserAuth')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -99,7 +99,7 @@ async def refresh(
             tokens = await j.tokens()
             result = tokens
     except Exception as e:
-        err = default_error(e, item='UserAuth')
+        err = default_error(e, source='UserAuth')
         response.status_code = err[0]
         result = err[1]
     return result

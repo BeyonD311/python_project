@@ -72,5 +72,3 @@ class Access():
             "patch": modules[2],
             "delete": modules[3]
         }
-    
-    

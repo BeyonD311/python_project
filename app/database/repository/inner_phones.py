@@ -1,4 +1,4 @@
-from .super import SuperRepository, NotFoundError
+from .super import SuperRepository, NotFoundError, ExistsException
 from app.database.models.inner_phone import InnerPhone
 from app.database.models.users import UserModel
 from uuid import uuid4
@@ -7,6 +7,7 @@ from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
 from .asterisk import Asterisk, AsteriskParams
 from re import search
+from sqlalchemy.exc import IntegrityError
 
 class InnerPhones(SuperRepository):
 
@@ -38,7 +39,7 @@ class InnerPhones(SuperRepository):
             query = session.query(self.base_model).filter(self.base_model.id == id).first()
             if not query:
                 description = f"Не найден внутренний номер с ID={id}."
-                raise NotFoundError("Not found item", entity_description=description)
+                raise NotFoundError(entity_id=id, entity_description=description)
             return query
 
     def add(self, arg):
@@ -52,7 +53,7 @@ class InnerPhones(SuperRepository):
             query = session.query(self.base_model).filter(self.base_model.user_id == user_id).all()
             if not query:
                 description = f"Не найден пользователь с ID={user_id}."
-                raise NotFoundError("User Not Found", entity_description=description)
+                raise NotFoundError(entity_id=user_id, entity_description=description)
             return query
         
     def create_or_update(self, params) -> list:
@@ -96,14 +97,21 @@ class InnerPhones(SuperRepository):
                 if inner_phone.is_registration and inner_phone.is_default and count_default == 0:
                     check_phone = self.session_asterisk.get_by_user_phone(inner_phone.phone_number)
                     if check_phone is not None:
-                        description=f"Телефон уже существует {inner_phone.phone_number}"
-                        raise PhoneFoundError(entity_description=description)
+                        description = f"Уже существует номер: {inner_phone.phone_number}"
+                        raise ExistsException(item=inner_phone.phone_number, entity_description=description)
                     param = self.__params(user, phone, inner_phone)
                     self.session_asterisk.insert_sip_user_asterisk(param)
                     count_default += 1
                 session.add(phone)
+            # TODO: номер добавляется при наличии такого же
+            # TODO: "is_registration": true/false -> удаляет запись
+            # TODO: "is_default": true/false -> удаляет запись
             session.commit()
-            self.session_asterisk.execute()
+            try:
+                self.session_asterisk.execute()
+            except IntegrityError:
+                description = f"Уже существует номер: {inner_phone.phone_number}"
+                raise ExistsException(item=inner_phone.phone_number, entity_description=description)
         return response
 
     def delete_phone(self,user_id: int, phones_id: list):
@@ -123,7 +131,7 @@ class InnerPhones(SuperRepository):
         user = session.query(UserModel).filter(UserModel.id == user_id, UserModel.is_active == True).first()
         if user is None:
             description = f"Не найден пользователь с ID={user_id}."
-            raise NotFoundError("User not found", entity_description=description)
+            raise NotFoundError(entity_id=user_id, entity_description=description)
         return user
     
     def __params(self, user: UserModel, inner_phone: InnerPhone, inner_phone_params) -> AsteriskParams:

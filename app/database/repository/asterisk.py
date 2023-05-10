@@ -207,7 +207,8 @@ class Asterisk():
                 f"from queues q left join queue_members qm on qm.queue_name = q.name where uuid = '{uuid}'"
             state_queue = session.execute(sql).first()
             if state_queue is None:
-                raise NotFoundError()
+                description = "Не найдена очередь с ID={uuid}"
+                raise NotFoundError(entity_id=uuid, entity_description=description)
             session.close()
             return state_queue
 
@@ -294,7 +295,8 @@ class Asterisk():
         with self.session_asterisk() as session:
             query = session.execute(query).first()
             if query == None:
-                raise ExceptionAsterisk("Queue not found")
+                description: str = "Очередь не найдена"
+                raise ExceptionAsterisk(item=uuid, entity_description=description)
             session.close()
             return query
     def get_status_queue(self, uuids: list):
@@ -355,5 +357,5 @@ class Asterisk():
 
 class ExceptionAsterisk(NotFoundError):
     entity_name: str
-    def __init__(self, message):
-        super().__init__(f"{message}")
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)

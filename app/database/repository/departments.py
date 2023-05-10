@@ -66,7 +66,7 @@ class DepartmentsRepository(SuperRepository):
                 return []
             return query
     
-    def get_employees(self, filter = None) -> Department:  # TODO: DISTINCT users
+    def get_employees(self, filter = None) -> Department:  # TODO: проверить DISTINCT users
         with self.session_factory() as session:
             query = session.query(
                 self.base_model.id.label("department_id"),
@@ -237,7 +237,8 @@ class DepartmentsRepository(SuperRepository):
             session.commit()
 
             if department.id is None:
-                raise NotFoundError("Not create")
+                description = "Невозможно создать департамент"
+                raise NotFoundError(entity_id=department.id, entity_description=description)
             
             try:
                 self.__add_employee(params=params, session=session, id=department.id)
@@ -288,8 +289,8 @@ class DepartmentsRepository(SuperRepository):
     def find_department_by_name(self, name: str, session):
         query = session.query(self.base_model).filter(self.base_model.name.ilike(f"%{name}%")).first()
         if query is not None:
-            description = f"Департамент с именем '{name}' уже существует."
-            raise ExistsException(entity_id=name, entity_description=description)
+            description = f"Уже существует департамент с именем '{name}'."
+            raise ExistsException(item=name, entity_description=description)
 
     def find_employee(self, department_id: int, session):
         result = {}
@@ -301,7 +302,7 @@ class DepartmentsRepository(SuperRepository):
     def find_department_by_id(self, id, session) -> DepartmentsModel:
         query = session.query(self.base_model).filter(self.base_model.id == id).first()
         if query is None:
-            description = f"Департамента с ID={id} не существует."
+            description = f"Не существует департамент с ID={id}."
             raise NotFoundError(entity_id=id, entity_description=description)
         return query
     
@@ -328,14 +329,14 @@ class DepartmentsRepository(SuperRepository):
         del departments
         if head_employees_department != None and params.director_user_id != None:
             if not self.get_users(params, session):
-                description = f"Пользователя с ID={params.director_user_id} не существует."
+                description = f"Не существует пользователь с ID={params.director_user_id}."
                 raise NotFoundError(entity_id=id, entity_description=description)
             if params.director_user_id != head_employees_department.head_of_department_id:
                 head_employees_department.head_of_department_id = params.director_user_id
                 session.add(head_employees_department)
         elif head_employees_department == None and params.director_user_id != None:
             if not self.get_users(params, session):
-                description = f"Пользователья с ID={params.director_user_id} не существует."
+                description = f"Не существует пользователь с ID={params.director_user_id}."
                 raise NotFoundError(entity_id=id, entity_description=description)
             session.add(HeadOfDepartment(
                 department_id=id,

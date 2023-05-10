@@ -28,17 +28,21 @@ def get_file(
     response: Response):
     """
     Exceptions:
-        FileNotFoundError
         NotFoundError
     """
     path = f"images/user_image/{filename}"
-    if os.path.exists(path) and os.path.isfile(path):
-        result = FileResponse(path)
-    else:  # TODO: message задаётся как и description - поправить в super.py
-        description = f"Не найдено изображение с именем '{filename}'"
-        response.status_code = status.HTTP_404_NOT_FOUND
-        result = NotFoundError(entity_id=filename, entity_description=description).message
+    try:
+        if os.path.exists(path) and os.path.isfile(path):
+            result = FileResponse(path)
+        else:
+            description = f"Не найдено изображение с именем '{filename}'"
+            raise NotFoundError(item=filename, entity_description=description)
+    except Exception as e:
+        err = default_error(e, source='Image')
+        response.status_code = err[0]
+        result = err[1]
     return result
+
 
 @route.post("/")
 @inject
@@ -54,7 +58,7 @@ def save_file(
     try:
         result = image_services.add(file)
     except Exception as e:
-        err = default_error(e, item='Image')
+        err = default_error(e, source='Image')
         response.status_code = err[0]
         result = err[1]
     return result
