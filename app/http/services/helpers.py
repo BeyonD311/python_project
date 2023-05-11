@@ -35,6 +35,14 @@ def default_error(error: Exception, source=None):
     project_exceptions = ProjectExceptionsImport()
     exceptions_array: tuple = tuple(project_exceptions.__dir__())
     name_err = error.__repr__().split('(')[0]
+    if name_err == "DecodeError":
+        detail = error  # "Invaid JWT generated."
+        description = "Сгенерирован недопустимый JWT."
+        return status.HTTP_401_UNAUTHORIZED, message(source, message=detail, description=description)
+    if name_err == "InvalidSignatureError":
+        detail = error   # "Signature verification failed."
+        description = "Ошибка проверки подписи JWT."
+        return status.HTTP_401_UNAUTHORIZED, message(source, message=detail, description=description)
     if name_err == "IntegrityError":
         try:
             detail = re.findall(r'((\d*\,?)(\".*[^\)]))', error.args[0])
