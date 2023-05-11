@@ -100,7 +100,7 @@ async def refresh(
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     """_summary_
 
-    Ecxeptions:
+    Exceptions:
         InvalidSignatureError
         NotFoundError
         TokenInBlackList

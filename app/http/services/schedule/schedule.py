@@ -18,6 +18,7 @@ class ScheduleService:
                                                  order=order)
 
     def create(self, schedule: ScheduleCreate):
+        schedule.period_schedule = self._fill_gave_data_in_periods(periods=schedule.period_schedule)
         inclusions_count = self._repository.get_count_of_inclusions(beginning=schedule.beginning,
                                                                     ending=schedule.ending,
                                                                     queue_name=schedule.queue_name)
@@ -26,6 +27,7 @@ class ScheduleService:
         return self._repository.add(schedule_data=schedule)
 
     def update(self, schedule_id: int, update_data: ScheduleUpdate):
+        update_data.period_schedule = self._fill_gave_data_in_periods(periods=update_data.period_schedule)
         inclusions_count = self._repository.get_count_of_inclusions(beginning=update_data.beginning,
                                                                     ending=update_data.ending,
                                                                     queue_name=update_data.queue_name)
@@ -65,3 +67,8 @@ class ScheduleService:
 
     def get_all_queue_names(self):
         return self._repository.get_all_queues_names()
+
+    def _fill_gave_data_in_periods(self, periods):
+        template = {0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: []}
+        template.update(periods)
+        return template
