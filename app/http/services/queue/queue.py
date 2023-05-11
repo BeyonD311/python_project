@@ -187,6 +187,11 @@ class QueueService:
     async def get_queue_by_uuid(self, uuid: str):
         """ Получение очереди по uuid4 """
         queue = self.__queue_filed_result(self._asterisk.get_queue_by_uuid(uuid))
+        return queue
+    
+    async def get_queue_by_uuid_for_card(self, uuid: str):
+        """  """
+        queue = self.__queue_filed_result(self._asterisk.get_queue_by_uuid(uuid))
         hyperscript = await self._get_hyperscript_params()
         strategy = StrategyParams()
         queue.base_info.strategy = strategy[queue.base_info.strategy].name

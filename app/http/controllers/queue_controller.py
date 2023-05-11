@@ -96,6 +96,24 @@ async def get_queue_by_uuid(
         result = err[1]
     return result
 
+@route.get("/card/{uuid}")
+@inject
+async def get_queue_by_uuid_card(
+    uuid: str,
+    response: Response,
+    queue_service: QueueService = Depends(Provide[Container.queue_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
+):
+    """ С заменой параметров """
+    result = {}
+    try:
+        return await queue_service.get_queue_by_uuid_for_card(uuid)
+    except Exception as exception:
+        err = default_error(exception, source='Queue')
+        response.status_code = err[0]
+        result = err[1]
+    return result
+
 @route.get("/state/{uuid}")
 @inject
 async def get_queue_state(
