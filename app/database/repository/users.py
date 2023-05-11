@@ -23,6 +23,7 @@ from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
 from typing import Callable
 from uuid import uuid4
+from app.http.services.event_channel.publisher import Params
 from .asterisk import Asterisk, StatusHistoryParams
 
 
@@ -431,13 +432,17 @@ class UserRepository(SuperRepository):
                 "event": "CONNECTION",
                 "status": "",
                 "status_at": str(user.status_at),
-                "startTimeKC": str(time_kc),
-                "color": ""
+                "start_time_kc": str(time_kc),
+                "color": "",
+                "user_id": user_id,
+                "status_id": 0,
             }
             if user.status is not None:
+                result['status_id'] = user.status.id
                 result['status'] = user.status.alter_name
                 result['color'] = user.status.color
-            return result
+                result['status_code'] = user.status.code
+            return Params(**result)
         
     def user_recover(self, user_id: int):
             user = self.get_by_id(user_id)
