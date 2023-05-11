@@ -29,21 +29,12 @@ class ProjectExceptionsImport:
         NotFoundError, ExpectationError, ExistsException, AccessException,
         RequestException, BadFileException, UserNotFoundError
     )
-    from jwt.exceptions import InvalidSignatureError, ExpiredSignatureError
-    from jwt import DecodeError
-    from sqlalchemy.exc import (
-        IntegrityError, DataError
-    )
-    from websockets.exceptions import ConnectionClosedError
-    from json.decoder import JSONDecodeError
-    from app.http.services.jwt_managment import TokenInBlackList, TokenNotFound
 
 
 def default_error(error: Exception, source=None):
     project_exceptions = ProjectExceptionsImport()
     exceptions_array: tuple = tuple(project_exceptions.__dir__())
     name_err = error.__repr__().split('(')[0]
-    # TODO: вынести из функции все конкретные проверки 
     if name_err == "IntegrityError":
         try:
             detail = re.findall(r'((\d*\,?)(\".*[^\)]))', error.args[0])
@@ -57,10 +48,6 @@ def default_error(error: Exception, source=None):
         detail = re.findall(r"\"(.*)\"", error.args[0])
         description = "Данные не корректны"
         return status.HTTP_400_BAD_REQUEST, message(source, message=detail, description='')
-    if name_err == "ConnectionClosedError":
-        err_message = "WebSocket connection was closed without receiving and sending a close frame."
-        description = "Данные не обнаружены"
-        return message(source, message=err_message, description=description)
     if name_err == "JSONDecodeError":
         err_message = "JSON data is not formatted."
         description = "Данные не обнаружены"
