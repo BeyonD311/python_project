@@ -53,8 +53,6 @@ class UserService:
                 department_headers.append(person)
             else:
                 department_employees.append(person)
-            # TODO
-            # (department_headers if person[5] == True else department_employees).append(person)
         if not department_headers and not department_employees:
             description = f"Не найдено пользователей в департаменте с ID={department_id}."
             raise NotFoundError(
@@ -157,11 +155,11 @@ class UserService:
                     result['start_time_kc'] = convert_second_to_time(time_kc.seconds)
                     result['status_at'] = convert_second_to_time(status_at.seconds)
                     await websocket.send_json(result)
-            except ConnectionClosedOK as e:
-                log.error(str(e))
+            except ConnectionClosedOK as connection_close:
+                log.error(str(connection_close))
                 return
-            except WebSocketDisconnect as e:
-                log.error(str(e))
+            except WebSocketDisconnect as web_socket_disconnect:
+                log.error(str(web_socket_disconnect))
                 return
 
     async def add_status_to_redis(self):
@@ -173,6 +171,7 @@ class UserService:
             await self._redis.redis.set(f"status:code:{status.code}", json.dumps(params))
 
     async def set_status_by_aster(self, uuid: str, status_code: str, status_time: str, incoming_call: str = None, call_id: str = None):
+        """ Используется для установки статуса из астериска """
         status_time = datetime.datetime.fromtimestamp(status_time).__format__("%Y-%m-%d %H:%M:%S.%f")
         status = await self._redis.redis.get(f"status:code:{status_code}")
         user_id = await self._redis.redis.get(f"user:uuid:{uuid}")

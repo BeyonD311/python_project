@@ -19,7 +19,8 @@ class Jwt:
             payload={
                 "azp": self.user.id,
                 "iat": timestamp,
-                "exp": timestamp + (self.hour * 24)
+                "exp": timestamp + (self.hour * 24),
+                "type": "r"
             },
             key=os.getenv("SECRET_KEY"),
             algorithm="HS256"
@@ -34,6 +35,7 @@ class Jwt:
                 "azp": self.user.id,
                 "iat": timestamp,
                 "exp": timestamp + (10 * 60),
+                "type": "a"
             },
             key=os.getenv("SECRET_KEY"),
             algorithm="HS256"

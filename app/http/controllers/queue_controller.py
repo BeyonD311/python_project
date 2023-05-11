@@ -89,7 +89,7 @@ async def get_queue_by_uuid(
 ):
     result = {}
     try:
-        return queue_service.get_queue_by_uuid(uuid)
+        return await queue_service.get_queue_by_uuid(uuid)
     except Exception as exception:
         err = default_error(exception, source='Queue')
         response.status_code = err[0]

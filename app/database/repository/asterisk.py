@@ -74,6 +74,10 @@ class Asterisk():
             session.close()
             return  query
 
+    def get_call_by_id(self, call_id: str):
+        with self.session_asterisk() as session:
+            query = session.execute(f"select ")
+
     def get_by_user_phone(self, phone: str):
         with self.session_asterisk() as session:
             query = session.execute(f" select id from ps_auths where id = '{phone}' ").first()

@@ -52,6 +52,8 @@ class Auth(BaseHTTPMiddleware):
             if decode_jwt['azp'] == 0:
                 return await call_next(request)
             user = get_user(decode_jwt['azp'])
+            request.state.current_user_id = decode_jwt['azp']
+            request.state.token = token
             method = request.method.lower()
             if str(request.get("path")) in user_path_exception:
                 return await call_next(request)

@@ -50,11 +50,9 @@ async def logout(
         DecodeError
     """
     try:
-        access_token = get_token(request)
-        decode = token_decode(access_token)
-        user = user_service.by_id(decode['azp'])
+        user = user_service.by_id(request.state.current_user_id)
         jwt_gen = await jwt_m.generate(user)
-        await user_service.set_status(decode['azp'], 15)
+        await user_service.set_status(request.state.current_user_id, 15)
         async with jwt_gen as j:
             tokens = await j.get_tokens() 
             await j.add_to_black_list(tokens['access_token'])
@@ -89,13 +87,11 @@ async def refresh(
         ExpiredSignatureError
     """
     try:
-        access_token = get_token(request)
-        decode = token_decode(access_token)
-        user = user_service.by_id(decode['azp'])
+        user = user_service.by_id(request.state.current_user_id)
         jwt_gen = await jwt_m.generate(user)
         async with jwt_gen as j:
             await j.get_tokens()
-            await j.add_to_black_list(access_token)
+            await j.add_to_black_list(request.state.token)
             tokens = await j.tokens()
             result = tokens
     except Exception as e:
