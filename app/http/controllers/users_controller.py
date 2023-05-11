@@ -225,6 +225,11 @@ async def get_user_id(
         NotFoundError
     """
     try:
+        if id == 0:
+            response.status_code = status.HTTP_404_NOT_FOUND
+            return {
+                "description": f"Не найден пользователь ID={0}"
+            }
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
             slef_id = request.state.for_user['user'].id
             if slef_id != id:
