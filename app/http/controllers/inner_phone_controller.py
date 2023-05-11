@@ -126,10 +126,8 @@ def get_settings_by_user_id(
     Exceptions:
         NotFoundError
     """
-    token = request.headers.get('authorization').replace("Bearer ", "")
-    decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
     try:
-        result = inner_phone_service.get_settings_by_user_id(user_id=decode['azp'])
+        result = inner_phone_service.get_settings_by_user_id(user_id=request.state.current_user_id)
     except Exception as e:
         err = default_error(e, source='InnerPhone')
         response.status_code = err[0]

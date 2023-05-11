@@ -275,7 +275,7 @@ class UserRepository(SuperRepository):
             session.commit()
         status_id = current.status_id
         status_code = current.status.code
-        if current.status_id == 10:
+        if current.status_id == 10 or current.status_id == 17:
             if self.session_asterisk.check_device_status(current.uuid):
                 status_id = 10
                 status_code = "ready"
@@ -285,7 +285,7 @@ class UserRepository(SuperRepository):
         if status_code.find("break") != -1:
             status_id = 9
         if current.status_id != 18:
-            self.session_asterisk.save_sip_status_asterisk(status_id, current.uuid)  # TODO rename to 'save_status_asterisk'
+            self.session_asterisk.save_sip_status_asterisk(status_id, current.uuid)
             inner_phone: InnerPhone
             for inner_phone in current.inner_phone:
                 if inner_phone.is_default and inner_phone.is_registration:

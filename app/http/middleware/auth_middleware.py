@@ -49,6 +49,8 @@ class Auth(BaseHTTPMiddleware):
             async with generate as g:
                 await g.check_black_list(token)
             decode_jwt = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
+            request.state.current_user_id = decode_jwt['azp']
+            request.state.token = token
             if decode_jwt['azp'] == 0:
                 return await call_next(request)
             user = get_user(decode_jwt['azp'])

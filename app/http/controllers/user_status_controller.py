@@ -6,6 +6,7 @@ from dependency_injector.wiring import Provide, inject
 from app.http.services.users import UserService
 from app.http.services.helpers import default_error
 from app.http.services.logger_default import get_logger
+from app.http.services.sutecrm import send_call_post
 
 log = get_logger("status_controller.log")
 
@@ -52,11 +53,10 @@ async def update_status(
     """ Если параметр '**user_id** == null' то будет изменен статус текущего пользователя """
     try:
         if user_id == None:
-            token = request.headers.get('authorization').replace("Bearer ", "")
-            decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
-            user_id = decode['azp']
-        
+            user_id = request.state.current_user_id
         await user_service.set_status(user_id, status_id=status_id, call_id=call_id)
+        if call_id is not None:
+            await send_call_post(call_id, "1003")
         result = {
             "message": "set status",
             "description": f"Новый статус ID={status_id} установлен."
@@ -72,7 +72,7 @@ async def update_status(
 @route.get("/asterisk",  include_in_schema=True)
 @inject
 async def update_status_asterisk(
-    status_cod: str, 
+    status_code: str, 
     uuid: str,
     status_time: int,
     response: Response, 
@@ -86,8 +86,13 @@ async def update_status_asterisk(
         **status_time** - время установки статуса 
     """
     try:
-        log.debug(f"Input params: status_cod = {status_cod}; uuid = {uuid}; status_time = {status_time}; caller = {caller}")
-        await user_service.set_status_by_aster(uuid=uuid, status_code=status_cod, status_time=status_time, incoming_call=caller, call_id=call_id)
+        log.debug(f"Input params: status_cod = {status_code}; uuid = {uuid}; status_time = {status_time}; caller = {caller}")
+        await user_service.set_status_by_aster(uuid=uuid, status_code=status_code, status_time=status_time, incoming_call=caller, call_id=call_id)
+        if status_code == 'precall':
+            if call_id is not None:
+                await send_call_post(call_id, caller)
+        if call_id is not None:
+            await send_call_post(call_id, "1003")
         result = {
             "message": "set status"
         }

@@ -184,10 +184,14 @@ class QueueService:
         if len(statuses) > 0:
             statuses = [QueueStatus(**uuid) for uuid in statuses]
         return statuses
-    def get_queue_by_uuid(self, uuid: str):
+    async def get_queue_by_uuid(self, uuid: str):
         """ Получение очереди по uuid4 """
-        queue = self._asterisk.get_queue_by_uuid(uuid)
-        return self.__queue_filed_result(queue)
+        queue = self.__queue_filed_result(self._asterisk.get_queue_by_uuid(uuid))
+        hyperscript = await self._get_hyperscript_params()
+        strategy = StrategyParams()
+        queue.base_info.strategy = strategy[queue.base_info.strategy].name
+        queue.script_ivr.hyperscript = hyperscript[queue.script_ivr.hyperscript]['name']
+        return queue
     
     async def get_default_params(self):
         strategy = StrategyParams().getparams()
@@ -195,17 +199,12 @@ class QueueService:
             strategy=strategy
         )
         del strategy
-        request = requests.get(self.hyperscript_uri+"/api/forms/")
-        if request.status_code != 200:
-            raise HTTPException({
-                "message": "hyper script fail request",
-                "description": "Запрос не 200"
-            })
-        for hyperscript_params in request.json()['data']:
-            hyperscript_params['id'] = hyperscript_params['uuid_form']
-            covertParams = HyperScriptParams(**hyperscript_params)
-            params.hyperscript.append(covertParams)
-            
+        hyperscript = await self._get_hyperscript_params()
+        params.hyperscript = list(hyperscript.values())
+        params.ivrs = await self._get_ivrs_params()
+        return params
+
+    async def _get_ivrs_params(self):
         ivrs = await self._redis.redis.get("ivrs")
         if ivrs is None:
             self.ssh.exec("ls /etc/asterisk/queue_ivrs/")
@@ -214,9 +213,29 @@ class QueueService:
         else:
             ivrs = json.loads(ivrs)
         ivrs = [IvrParams(id=ivr,name=ivr) for ivr in ivrs]
-        params.ivrs = ivrs
-        return params
 
+        return ivrs
+
+    async def _get_hyperscript_params(self)->dict:
+        """ Получение данных из hyperscript """
+        await self._redis.redis.delete("hyperscript_params")
+        result = await self._redis.redis.get("hyperscript_params")
+        if result is None:
+            request = requests.get(self.hyperscript_uri+"/api/forms/")
+            result = {}
+            if request.status_code != 200:
+                raise HTTPException({
+                    "message": "hyper script fail request",
+                    "description": "Запрос не 200"
+                })
+            for hyperscript_params in request.json()['data']:
+                hyperscript_params['id'] = hyperscript_params['uuid_form']
+                covertParams = HyperScriptParams(**hyperscript_params)
+                result[covertParams.id] = covertParams.dict(by_alias=True)
+            await self._redis.redis.set("hyperscript_params", json.dumps(result), ex=1200)
+        else:
+            result = json.loads(result)
+        return result
     def __queue_filed_result(self, queue) -> ResponseQueue:
         """ Преобразование ответа """
         res = {

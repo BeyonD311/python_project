@@ -170,10 +170,8 @@ async def current_user(
     Exceptions:
         NotFoundError
     """
-    token = request.headers.get('authorization').replace("Bearer ", "")
-    decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
     try:
-        result = user_service.get_user_by_id(decode['azp'])
+        result = user_service.get_user_by_id(request.state.current_user_id)
     except Exception as e:
         err = default_error(e, source='Users')
         response.status_code = err[0]
@@ -193,10 +191,8 @@ async def current_password(
         AccessException
     """
     try:
-        token = request.headers.get('authorization').replace("Bearer ", "")
         if user_id == None:  # NOTE: Get own password
-            decode = jwt.decode(token, os.getenv('SECRET_KEY'), algorithms=["HS256"])
-            user_id = decode['azp']
+            user_id = request.state.current_user_id
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
             request.state.for_user['user']
             if request.state.for_user['user'].id != user_id:
