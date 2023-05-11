@@ -97,3 +97,8 @@ class Auth(BaseHTTPMiddleware):
                 },
                 status_code=status.HTTP_401_UNAUTHORIZED
             )
+        except (
+            jwt.exceptions.ExpiredSignatureError, TokenInBlackList,
+            jwt.DecodeError
+        ) as e:
+            raise

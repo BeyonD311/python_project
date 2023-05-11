@@ -29,13 +29,6 @@ class ProjectExceptionsImport:
         NotFoundError, ExpectationError, ExistsException, AccessException,
         RequestException, BadFileException, UserNotFoundError
     )
-    from jwt.exceptions import InvalidSignatureError, ExpiredSignatureError
-    from jwt import DecodeError
-    from sqlalchemy.exc import (
-        IntegrityError, DataError
-    )
-    from websockets.exceptions import ConnectionClosedError
-    from json.decoder import JSONDecodeError
     from app.http.services.jwt_managment import TokenInBlackList, TokenNotFound
 
 
@@ -43,7 +36,10 @@ def default_error(error: Exception, source=None):
     project_exceptions = ProjectExceptionsImport()
     exceptions_array: tuple = tuple(project_exceptions.__dir__())
     name_err = error.__repr__().split('(')[0]
-    # TODO: вынести из функции все конкретные проверки 
+    if name_err == "ConnectionClosedError":
+        detail = "WS connection terminated with an error."
+        description = "Данные не обнаружены"
+        return message(message=detail, description=description)
     if name_err == "IntegrityError":
         try:
             detail = re.findall(r'((\d*\,?)(\".*[^\)]))', error.args[0])
