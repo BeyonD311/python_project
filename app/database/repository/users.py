@@ -112,7 +112,6 @@ class UserRepository(SuperRepository):
             return query
 
     def get_users_department(self, department_id):
-        self.find_department_by_id(department_id, session=session)
         with self.session_factory() as session:
             result = session.query(self.base_model.id,
                                   self.base_model.inner_phone,
