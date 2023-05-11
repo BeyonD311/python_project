@@ -8,6 +8,7 @@ from app.http.services.users import UserLoginParams, UserService
 from app.http.services.jwt_managment import JwtManagement, TokenNotFound
 from app.database import NotFoundError
 from app.kernel import Container
+from app.http.services.jwt_managment import TokenInBlackList
 
 route = APIRouter(
     prefix="/auth",
@@ -50,9 +51,11 @@ async def logout(
         DecodeError
     """
     try:
-        user = user_service.by_id(request.state.current_user_id)
+        access_token = get_token(request)
+        decode = token_decode(access_token)
+        user = user_service.by_id(decode['azp'])
         jwt_gen = await jwt_m.generate(user)
-        await user_service.set_status(request.state.current_user_id, 15)
+        await user_service.set_status(decode['azp'], 15)
         async with jwt_gen as j:
             tokens = await j.get_tokens() 
             await j.add_to_black_list(tokens['access_token'])
@@ -62,6 +65,24 @@ async def logout(
                 "message": "logout success",
                 "description": "Успешный выход из системы"
             }
+    except jwt.exceptions.ExpiredSignatureError as e:
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return {
+            "message": str(e),  # "Token Signature expired"
+            "description": "Срок действия токена истек. Войдите в систему еще раз."
+        }
+    except TokenInBlackList as e:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {
+            "message": str(e),  # "Token blacklisted. Login again."
+            "description": "Токен заблокирован. Войдите в систему еще раз."
+        }
+    except jwt.DecodeError as e:
+        response.status_code=status.HTTP_401_UNAUTHORIZED
+        return {
+            "message": str(e),  # "Invaid JWT generated."
+            "description": "Сгенерирован недопустимый JWT."
+        }
     except Exception as e:
         err = default_error(e, source='UserAuth')
         response.status_code = err[0]
@@ -87,13 +108,34 @@ async def refresh(
         ExpiredSignatureError
     """
     try:
-        user = user_service.by_id(request.state.current_user_id)
+        access_token = get_token(request)
+        decode = token_decode(access_token)
+        user = user_service.by_id(decode['azp'])
         jwt_gen = await jwt_m.generate(user)
+        print(request.state.__dict__)
         async with jwt_gen as j:
             await j.get_tokens()
-            await j.add_to_black_list(request.state.token)
+            await j.add_to_black_list(access_token)
             tokens = await j.tokens()
             result = tokens
+    except jwt.exceptions.ExpiredSignatureError as e:
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return {
+            "message": str(e),  # "Token Signature expired"
+            "description": "Срок действия токена истек. Войдите в систему еще раз."
+        }
+    except TokenInBlackList as e:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {
+            "message": str(e),  # "Token blacklisted. Login again."
+            "description": "Токен заблокирован. Войдите в систему еще раз."
+        }
+    except jwt.DecodeError as e:
+        response.status_code=status.HTTP_401_UNAUTHORIZED
+        return {
+            "message": str(e),  # "Invaid JWT generated."
+            "description": "Сгенерирован недопустимый JWT."
+        }
     except Exception as e:
         err = default_error(e, source='UserAuth')
         response.status_code = err[0]
