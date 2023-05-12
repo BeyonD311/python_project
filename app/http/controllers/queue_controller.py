@@ -37,22 +37,29 @@ async def get_queue(
         ** order_direction - направление сортировки(asc,desc)
         ** filter - должен содержать строку типа name=Название очереди;status=1,2;type=Название;
     """
-    split_filter = filter.split(";")
-    params = GetAllQueue(
-        page=page,
-        size=size,
-        order_field=order_field,
-        order_direction=order_direction
-    )
-    for filter in split_filter:
-        split_params = filter.split("=")
+    try:
+        split_filter = filter.split(";")
+        params = GetAllQueue(
+            page=page,
+            size=size,
+            order_field=order_field,
+            order_direction=order_direction
+        )
+        split_params = []
+        for filter in split_filter:
+            split_params.append(filter.split("="))
         if len(split_params) > 1:
-            params.filter.append(Filter(
-                field=split_params[0].upper(),
-                value=split_params[1]
-            ))
-
-    return queue_service.get_queues(params)
+            for params_filter in split_params:
+                params.filter.append(Filter(
+                    field=params_filter[0].upper(),
+                    value=params_filter[1]
+                ))
+        result = queue_service.get_queues(params)
+    except Exception as exception:
+        err = default_error(exception, source='Queue')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.get("/params")
 @inject

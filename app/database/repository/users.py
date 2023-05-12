@@ -315,7 +315,7 @@ class UserRepository(SuperRepository):
             event_type="set_status"
             session.execute(sql)
             session.commit()
-        self.session_asterisk.save_status_asterisk(status_id,uuid)
+        self.session_asterisk.save_sip_status_asterisk(status_id,uuid)
         self.session_asterisk.execute()
 
     def add(self, user_model: User) -> any:

@@ -18,7 +18,7 @@ class RolesServices():
             for module_id, module in role['access'].items():
                 access.parse(module['method_access'])
                 res.append({
-                    'id': module['id'],
+                    'id': module_id,
                     'name': module['name'],
                     'module_name': module['module_name'],
                     'access': access.get_access_model()

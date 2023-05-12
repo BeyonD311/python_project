@@ -72,7 +72,7 @@ async def logout(
             "description": "Срок действия токена истек. Войдите в систему еще раз."
         }
     except TokenInBlackList as e:
-        response.status_code = status.HTTP_400_BAD_REQUEST
+        response.status_code = status.HTTP_401_UNAUTHORIZED
         return {
             "message": str(e),  # "Token blacklisted. Login again."
             "description": "Токен заблокирован. Войдите в систему еще раз."
@@ -112,7 +112,6 @@ async def refresh(
         decode = token_decode(access_token)
         user = user_service.by_id(decode['azp'])
         jwt_gen = await jwt_m.generate(user)
-        print(request.state.__dict__)
         async with jwt_gen as j:
             await j.get_tokens()
             await j.add_to_black_list(access_token)
@@ -125,7 +124,7 @@ async def refresh(
             "description": "Срок действия токена истек. Войдите в систему еще раз."
         }
     except TokenInBlackList as e:
-        response.status_code = status.HTTP_400_BAD_REQUEST
+        response.status_code = status.HTTP_401_UNAUTHORIZED
         return {
             "message": str(e),  # "Token blacklisted. Login again."
             "description": "Токен заблокирован. Войдите в систему еще раз."
@@ -156,7 +155,7 @@ async def login(
     password = sha256(params.password.encode()).hexdigest()
     try:
         user = user_service.find_user_by_login(params.login)
-        await user_service.set_status(user.id, 15)
+        await user_service.set_status(user.id, 18)
     except NotFoundError:
         response.status_code = status.HTTP_401_UNAUTHORIZED
         return {

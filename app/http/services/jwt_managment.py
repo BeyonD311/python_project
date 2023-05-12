@@ -63,7 +63,7 @@ class Jwt:
         }
         await self.redis.set(f"user:token:{self.user.id}", json.dumps(tokens))
         return tokens
-        
+    
     async def get_tokens(self):
         tokens = await self.redis.get(f"user:token:{self.user.id}")
         if tokens is None:
