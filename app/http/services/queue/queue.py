@@ -2,7 +2,7 @@ import requests, json
 from http.client import HTTPException
 from collections.abc import Iterable
 from app.http.services.logger_default import get_logger
-from app.database import PositionRepository
+from app.database import PositionRepository, ExistsException
 from app.http.services.helpers import RedisInstance
 from app.database.repository import Asterisk
 from app.http.services.ssh import Ssh
@@ -11,7 +11,8 @@ from .queue_base_model import (
     ResponseQueueMembers, OuterLines, 
     RequestQueueMembers, GetAllQueue, 
     ConstField, HyperScriptParams,
-    DefaultParams, User, OuterLines, IvrParams, QueueStatus
+    DefaultParams, User, OuterLines, IvrParams, QueueStatus,
+    Filter
     )
 
 __all__ = ['QueueService']
@@ -109,6 +110,18 @@ class QueueService:
     def get_queues(self, params: GetAllQueue):
         if params.page == 0:
             params.page = 1
+        filter_user = list(filter(lambda elem: elem.field.lower() == 'user_id', params.filter))
+        if len(filter_user) > 0:
+            users = self._repository.get_operators_by_id(filter_user[0].value.split(','))
+            filter_member = Filter(field="membername", value="")
+            for user in users:
+                filter_member.value = filter_member.value + str(user.inner_phone)
+            if filter_member.value != "":
+                params.filter.append(filter_member)
+            else:
+                raise ExistsException(
+                    entity_message = "queue not found", entity_description = "Очередь для пользователей не найдена"
+                )
         queues = self._asterisk.get_all_queue(params)
         return queues
 
@@ -195,7 +208,10 @@ class QueueService:
         hyperscript = await self._get_hyperscript_params()
         strategy = StrategyParams()
         queue.base_info.strategy = strategy[queue.base_info.strategy].name
-        queue.script_ivr.hyperscript = hyperscript[queue.script_ivr.hyperscript]['name']
+        if queue.script_ivr.hyperscript in hyperscript:
+            queue.script_ivr.hyperscript = hyperscript[queue.script_ivr.hyperscript]['name']
+        else:
+            queue.script_ivr.hyperscript = "Скрипт не обнаружен"
         return queue
     
     async def get_default_params(self):

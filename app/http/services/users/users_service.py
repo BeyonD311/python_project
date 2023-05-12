@@ -175,6 +175,9 @@ class UserService:
         status_time = datetime.datetime.fromtimestamp(status_time).__format__("%Y-%m-%d %H:%M:%S.%f")
         status = await self._redis.redis.get(f"status:code:{status_code}")
         user_id = await self._redis.redis.get(f"user:uuid:{uuid}")
+        description = f"Пользователь не найден с {uuid}"
+        if user_id is None:
+            raise NotFoundError(entity_message="user not found", entity_description=description)
         user_id = json.loads(user_id)
         if status is None:
             description = f"Не найден статус"
@@ -199,6 +202,9 @@ class UserService:
             incoming_call=incoming_call,
             call_id=call_id
         )
+        print('----------------------------')
+        print(params)
+        print('----------------------------')
         await self.__set_status_redis(params)
         if params.status_code == "precall":
             await asyncio.sleep(0.1)

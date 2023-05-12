@@ -4,18 +4,19 @@ from uuid import uuid4
 from contextlib import AbstractContextManager
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from .super import NotFoundError, Pagination
+from .super import NotFoundError, Pagination, ExistsException
 
 from app.http.services.helpers import convert_time_to_second
 
-__all__ = ["Asterisk", "AsteriskParams", "ExceptionAsterisk", "StatusHistoryParams"]
+__all__ = ["Asterisk", "AsteriskParams", "ExistsException", "StatusHistoryParams"]
 
 
 # Параметры для фильтрации выборки
 queueFilter = {
     "NAME": lambda n: "and LOWER(name) like '%"+n+"%'",
     "STATUS": lambda status: "and status in (" + status + ")",
-    "TYPE": lambda type: "and LOWER(type) = '" + str(type).lower() + "'"
+    "TYPE": lambda type: "and LOWER(type) = '" + str(type).lower() + "'",
+    "MEMBERNAME": lambda membername: "and membername in ("+membername+")"
 }
     
 
@@ -181,21 +182,45 @@ class Asterisk():
 
     def get_all_queue(self, params):
         """ Получениые всех очередей """
-        select_queue = "select q.uuid as `uuid`, name, queue_enabled as status, type_queue as type, count(qm.member_position) as operators"\
+        # Основная часть запроса для фитров
+        select_queue = "select q.uuid as `uuid`, name, queue_enabled as status, type_queue as type "\
                         " from queues q"\
-                        " left join queue_members qm on qm.queue_name = q.name and qm.member_position = 2"\
-                        f" GROUP by q.name HAVING 1=1"
+                        " left join queue_members qm on qm.queue_name = q.name "\
+                        " left join ps_auths pa on qm.membername = pa.id and pa.status not in (14, 9, 15) "\
+                        f" where 1=1 and q.uuid is not NULL "
         select_queue = select_queue + " " + self.__filter_queues(params.filter)
         select_queue_limit = select_queue + f" limit {(params.page - 1) * params.size}, {params.size}"
-        select_wrapper = f"select * from ({select_queue_limit}) temp_queue "
+        # часть запроса для подсчета
+        select_wrapper = f"select uuid, name, status, type, operators, online from ({select_queue_limit}) temp_queue "\
+            '''
+                left join (
+                    select  
+                    queues.name queue_name, count(qm.membername) operators, 
+                    sum(if(pa.status, 1, 0)) as online 
+                    from  queues
+                    join queue_members qm on qm.queue_name = queues.name
+                    left join ps_auths pa on pa.id = qm.membername and pa.status not in (14, 9, 15)
+                    GROUP by queues.name
+                ) counter on counter.queue_name = temp_queue.name
+                group by temp_queue.name 
+            '''
+            
         select_wrapper = select_wrapper + " " + self.__order_by_queues(params.order_field, params.order_direction)
         with self.session_asterisk() as session:
             query = session.execute(select_wrapper).all()
-            total = self.__total(session=session, select_queue=select_queue)
+            res = []
+            for queue in query:
+                queue = dict(queue)
+                if queue['operators'] == None:
+                    queue['operators'] = 0
+                if queue['online'] == None:
+                    queue['online'] = 0
+                res.append(queue)
+            total = self.__total(session=session, select_queue=select_wrapper)
             session.close()
             total_page=ceil(total / params.size)
             return {
-                "data": query,
+                "data": res,
                 "pagination": Pagination(
                     page=params.page,
                     total_page=total_page,
@@ -237,9 +262,10 @@ class Asterisk():
         res = ""
         for filter in params:
             try:
-                action = queueFilter[filter.field]
+                action = queueFilter[filter.field.upper()]
                 res = res + " " + action(filter.value)
             except Exception:
+                print(filter.field)
                 continue
         return res
 
@@ -300,7 +326,7 @@ class Asterisk():
             query = session.execute(query).first()
             if query == None:
                 description: str = "Очередь не найдена"
-                raise ExceptionAsterisk(item=uuid, entity_description=description)
+                raise ExistsException(item=uuid, entity_description=description)
             session.close()
             return query
     def get_status_queue(self, uuids: list):
@@ -358,8 +384,3 @@ class Asterisk():
                 query = self.stack_multiple_query.pop()
                 session.execute(query)
             session.commit()
-
-class ExceptionAsterisk(NotFoundError):
-    entity_name: str
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)

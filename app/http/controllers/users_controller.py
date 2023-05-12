@@ -26,6 +26,12 @@ route = APIRouter(
     responses={404: {"description": "Not found"}} 
 )
 
+@route.get("/fill", include_in_schema=False)
+@inject
+async def fill_redis(
+    user_service: UserService = Depends(Provide[Container.user_service]),
+):
+    await user_service.all()
 
 @route.get("/departments")
 @inject

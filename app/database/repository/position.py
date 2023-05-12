@@ -41,6 +41,27 @@ class PositionRepository(SuperRepository):
                     ))
                 del new_user
             return result
+    
+    def get_operators_by_id(self, id: list[int])->list:
+        with self.session_factory() as session:
+            users = session.query(UserModel).filter(UserModel.id.in_(id)).all()
+            result = []
+            for user in users:
+                new_user = {
+                    "fio": user.fio
+                }
+                for inner_phone in user.inner_phone:
+                    if inner_phone.is_registration and inner_phone.is_default:
+                        new_user['inner_phone'] = inner_phone.phone_number
+                if 'inner_phone' in new_user:
+                    result.append(User(
+                        fio=new_user['fio'],
+                        inner_phone=new_user['inner_phone'],
+                        position=2
+                    ))
+                del new_user
+            return result
+
     def get_users_by_position(self, id: int, fio: str) -> PositionModel:
         with self.session_factory() as session:
             users = session.query(UserModel).filter(UserModel.position_id == id)
