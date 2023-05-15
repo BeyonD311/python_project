@@ -36,7 +36,11 @@ async def get_queue(
     описание полей \n
         ** order_field - поле сортировки (name, status, type, operators)
         ** order_direction - направление сортировки(asc,desc)
-        ** filter - должен содержать строку типа name=Название очереди;status=1,2;type=Название;
+        ** filter - должен содержать строку типа \n
+                    name=Название очереди;
+                    status=1,2;
+                    type=Название;
+                    user_id=(int) для фильтрации очередей по user_id
     """
     try:
         split_filter = filter.split(";")
@@ -48,8 +52,10 @@ async def get_queue(
         )
         split_params = []
         for filter in split_filter:
-            split_params.append(filter.split("="))
-        if len(split_params) > 1:
+            filter = filter.split("=")
+            if len(filter) > 1:
+                split_params.append(filter)
+        if len(split_params) > 0:
             for params_filter in split_params:
                 params.filter.append(Filter(
                     field=params_filter[0].upper(),
