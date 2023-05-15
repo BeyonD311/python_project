@@ -139,6 +139,7 @@ class Container(containers.DeclarativeContainer):
         QueueService,
         position_repository = position_repository,
         asterisk = asterisk_repository,
+        inner_phones = inner_phone_repository,
         redis = redis_instance,
         hyperscript_uri = config.hyperscript.uri,
         ssh=ssh

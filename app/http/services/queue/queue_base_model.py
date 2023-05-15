@@ -21,7 +21,9 @@ __all__ = [
     "User",
     "OuterLines",
     "IvrParams",
-    "QueueStatus"
+    "QueueStatus",
+    "QueueSelected",
+    "AddPhonesToTheQueue"
 ]
 
 
@@ -121,11 +123,18 @@ class OuterLines(BaseModel):
     name: str
     is_selected: bool = False
 
+class QueueSelected(OuterLines):
+    uuid: str
+
 class ResponseQueueMembers(BaseModel):
     operators: list[User] = []
     supervisors: list[User] = []
     numbers_lines: list[OuterLines] = []
     
+
+class AddPhonesToTheQueue(BaseModel):
+    user_id: int
+    queues_uuid: list[str] = []
 
 class RequestQueueMembers(BaseModel):
     operators: list[int] = Field([1005,1002])

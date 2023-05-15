@@ -6,6 +6,7 @@ from app.http.services.queue import RequestQueue
 from app.http.services.queue import RequestQueueMembers
 from app.http.services.queue import GetAllQueue
 from app.http.services.queue import Filter
+from app.http.services.queue import AddPhonesToTheQueue
 from dependency_injector.wiring import inject
 from dependency_injector.wiring import Provide
 from app.kernel.container import Container
@@ -69,6 +70,40 @@ async def get_queue_params(
 ):
     params = await queue_service.get_default_params()
     return params
+
+@route.get("/resources/queues")
+@inject
+async def get_resources_queues_by_user_id(
+    id: int, 
+    queue_service: QueueService = Depends(Provide[Container.queue_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security),
+    queue_name: str = "",
+):
+    """ 
+        Получение очередей для оператора по id пользователя \n
+        **name_queue - для фильтрации по имени очереди
+    """
+    return queue_service.get_queues_is_selected(id, queue_name)
+
+@route.post("/resources/queues")
+@inject
+async def add_phones_to_the_queue(
+    params: AddPhonesToTheQueue,
+    response: Response,
+    queue_service: QueueService = Depends(Provide[Container.queue_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security),
+):
+    """ 
+        Добавить внутренние номера к очереди
+    """
+    result = {}
+    try:
+        result = queue_service.add_phones_to_the_queue(params)
+    except Exception as exception:
+        err = default_error(exception, source='Queue')
+        response.status_code = err[0]
+        result = err[1]
+    return result
 
 @route.get("/resources")
 @inject

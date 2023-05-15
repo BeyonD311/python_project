@@ -1,4 +1,4 @@
-import os, jwt, typing, datetime
+import os, jwt, typing
 from hashlib import sha256
 from fastapi import APIRouter, Depends, status, Response, Request
 from fastapi.security import HTTPBearer
