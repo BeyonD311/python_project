@@ -139,7 +139,6 @@ class Asterisk():
             if uuid is not None:    
                 sql = sql + f" where uuid != '{uuid}' "
             sql = sql + " )"
-            print(sql)
             query = session.execute(sql).all()
             session.commit()
             session.close()
@@ -179,6 +178,29 @@ class Asterisk():
     def delete_queue(self, uuid: str):
         query = f"delete from queues where uuid = '{uuid}'"
         self.stack_multiple_query.append(query)
+
+    def get_queues(self, queue_name: str = None, phones: list = None):
+        select_queue = '''
+            select q.name name, q.uuid uuid from queue_members qm 
+            join queues q on q.name = qm.queue_name 
+            where 1=1
+        '''
+        if queue_name is not None:
+            select_queue = select_queue + f" and LOWER(q.name) like '%{queue_name}%'"
+        if phones is not None:
+            phones = ",".join(phones)
+            select_queue = select_queue + f" and membername in ({phones})"
+        select_queue = select_queue + " group by q.name "
+        with self.session_asterisk() as asterisk:
+            query = asterisk.execute(select_queue).all()
+            return query
+
+    def delete_phones(self, phones: list):
+        phones_concat = ",".join(phones)
+        delete_queue_members = f"delete from queue_members where membername in ({phones_concat})"
+        delete_queue_phones = f"delete from queue_phones where phone in ({phones_concat})"
+        self.stack_multiple_query.append(delete_queue_members)
+        self.stack_multiple_query.append(delete_queue_phones)
 
     def get_all_queue(self, params):
         """ Получениые всех очередей """
@@ -317,6 +339,12 @@ class Asterisk():
         res['uuid'] = str(uuid)
         return res
 
+    def get_queues_by_uuid(self, uuids: list):
+        uuids = ",".join(uuids)
+        select = f"select name from queues where uuid in ({uuids})"
+        with self.session_asterisk() as session:
+            query = session.execute(select).all()
+            return query
 
     def get_queue_by_uuid(self, uuid: str):
         queue_fields = self.__params_queue_fields()
@@ -382,5 +410,8 @@ class Asterisk():
         with self.session_asterisk() as session:
             while self.stack_multiple_query != []:
                 query = self.stack_multiple_query.pop()
+                print('-----------------------')
+                print(query)
+                print('-----------------------')
                 session.execute(query)
             session.commit()

@@ -2,7 +2,7 @@ import requests, json
 from http.client import HTTPException
 from collections.abc import Iterable
 from app.http.services.logger_default import get_logger
-from app.database import PositionRepository, ExistsException
+from app.database import PositionRepository, ExistsException, InnerPhones
 from app.http.services.helpers import RedisInstance
 from app.database.repository import Asterisk
 from app.http.services.ssh import Ssh
@@ -12,7 +12,7 @@ from .queue_base_model import (
     RequestQueueMembers, GetAllQueue, 
     ConstField, HyperScriptParams,
     DefaultParams, User, OuterLines, IvrParams, QueueStatus,
-    Filter
+    Filter, QueueSelected, AddPhonesToTheQueue
     )
 
 __all__ = ['QueueService']
@@ -89,11 +89,17 @@ class StrategyParams(QueueConstParams):
     }
 
 class QueueService:
-    def __init__(self, position_repository: PositionRepository, asterisk: Asterisk, redis: RedisInstance, hyperscript_uri: str, ssh: Ssh) -> None:
+    def __init__(self, 
+                position_repository: PositionRepository, 
+                asterisk: Asterisk, redis: RedisInstance, 
+                inner_phones: InnerPhones,
+                hyperscript_uri: str, 
+                ssh: Ssh) -> None:
         self._repository: PositionRepository = position_repository
         self._asterisk: Asterisk = asterisk
         self._redis: RedisInstance = redis
         self.hyperscript_uri = hyperscript_uri
+        self._inner_phones: InnerPhones = inner_phones
         self.ssh: Ssh = ssh
 
     def get_state_queue(self, uuid):
@@ -124,6 +130,46 @@ class QueueService:
                 )
         queues = self._asterisk.get_all_queue(params)
         return queues
+
+    def get_queues_is_selected(self, id: str = None, queue_name: str = None):
+        result = []
+        phones = [str(phone.phone_number) for phone in self._inner_phones.get_by_user_id_all(id)]
+        selected_queues = {}
+        if len(phones) > 0:
+            selected_queues = {queue.uuid: True for queue in self._asterisk.get_queues(phones=phones)}
+        queues = self._asterisk.get_queues(queue_name=queue_name)
+        for queue in queues:
+            if queue.uuid in selected_queues:
+                result.append(QueueSelected(
+                    name=queue.name,
+                    is_selected=True,
+                    uuid=queue.uuid
+                ))
+            else:
+                result.append(QueueSelected(
+                    name=queue.name,
+                    uuid=queue.uuid
+                ))
+        return result
+
+    def add_phones_to_the_queue(self, params: AddPhonesToTheQueue):
+        all_params = self._inner_phones.get_by_user_id_all(params.user_id)
+        phones = [str(phone.phone_number) for phone in all_params]
+        if len(phones) == 0:
+            raise ExistsException(entity_message="Not found inner phones", entity_description="Не найдены внутренние номера телефонов")
+        position = all_params[0].users.position_id
+        if len(params.queues_uuid) > 0: 
+            params.queues_uuid = [f"'{uuid}'" for uuid in params.queues_uuid]
+            queues = self._asterisk.get_queues_by_uuid(params.queues_uuid)
+            users = [User(inner_phone=phone.phone_number, position=position) for phone in all_params]
+            for queue in queues:
+                self._asterisk.add_queue_member(params=users,name_queue=queue.name)
+        self._asterisk.delete_phones(phones)
+        self._asterisk.execute()
+        return {
+            "message": "update success",
+            "description": "Номера успешно добавлены в очередь"
+        }
 
     def get_queue_members(self, uuid, fio_operators: str, fio_supervisor: str) -> ResponseQueueMembers:
         """ Получение занесенных участников очереди """

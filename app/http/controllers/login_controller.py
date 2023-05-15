@@ -1,4 +1,4 @@
-import os, jwt, typing, datetime
+import os, jwt, typing
 from hashlib import sha256
 from fastapi import APIRouter, Depends, status, Response, Request
 from fastapi.security import HTTPBearer
@@ -156,6 +156,7 @@ async def login(
     try:
         user = user_service.find_user_by_login(params.login)
         await user_service.set_status(user.id, 18)
+        await user_service.set_status(user.id, 15)
     except NotFoundError:
         response.status_code = status.HTTP_401_UNAUTHORIZED
         return {

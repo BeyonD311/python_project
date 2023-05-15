@@ -49,12 +49,24 @@ class InnerPhones(SuperRepository):
         pass
 
     def get_by_user_id(self, user_id: int):
+        """ Для получения всех телефонов по id если """
+        # TODO добавить issues для исправления(убрать исключение на уровне запроса)
         with self.session_factory() as session:
             query = session.query(self.base_model).filter(self.base_model.user_id == user_id).all()
             if not query:
                 description = f"Не найден пользователь с ID={user_id}."
                 raise NotFoundError(entity_id=user_id, entity_description=description)
             return query
+    
+    def get_by_user_id_all(self, user_id: int):
+        """ Для получения всех телефонов по id если нет то пустой массив """
+        with self.session_factory() as session:
+            query = session.query(self.base_model).filter(self.base_model.user_id == user_id).all()
+            result = []
+            for phone in query:
+                phone.users
+                result.append(phone)
+            return result
         
     def create_or_update(self, params) -> list:
         count_default = 0
