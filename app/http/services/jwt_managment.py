@@ -27,15 +27,16 @@ class Jwt:
         )
         return refresh_token
 
-    async def _access_token(self):
+    async def _access_token(self, refresh_token: str):
         timestamp = round(datetime.now().timestamp())
         self.timestamp = timestamp + (10 * 60)
         access_token = jwt.encode(
             payload={
                 "azp": self.user.id,
                 "iat": timestamp,
-                "exp": timestamp + (10 * 60),
-                "type": "a"
+                "exp": self.timestamp,
+                "type": "a",
+                "rf": refresh_token
             },
             key=os.getenv("SECRET_KEY"),
             algorithm="HS256"
@@ -54,8 +55,8 @@ class Jwt:
             raise TokenInBlackList
 
     async def tokens(self):
-        access = await self._access_token()
         refresh = await self._refresh_token()
+        access = await self._access_token(refresh_token=refresh.decode('utf-8'))
         tokens = {
             "access_token": access.decode('utf-8'),
             "refresh_token": refresh.decode('utf-8'),
