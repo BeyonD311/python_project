@@ -57,10 +57,12 @@ async def logout(
         jwt_gen = await jwt_m.generate(user)
         await user_service.set_status(decode['azp'], 15)
         async with jwt_gen as j:
-            tokens = await j.get_tokens() 
-            await j.add_to_black_list(tokens['access_token'])
-            await j.add_to_black_list(tokens['refresh_token'])
-            await j.remove_token()
+            if decode['type'] == "a" and 'rf' in decode:
+                await j.add_to_black_list(decode['rf'])
+            await j.check_black_list(access_token)
+            await j.add_to_black_list(access_token)    
+            # await j.add_to_black_list(tokens['access_token'])
+            # await j.add_to_black_list(tokens['refresh_token'])
             result = {
                 "message": "logout success",
                 "description": "Успешный выход из системы"
