@@ -6,7 +6,7 @@ from dependency_injector.wiring import Provide, inject
 from app.http.services.helpers import default_error
 from app.http.services.users import UserLoginParams, UserService
 from app.http.services.jwt_managment import JwtManagement, TokenNotFound
-from app.database import NotFoundError
+from app.database import NotFoundError, UnauthorizedException
 from app.kernel import Container
 from app.http.services.jwt_managment import TokenInBlackList
 
@@ -82,6 +82,12 @@ async def logout(
         return {
             "message": str(e),  # "Invaid JWT generated."
             "description": "Сгенерирован недопустимый JWT."
+        }
+    except UnauthorizedException as e:
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return {
+            "message": str(e),  # "Token blacklisted. Login again."
+            "description": "Вы не авторизованы"
         }
     except Exception as e:
         err = default_error(e, source='UserAuth')

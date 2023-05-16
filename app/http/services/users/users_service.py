@@ -248,9 +248,13 @@ class UserService:
             status = await self._redis.redis.get(f"status.user.{user_id}")
             if status is not None:
                 status_params = json.loads(status)
+                try:
+                    status_code = status_params['status_code']
+                except Exception:
+                    status_code = status_params['status_cod']
                 result[user_id] = UserStatus(
                     status_id=status_params['status_id'],
-                    status_cod=status_params['status_code'],
+                    status_cod=status_code,
                     status_at=str(status_params['status_at']),
                     status=status_params['status'],
                     color=status_params['color'],
