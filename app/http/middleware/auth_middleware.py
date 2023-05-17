@@ -18,10 +18,12 @@ def get_user(id, user_repository = Depends(Provide[Container.user_repository])):
 
 @inject
 def get_user_permission(user, user_repository = Depends(Provide[Container.user_repository])):
-    result = user_repository.get_user_permission(user.id)
-    if result == {}:
-        result = user_repository.get_role_permission(user.id)
-    return result
+    user_roles:dict = user_repository.get_user_permission(user.id)
+    roles = user_repository.get_role_permission(user.id)
+    for key, user_role in user_roles.items():
+        if key in roles:
+            roles[key] = user_role
+    return roles
 
 @inject
 async def redis(jwt_m: JwtManagement = Depends(Provide[Container.jwt])):
@@ -58,7 +60,10 @@ class Auth(BaseHTTPMiddleware):
             if str(request.get("path")) in user_path_exception:
                 return await call_next(request)
             access = Access(method=method)
-            for role_id, value in get_user_permission(user).items():
+            perms = get_user_permission(user).items()
+            print(perms)
+            for role_id, value in perms:
+                
                 if path[1] in value['permissions']:
                     map_access = value['permissions'][path[1]]
                     access.set_access_model(map_access['method_access'])
