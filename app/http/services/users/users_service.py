@@ -43,7 +43,20 @@ class UserService:
 
     def get_user_position(self):
         return self._repository.get_users_position()
-    
+    def get_call_by_call_id(self, call_id):
+        """ Формирование данных из таблицы cdr для отправки в sutecrm """
+        total_billsec = 0
+        disposition = ""
+        cdrs = self._repository.get_call_by_call_id(call_id=call_id)
+        for cdr in cdrs:
+            if disposition == "":
+                disposition = cdr.disposition
+            total_billsec = total_billsec + cdr.billsec
+        
+        return {
+            "billsec": total_billsec,
+            "disposition": disposition
+        }
     def get_departments_employees(self, department_id):
         department_headers, department_employees = [], []
         users = self._repository.get_users_department(department_id=department_id)
@@ -325,9 +338,15 @@ class UserService:
         for role_id, params in user_permission.items():
             if len(params['permissions']) == 0:
                 continue
-            result_roles[role_id] = params
-            result_roles[role_id]['permissions'] = list(params['permissions'].values())
+            res = {
+                "id": params['id'],
+                "name": params['role_name'],
+                "access": []
+            }
+            result_roles[role_id] = res
+            result_roles[role_id]['access'] = list(params['permissions'].values())
         userDetail.roles = list(result_roles.values())
+        print(userDetail.roles)
         del status_user
         return userDetail
 
