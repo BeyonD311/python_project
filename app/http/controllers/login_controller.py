@@ -121,8 +121,10 @@ async def refresh(
         user = user_service.by_id(decode['azp'])
         jwt_gen = await jwt_m.generate(user)
         async with jwt_gen as j:
-            await j.get_tokens()
-            await j.add_to_black_list(access_token)
+            if decode['type'] == "a" and 'rf' in decode:
+                await j.add_to_black_list(decode['rf'])
+            await j.check_black_list(access_token)
+            await j.add_to_black_list(access_token) 
             tokens = await j.tokens()
             result = tokens
     except jwt.exceptions.ExpiredSignatureError as e:
