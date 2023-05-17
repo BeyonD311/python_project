@@ -344,9 +344,17 @@ class UserService:
                 "access": []
             }
             result_roles[role_id] = res
-            result_roles[role_id]['access'] = list(params['permissions'].values())
+            permission = []
+            for p in params['permissions'].values():
+                permission.append({
+                    'name': p['name'],
+                    'access': p['method_access'],
+                    "module_name": p['module_name'],
+                    "module_id": p['module_id']
+                })
+                print(p)
+            result_roles[role_id]['access'] = permission
         userDetail.roles = list(result_roles.values())
-        print(userDetail.roles)
         del status_user
         return userDetail
 
