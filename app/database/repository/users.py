@@ -273,7 +273,7 @@ class UserRepository(SuperRepository):
             session.commit()
         status_id = current.status_id
         status_code = current.status.code
-        if current.status_id == 10 or current.status_id == 17:
+        if current.status_id == 10 or current.status_id == 17 or current.status_id == 15:
             if self.session_asterisk.check_device_status(current.uuid):
                 status_id = 10
                 status_code = "ready"
@@ -472,7 +472,7 @@ class UserRepository(SuperRepository):
             if params.filter.fio != None:
                 query = query.filter(self.base_model.fio.ilike(f'%{params.filter.fio}%'))
             if params.filter.status != None:
-                query = query.filter(self.base_model.status_id.in_(params.filter.status))
+                query = query.filter(self.base_model.employment_status == params.filter.status)
             if params.filter.login != None:
                 query = query.filter(self.base_model.login == params.filter.login)
             if params.filter.department != None:
