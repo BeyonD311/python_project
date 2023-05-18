@@ -54,7 +54,7 @@ class InnerPhones(SuperRepository):
         with self.session_factory() as session:
             query = session.query(self.base_model).filter(self.base_model.user_id == user_id).all()
             if not query:
-                description = f"Не найден пользователь с ID={user_id}."
+                description = f"У пользователя не обнаруженны номера с ID={user_id}."
                 raise NotFoundError(entity_id=user_id, entity_description=description)
             return query
     
@@ -83,10 +83,10 @@ class InnerPhones(SuperRepository):
                         phones_asterisk.append(str(phone.phone_number))
                 session.delete(phone)
             session.commit()
+            phones = self.session_asterisk.get_phones_by_user_uuid(user.uuid)
+            for phone in phones:
+                phones_asterisk.append(str(phone.id))
             if len(phones_asterisk) > 0:
-                phones = self.session_asterisk.get_phones_by_user_uuid(user.uuid)
-                for phone in phones:
-                    phones_asterisk.append(str(phone.id))
                 self.session_asterisk.delete_sip_user_asterisk(",".join(phones_asterisk))
                 self.session_asterisk.execute()
             for inner_phone in params.inner_phones:
