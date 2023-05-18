@@ -17,7 +17,7 @@ class RolesRepository(SuperRepository):
     def get_by_id(self, id: int):
         with self.session_factory() as session:
             modules = self.__permission_default(session)
-            current_role = self.__query_all(session).filter(RolesModel.id == id).all()
+            current_role = self.__query_all(session).filter(RolesModel.id == id).order_by(RolesModel.id.asc()).all()
             if current_role == []:
                 description = f"Не найдена роль с ID={id}"
                 raise NotFoundError(entity_id=id, entity_description=description)

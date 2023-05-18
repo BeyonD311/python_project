@@ -55,8 +55,8 @@ async def update_status(
         if user_id == None:
             user_id = request.state.current_user_id
         await user_service.set_status(user_id, status_id=status_id, call_id=call_id)
-        if call_id is not None:
-            await send_call_post(call_id, "1003")
+        # if call_id is not None:
+        #     await send_call_post(call_id, "1003")
         result = {
             "message": "set status",
             "description": f"Новый статус ID={status_id} установлен."
