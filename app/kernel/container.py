@@ -11,6 +11,7 @@ from app.http.services.departments import DepartmentsService
 from app.http.services.images_service import ImagesServices
 from app.http.services.inner_phone import InnerPhoneServices
 from app.http.services.schedule.schedule import ScheduleService
+from app.http.services.analytics.analytics import AnalyticsService
 from app.http.services.queue import QueueService
 from .redis import init_redis_pool
 from app.http.services.jwt_managment import JwtManagement
@@ -143,4 +144,14 @@ class Container(containers.DeclarativeContainer):
         redis = redis_instance,
         hyperscript_uri = config.hyperscript.uri,
         ssh=ssh
+    )
+
+    analytics_repository = providers.Factory(
+        DatabaseCustom.AnalyticsRepository,
+        session_asterisk=asterisk.provided.session
+    )
+
+    analytics_service = providers.Factory(
+        AnalyticsService,
+        analytics_repository=analytics_repository
     )
