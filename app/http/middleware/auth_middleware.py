@@ -1,5 +1,6 @@
 import jwt
 import os
+import re
 from dependency_injector.wiring import inject, Provide
 from fastapi import status, responses, Depends
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -10,7 +11,7 @@ from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
 path_exception = ("auth", "docs", "openapi.json", "images")
 path_exception_aster = ("/users/status/asterisk", "/users/status/test", "/users/status/fill", "/users/fill")
 
-user_path_exception = ("/users/status", "/users/current", "users/departments", "/queue")
+user_path_exception = ("/users/status", "/users/current", "users/departments", "/queue", "/users/inner_phone/settings")
 
 @inject
 def get_user(id, user_repository = Depends(Provide[Container.user_repository])):
@@ -57,13 +58,13 @@ class Auth(BaseHTTPMiddleware):
                 return await call_next(request)
             user = get_user(decode_jwt['azp'])
             method = request.method.lower()
-            if str(request.get("path")) in user_path_exception:
-                return await call_next(request)
+            for upx in user_path_exception:
+                upx = upx.replace('/', '\/')
+                if re.search(r''+upx, str(request.get("path"))) is not None:
+                    return await call_next(request)
             access = Access(method=method)
             perms = get_user_permission(user).items()
-            print(perms)
-            for role_id, value in perms:
-                
+            for _, value in perms:
                 if path[1] in value['permissions']:
                     map_access = value['permissions'][path[1]]
                     access.set_access_model(map_access['method_access'])
