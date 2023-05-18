@@ -104,7 +104,7 @@ class InnerPhones(SuperRepository):
                     incoming_calls = inner_phone.incoming_calls,
                     comment = inner_phone.comment
                 )
-                if inner_phone.id != 0:
+                if inner_phone.id > 0:
                     phone.id = inner_phone.id
                 if inner_phone.is_registration and inner_phone.is_default and count_default == 0:
                     check_phone = self.session_asterisk.get_by_user_phone(inner_phone.phone_number)

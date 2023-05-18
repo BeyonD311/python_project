@@ -52,8 +52,6 @@ def add_inner_phone(
         ExistsException
     """
     try:
-        if params.inner_phones.id <= 0:
-            params.inner_phones.id = 0
         inner_phone_service.add(params)  # TODO: создаёт запись с одинаковым внут.номером
         result =  {
             "message": "Phone added",
@@ -78,8 +76,6 @@ def update_inner_phone(
         NotFoundError
     """
     try:
-        if params.inner_phones.id <= 0:
-            params.inner_phones.id = 0
         inner_phone_service.update(params)
         result = {
             "message": "Phone has been updated.",
