@@ -449,10 +449,22 @@ class UserRepository(SuperRepository):
                 "status_id": 0,
             }
             if user.status is not None:
-                result['status_id'] = user.status.id
-                result['status'] = user.status.alter_name
-                result['color'] = user.status.color
-                result['status_code'] = user.status.code
+                if user.status_id == 10 or user.status_id == 17 or user.status_id == 15:
+                    if self.session_asterisk.check_device_status(user.uuid):
+                        result['status_id'] = 10
+                        result['status_code'] = "ready"
+                        result['color'] = "success"
+                        result['status'] = 'Доступен'
+                    else:
+                        result['status_id'] = 14
+                        result['status_code'] = "unavailable"
+                        result['status'] = 'Оффлайн'
+                        result['color'] = 'disabled'
+                else:
+                    result['status_id'] = user.status.id
+                    result['status'] = user.status.alter_name
+                    result['color'] = user.status.color
+                    result['status_code'] = user.status.code
             return Params(**result)
         
     def user_recover(self, user_id: int):
