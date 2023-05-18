@@ -11,13 +11,13 @@ class RolesRepository(SuperRepository):
     def get_all(self):
         with self.session_factory() as session:
             modules = self.__permission_default(session)
-            roles = self.__query_all(session).order_by(RolesModel.id.asc())
+            roles = self.__query_all(session).order_by(RolesModel.id.asc()).order_by(RolesPermission.module_id.asc())
             return self.__parse_role(modules=modules,roles=roles)
 
     def get_by_id(self, id: int):
         with self.session_factory() as session:
             modules = self.__permission_default(session)
-            current_role = self.__query_all(session).filter(RolesModel.id == id).order_by(RolesModel.id.asc()).all()
+            current_role = self.__query_all(session).filter(RolesModel.id == id).order_by(RolesModel.id.asc()).order_by(RolesPermission.module_id.asc()).all()
             if current_role == []:
                 description = f"Не найдена роль с ID={id}"
                 raise NotFoundError(entity_id=id, entity_description=description)
