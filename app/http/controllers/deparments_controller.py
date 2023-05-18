@@ -3,7 +3,7 @@ from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
 from app.http.services.helpers import parse_params_num
 from app.kernel import Container
-from app.http.services.departments import DepartmentsService, DepartmentParams
+from app.http.services.departments import DepartmentsService, DepartmentParams, Filter
 from app.http.services.helpers import default_error
 
 route = APIRouter(
@@ -40,6 +40,7 @@ def get_departments(
             "status": status,
             "phone": phone
         }
+        filter_params = Filter(**filter_params)
         result = department_service.get_employees(filter_params)
     except Exception as e:
         err = default_error(e, source='Departments')

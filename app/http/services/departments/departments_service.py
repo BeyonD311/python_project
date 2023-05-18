@@ -3,15 +3,8 @@ from app.database import DepartmentsModel
 from app.http.services.users import UserStatus
 from app.http.services.users import UsersResponse
 from pydantic import BaseModel
+from pydantic import validator
 from typing import List
-
-class EmployeeResponse(BaseModel):
-    id: int
-    fio: str
-    is_head_of_department: bool
-    status:str
-    status_at: str
-    inner_phone: str
 
 class DepartmentParams(BaseModel):
     name: str
@@ -24,6 +17,23 @@ class Node(BaseModel):
     id: int
     child: List = []
 
+class Filter(BaseModel):
+    fio: str = None
+    department: list = None
+    position: list = None
+    status: list = None
+    phone: str = None
+
+    @validator('fio')
+    def check_fio(cls, v):
+        if v is "":
+            return None
+        return v
+    @validator('phone')
+    def check_phone(cls, v):
+        if v is "":
+            return None
+        return v
 class DepartmentResponse(BaseModel):
     nodes: Node
 
@@ -48,8 +58,8 @@ class DepartmentsService:
         return filter
 
 
-    def get_employees(self, filter: dict):
-        items = self._repository.get_employees(self.__check_filter(filter))
+    def get_employees(self, filter: Filter):
+        items = self._repository.get_employees(filter.dict())
         res = []
         for i, item in items.items():
             if item.parent_department_id != None: 
