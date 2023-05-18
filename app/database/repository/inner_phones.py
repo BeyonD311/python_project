@@ -54,7 +54,7 @@ class InnerPhones(SuperRepository):
         with self.session_factory() as session:
             query = session.query(self.base_model).filter(self.base_model.user_id == user_id).all()
             if not query:
-                description = f"Не найден пользователь с ID={user_id}."
+                description = f"У пользователя не обнаруженны номера с ID={user_id}."
                 raise NotFoundError(entity_id=user_id, entity_description=description)
             return query
     
@@ -86,35 +86,35 @@ class InnerPhones(SuperRepository):
             phones = self.session_asterisk.get_phones_by_user_uuid(user.uuid)
             for phone in phones:
                 phones_asterisk.append(str(phone.id))
-            self.session_asterisk.delete_sip_user_asterisk(",".join(phones_asterisk))
-            self.session_asterisk.execute()
             if len(phones_asterisk) > 0:
-                for inner_phone in params.inner_phones:
-                    phone = InnerPhone(
-                        uuid = uuid4(),
-                        user_id = user.id,
-                        phone_number = inner_phone.phone_number,
-                        description = inner_phone.description,
-                        is_registration = inner_phone.is_registration,
-                        is_default = inner_phone.is_default,
-                        login = inner_phone.login,
-                        password = inner_phone.password,
-                        duration_call = inner_phone.duration_call,
-                        duration_conversation = inner_phone.duration_conversation,
-                        incoming_calls = inner_phone.incoming_calls,
-                        comment = inner_phone.comment
-                    )
-                    if inner_phone.id != 0:
-                        phone.id = inner_phone.id
-                    if inner_phone.is_registration and inner_phone.is_default and count_default == 0:
-                        check_phone = self.session_asterisk.get_by_user_phone(inner_phone.phone_number)
-                        if check_phone is not None:
-                            description = f"Уже существует номер: {inner_phone.phone_number}"
-                            raise ExistsException(item=inner_phone.phone_number, entity_description=description)
-                        param = self.__params(user, phone, inner_phone)
-                        self.session_asterisk.insert_sip_user_asterisk(param)
-                        count_default += 1
-                    session.add(phone)
+                self.session_asterisk.delete_sip_user_asterisk(",".join(phones_asterisk))
+                self.session_asterisk.execute()
+            for inner_phone in params.inner_phones:
+                phone = InnerPhone(
+                    uuid = uuid4(),
+                    user_id = user.id,
+                    phone_number = inner_phone.phone_number,
+                    description = inner_phone.description,
+                    is_registration = inner_phone.is_registration,
+                    is_default = inner_phone.is_default,
+                    login = inner_phone.login,
+                    password = inner_phone.password,
+                    duration_call = inner_phone.duration_call,
+                    duration_conversation = inner_phone.duration_conversation,
+                    incoming_calls = inner_phone.incoming_calls,
+                    comment = inner_phone.comment
+                )
+                if inner_phone.id != 0:
+                    phone.id = inner_phone.id
+                if inner_phone.is_registration and inner_phone.is_default and count_default == 0:
+                    check_phone = self.session_asterisk.get_by_user_phone(inner_phone.phone_number)
+                    if check_phone is not None:
+                        description = f"Уже существует номер: {inner_phone.phone_number}"
+                        raise ExistsException(item=inner_phone.phone_number, entity_description=description)
+                    param = self.__params(user, phone, inner_phone)
+                    self.session_asterisk.insert_sip_user_asterisk(param)
+                    count_default += 1
+                session.add(phone)
             # TODO: номер добавляется при наличии такого же
             # TODO: "is_registration": true/false -> удаляет запись
             # TODO: "is_default": true/false -> удаляет запись
