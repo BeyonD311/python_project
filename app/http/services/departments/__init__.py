@@ -1,3 +1,3 @@
-from .departments_service import DepartmentsService, DepartmentParams
+from .departments_service import DepartmentsService, DepartmentParams, Filter
 
-__all__ = ['DepartmentsService', 'DepartmentParams']
+__all__ = ['DepartmentsService', 'DepartmentParams', 'Filter']
