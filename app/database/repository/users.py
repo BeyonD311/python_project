@@ -273,13 +273,32 @@ class UserRepository(SuperRepository):
             session.commit()
         status_id = current.status_id
         status_code = current.status.code
+        status = {
+            "uuid": current.uuid,
+            "id": current.id,
+            "status_id": current.status_id,
+            "status_at": str(current.status_at),
+            "status": current.status.name,
+            "code": current.status.behavior,
+            "color": current.status.color,
+            "alter_name": current.status.alter_name,
+        }
+        behavior = current.status.behavior
+        status_id = current.status_id
         if current.status_id == 10 or current.status_id == 17 or current.status_id == 15:
             if self.session_asterisk.check_device_status(current.uuid):
+                status['status_id'] = 10
                 status_id = 10
-                status_code = "ready"
+                status['code'] = "ready"
+                status['color'] = "success"
+                status['alter_name'] = 'Доступен'
+                behavior = "ready"
             else:
+                status['status_id'] = 14
                 status_id = 14
-                status_code = "unavailable"
+                status['code'] = "unavailable"
+                status['alter_name'] = 'Оффлайн'
+                behavior = "offline"
         if status_code.find("break") != -1:
             status_id = 9
         if current.status_id != 18:
@@ -293,20 +312,12 @@ class UserRepository(SuperRepository):
                         user_c=str(inner_phone.phone_number),
                         source=0,
                         destination=0,
-                        code=status_code
+                        code=status['code']
                     )
                     self.session_asterisk.set_status_history(status_history_params)
         self.session_asterisk.execute()
-        return {
-            "uuid": current.uuid,
-            "id": current.id,
-            "status_id": current.status_id,
-            "status_at": str(current.status_at),
-            "status": current.status.name,
-            "code": current.status.behavior,
-            "color": current.status.color,
-            "alter_name": current.status.alter_name,
-        }
+        status['code'] = behavior
+        return status
     
     async def set_status_by_uuid(self, uuid, status_id, status_time):
         global event_type
