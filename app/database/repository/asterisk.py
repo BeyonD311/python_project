@@ -211,9 +211,8 @@ class Asterisk():
                         " left join ps_auths pa on qm.membername = pa.id and pa.status not in (14, 9, 15) "\
                         f" where 1=1 and q.uuid is not NULL "
         select_queue = select_queue + " " + self.__filter_queues(params.filter)
-        select_queue_limit = select_queue + f" limit {(params.page - 1) * params.size}, {params.size}"
         # часть запроса для подсчета
-        select_wrapper = f"select uuid, name, status, type, operators, online from ({select_queue_limit}) temp_queue "\
+        select_wrapper = f"select uuid, name, status, type, operators, online from ({select_queue}) temp_queue "\
             '''
                 left join (
                     select  
@@ -229,7 +228,7 @@ class Asterisk():
             
         select_wrapper = select_wrapper + " " + self.__order_by_queues(params.order_field, params.order_direction)
         with self.session_asterisk() as session:
-            query = session.execute(select_wrapper).all()
+            query = session.execute(select_wrapper + f" limit {(params.page - 1) * params.size}, {params.size}").all()
             res = []
             for queue in query:
                 queue = dict(queue)
