@@ -169,11 +169,13 @@ class UserService:
                     result['status_at'] = convert_second_to_time(status_at.seconds)
                     await websocket.send_json(result)
             except ConnectionClosedOK as connection_close:
-                log.error(str(connection_close))
+                log.error(connection_close, stack_info=True)
                 return
             except WebSocketDisconnect as web_socket_disconnect:
-                log.error(str(web_socket_disconnect))
+                log.error(web_socket_disconnect, stack_info=True)
                 return
+            except Exception as exception:
+                log.error(exception, stack_info=True)
 
     async def add_status_to_redis(self):
         statuses = self._repository.get_all_status()
