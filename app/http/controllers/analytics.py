@@ -1,13 +1,13 @@
-from enum import Enum
-
+from datetime import date
 from fastapi import APIRouter, Depends, status, Response
 from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
-from app.http.services.helpers import parse_params_num
 from app.database import NotFoundError
+from app.http.services.users import UserService
 from app.kernel import Container
 from app.http.services.analytics.analytics import AnalyticsService
-from app.http.services.analytics.analytics_base_model import DisposalAnalytic, AntAnalytic, CallAnalytic
+from app.http.services.analytics.analytics_base_model import DisposalAnalytic, AntAnalytic, CallAnalytic, \
+    CalculationMethod
 
 security = HTTPBearer()
 
@@ -18,52 +18,77 @@ route = APIRouter(
 )
 
 
-@route.post('/disposal')
+@route.get('/disposal')
 @inject
 async def get_disposal_analytic(
-        data: DisposalAnalytic,
+        user_id: int,
+        beginning: date,
+        ending: date,
         response: Response,
+        calculation_method: CalculationMethod = CalculationMethod.SUM,
         analytics_service: AnalyticsService = Depends(Provide[Container.analytics_service]),
+        user_service: UserService = Depends(Provide[Container.user_service]),
         HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
     try:
-        result = analytics_service.get_disposal_analytic(data=data)
+        uuid = user_service.get_uuid_by_id(user_id=user_id)
+        disposal_data = DisposalAnalytic(uuid=uuid, beginning=beginning, ending=ending,
+                                         calculation_method=calculation_method)
+        result = analytics_service.get_disposal_analytic(disposal_data=disposal_data)
         return result
     except ValueError as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {
             'message': str(e)
         }
+    except NotFoundError as e:
+        return {
+            'message': str(e)
+        }
 
 
-@route.post('/ant')
+@route.get('/ant')
 @inject
 async def get_ant_analytic(
-        data: AntAnalytic,
+        user_id: int,
+        beginning: date,
+        ending: date,
         response: Response,
+        calculation_method: CalculationMethod = CalculationMethod.SUM,
         analytics_service: AnalyticsService = Depends(Provide[Container.analytics_service]),
+        user_service: UserService = Depends(Provide[Container.user_service]),
         HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
     try:
-        result = analytics_service.get_ant_analytic(data=data)
+        uuid = user_service.get_uuid_by_id(user_id=user_id)
+        ant_data = AntAnalytic(uuid=uuid, beginning=beginning, ending=ending,
+                               calculation_method=calculation_method)
+        result = analytics_service.get_ant_analytic(data=ant_data)
         return result
     except ValueError as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {
             'message': str(e)
         }
+    except NotFoundError as e:
+        return {
+            'message': str(e)
+        }
 
 
-@route.post('/call')
+@route.get('/call')
 @inject
 async def get_call_analytic(
-        data: CallAnalytic,
+        beginning: date,
+        ending: date,
+        number: str,
         response: Response,
         analytics_service: AnalyticsService = Depends(Provide[Container.analytics_service]),
         HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
     try:
-        result = analytics_service.get_call_analytic(data=data)
+        call_data = CallAnalytic(beginning=beginning, ending=ending, number=number)
+        result = analytics_service.get_call_analytic(data=call_data)
         return result
     except ValueError as e:
         response.status_code = status.HTTP_400_BAD_REQUEST

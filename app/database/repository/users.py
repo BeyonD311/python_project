@@ -34,10 +34,10 @@ from .asterisk import Asterisk, StatusHistoryParams
 """
 event_type = None
 
-class UserRepository(SuperRepository): 
+class UserRepository(SuperRepository):
     base_model = User
-    
-    def __init__(self, 
+
+    def __init__(self,
                  session_factory: Callable[..., AbstractContextManager[Session]],
                  session_asterisk: Callable[..., AbstractContextManager[Session]] = None
                  ) -> None:
@@ -112,6 +112,14 @@ class UserRepository(SuperRepository):
                 query = []
             return query
 
+    def get_uuid_by_id(self, user_id: int):
+        with self.session_factory() as session:
+            result = session.query(self.base_model.uuid).filter(self.base_model.id == user_id).first()
+            if result:
+                return result[0]
+            else:
+                raise NotFoundError(entity_id=user_id, entity_description=f'Пользователь с id={user_id} не найден')
+
     def get_users_department(self, department_id):
         with self.session_factory() as session:
             result = session.query(self.base_model.id,
@@ -150,7 +158,7 @@ class UserRepository(SuperRepository):
                     f"where up.user_id = {user_id} and r.is_active = true "
             result = session.execute(sql).all()
             return self.__parse_permission_query(result, only_access)
-    
+
     def get_role_permission(self, user_id: int, only_access: bool = True):
         with self.session_factory() as session:
             sql = f"select p.name, p.module_name, rp.method_access, r.id role_id, r.name as role_name, rp.module_id from roles_permission rp "\
@@ -160,7 +168,7 @@ class UserRepository(SuperRepository):
                     f"where ur.user_id = {user_id} and r.is_active = true "
             result = session.execute(sql).all()
             return self.__parse_permission_query(result, only_access)
-            
+
 
     def __parse_permission_query(self, params, only_access: bool = True):
         result = {}
@@ -182,7 +190,7 @@ class UserRepository(SuperRepository):
                 "module_id": item[5],
             }
         return result
-            
+
 
     def update(self, id, user_model: User):
         with self.session_factory() as session:
@@ -244,7 +252,7 @@ class UserRepository(SuperRepository):
                         module_id = permission.module_id
                     )
                     session.add(p)
-            session.commit()  
+            session.commit()
 
 
     def get_all_status(self):
@@ -318,7 +326,7 @@ class UserRepository(SuperRepository):
         self.session_asterisk.execute()
         status['code'] = behavior
         return status
-    
+
     async def set_status_by_uuid(self, uuid, status_id, status_time):
         global event_type
         with self.session_factory() as session:
@@ -366,7 +374,7 @@ class UserRepository(SuperRepository):
         roles = session.query(RolesModel).filter(RolesModel.id.in_(user.roles_id)).all()
         groups = session.query(GroupsModel).filter(GroupsModel.id.in_(user.group_id)).all()
         if user.is_operator and user.skills_id != []:
-            skills = session.query(SkillsModel).filter(SkillsModel.id.in_(user.skills_id)).all() 
+            skills = session.query(SkillsModel).filter(SkillsModel.id.in_(user.skills_id)).all()
             [user.skills.append(s) for s in skills]
         elif user.is_operator == False:
             user.skills = []
@@ -375,7 +383,7 @@ class UserRepository(SuperRepository):
         session.add(user)
         session.commit()
         return user
-    
+
     def update_password(self, params: dict):
         with self.session_factory() as session:
             user: User = session.query(self.base_model).filter(self.base_model.id == params['id']).first()
@@ -398,11 +406,11 @@ class UserRepository(SuperRepository):
                 phones.append(f"{phone.phone_number}")
                 session.delete(phone)
             session.add(user)
-            session.commit()   
+            session.commit()
         if phones != []:
             self.session_asterisk.delete_asterisk(",".join(phones))
             self.session_asterisk.execute()
-    
+
     def user_dismiss(self, user_id: int, date_dismissal_at: datetime = None):
         try:
             user = self.get_by_id(user_id)
@@ -466,7 +474,7 @@ class UserRepository(SuperRepository):
                     result['color'] = user.status.color
                     result['status_code'] = user.status.code
             return Params(**result)
-        
+
     def user_recover(self, user_id: int):
             user = self.get_by_id(user_id)
             global event_type
@@ -488,8 +496,8 @@ class UserRepository(SuperRepository):
             user.date_dismissal_at = None
             user.is_active = True
             session.add(user)
-            session.commit()       
-    
+            session.commit()
+
     def __filter(self, query: Query, params) -> Query:
         if params.filter is not None:
             if params.filter.fio != None:
@@ -516,7 +524,7 @@ class UserRepository(SuperRepository):
             field = PositionModel.name
         elif params.sort_field == "department":
             field = DepartmentsModel.name
-        
+
         if params.sort_dir.lower() == "desc":
             field = field.desc()
         else:
@@ -527,7 +535,7 @@ class UserRepository(SuperRepository):
 # Обновляем таблицу status_history после обновления статусов
 @event.listens_for(User, 'after_update')
 def after_update_handler(mapper, connection: Connection, target: User):
-    
+
     def update(time_at = None):
         query_update = f"update status_history set is_active = false"
         if time_at is not None:

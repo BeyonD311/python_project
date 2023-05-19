@@ -11,7 +11,7 @@ class AnalyticsRepository:
 
     def get_disposal_analytic(self, uuid: str, calculation_method: str, beginning: date, ending: date):
         subquery = '''
-                        SELECT uuid, status_code, {} delta_time
+                        SELECT status_code, {} delta_time
                         FROM ps_status_history
                         WHERE (status_code LIKE "break%" OR status_code = "ready") AND uuid = :uuid 
                         AND DATE(time_at) BETWEEN :beginning AND :ending
@@ -25,7 +25,7 @@ class AnalyticsRepository:
 
     def get_ant_analytic(self, uuid: str, calculation_method: str, beginning: date, ending: date):
         subquery = '''
-                        SELECT uuid, status_code, {} delta_time
+                        SELECT status_code, {} delta_time
                         FROM ps_status_history
                         WHERE status_code IN ('precall', 'aftercall', 'externalcall', 'callwaiting') 
                         AND uuid = :uuid AND DATE(time_at) BETWEEN :beginning AND :ending
@@ -59,7 +59,7 @@ class AnalyticsRepository:
                 raise ValueError(f'{calculation_method} method is not supported')
             subquery = subquery.format(method)
             query = f'''
-                        SELECT uuid, status_code, TIME_FORMAT(SEC_TO_TIME(delta_time), "%H:%i:%s") delta_time
+                        SELECT status_code, TIME_FORMAT(SEC_TO_TIME(delta_time), "%H:%i:%s") delta_time
                         FROM ({subquery}) utils
                                             '''
             result = session.execute(query, {'uuid': uuid, 'beginning': beginning, 'ending': ending}).fetchall()
