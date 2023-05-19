@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from pydantic import Field
 from datetime import datetime
 from typing import List
 from app.database.repository.super import Pagination
@@ -102,7 +103,9 @@ class UsersFilter(BaseModel):
     status: list[int] = None
     department: int = None
     position: int = None
-
+    employment_status: bool = None
+    class Config:
+        allow_population_by_field_name = True
 class UserParams(BaseModel):
     page: int
     size: int

@@ -494,8 +494,8 @@ class UserRepository(SuperRepository):
         if params.filter is not None:
             if params.filter.fio != None:
                 query = query.filter(self.base_model.fio.ilike(f'%{params.filter.fio}%'))
-            if params.filter.status != None:
-                query = query.filter(self.base_model.employment_status == params.filter.status)
+            if params.filter.employment_status != None:
+                query = query.filter(self.base_model.employment_status == bool(params.filter.employment_status))
             if params.filter.login != None:
                 query = query.filter(self.base_model.login == params.filter.login)
             if params.filter.department != None:
