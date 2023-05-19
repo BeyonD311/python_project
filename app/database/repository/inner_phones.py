@@ -135,9 +135,10 @@ class InnerPhones(SuperRepository):
                     phone_number.append(f"{phone.phone_number}")
                 session.delete(phone)
                 session.commit()
+        print(phone_number)
         if phone_number != []:
             self.session_asterisk.delete_sip_user_asterisk(",".join(phone_number))
-            self.session_asterisk.execute
+            self.session_asterisk.execute()
     
     def __find_user(self, session: Session, user_id: int):
         user = session.query(UserModel).filter(UserModel.id == user_id, UserModel.is_active == True).first()
