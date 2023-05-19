@@ -285,7 +285,17 @@ class DepartmentsRepository(SuperRepository):
         for user in query:
             users[user.id] = user
         return users
+
     
+    def delete_by_id(self, department_id: int):
+        with self.session_factory() as session :
+            department = session.query(self.base_model).filter(self.base_model.id == department_id).first()
+            if department is None:
+                session.commit()
+                raise NotFoundError(entity_id=department.id, entity_description="Департамент не обнаружен")
+            session.delete(department)
+            session.commit()
+            
     def find_department_by_name(self, name: str, session):
         query = session.query(self.base_model).filter(self.base_model.name.ilike(f"%{name}%")).first()
         if query is not None:
