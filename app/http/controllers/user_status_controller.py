@@ -1,5 +1,5 @@
 import jwt, os, asyncio
-from fastapi import Depends, APIRouter, Response, Request, WebSocket
+from fastapi import Depends, APIRouter, Response, Request, WebSocket, WebSocketException
 from fastapi.security import HTTPBearer
 from app.kernel.container import Container
 from dependency_injector.wiring import Provide, inject
@@ -125,8 +125,8 @@ async def ws_channel_user_status(
                 fetch_task = asyncio.create_task(user_service.redis_pub_sub(websocket, data['user_id']))
         await asyncio.gather(read_from_socket(websocket), get_data_and_send())
     except Exception as e:
-        err = default_error(e, source='UserService')
-        await websocket.send_json(err[1])
+        log.error(e, stack_info=True)
+        websocket.close()
 
 @route.get("/fill",  include_in_schema=False)
 @inject
