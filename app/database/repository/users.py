@@ -297,6 +297,7 @@ class UserRepository(SuperRepository):
                 status['status_id'] = 14
                 status_id = 14
                 status['code'] = "unavailable"
+                status['color'] = "disabled"
                 status['alter_name'] = 'Оффлайн'
                 behavior = "offline"
         if status_code.find("break") != -1:
