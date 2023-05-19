@@ -1,7 +1,3 @@
-import re
-import json
-import jwt
-import os
 from fastapi import Depends, APIRouter, Response, status, Body, Request, HTTPException
 from datetime import datetime
 from dependency_injector.wiring import inject, Provide
@@ -16,6 +12,7 @@ from app.http.services.groups import GroupsService
 from app.http.services.users import SkillService, UserPermission
 from app.database import ExpectationError, AccessException
 from fastapi.security import HTTPBearer
+from pydantic import ValidationError
 
 
 security = HTTPBearer()
@@ -127,21 +124,17 @@ async def get_users(
         sort_field=sort_field,
         sort_dir=sort_dir
     )
-    if filter is not None:
-        reg = r'([a-z]*)(=)([А-Яа-яa-zA-Z?\s\d\,]*)'
-        user_filter = UsersFilter()
-        result = re.findall(reg,filter)
-        flag = False
-        for r in result:
-            if r[0] in user_filter.__dict__ and r[2] != "":
-                flag = True
-                param = r[2]
-                if r[0].lower() == "status":
-                    param = r[2].split(",")
-                user_filter.__setattr__(r[0], param)
-        if flag:
-            params.filter = user_filter
     try:
+        if filter is not None:
+            user_filter = {}
+            filter = filter.split(";")
+            for filter_param in filter:
+                params_filter = filter_param.split("=")
+                if len(params_filter) > 1:
+                    if params_filter[0] == "status":
+                        params_filter[1] = params_filter[1].split(",")
+                    user_filter[params_filter[0]] = params_filter[1]
+            params.filter = UsersFilter(**user_filter)
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
             if request.state.for_user['user'].department_id is None:
                 # TODO: проверить исключение и корректность description
@@ -152,6 +145,9 @@ async def get_users(
             params.filter.department = request.state.for_user['user'].department_id
             del request.state.for_user['user']
         result = user_service.get_all(params=params)
+    except ValidationError as e:
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return e.errors()
     except Exception as e:
         err = default_error(e, source='Users')
         response.status_code = err[0]
