@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from pydantic import Field
 from datetime import datetime
 from typing import List
 from app.database.repository.super import Pagination

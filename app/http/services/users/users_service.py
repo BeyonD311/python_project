@@ -185,7 +185,15 @@ class UserService:
             del params['_sa_instance_state']
             await self._redis.redis.set(f"status:code:{status.code}", json.dumps(params))
 
-    async def set_status_by_aster(self, uuid: str, status_code: str, status_time: str, incoming_call: str = None, call_id: str = None):
+    async def set_status_by_aster(
+            self, 
+            uuid: str, 
+            status_code: str, 
+            status_time: str, 
+            incoming_call: str = None, 
+            call_id: str = None,
+            script_ivr_hyperscript: str = None
+            ):
         """ Используется для установки статуса из астериска """
         status_time = datetime.datetime.fromtimestamp(status_time).__format__("%Y-%m-%d %H:%M:%S.%f")
         status = await self._redis.redis.get(f"status:code:{status_code}")
@@ -215,11 +223,9 @@ class UserService:
             event=event,
             color=status['color'],
             incoming_call=incoming_call,
-            call_id=call_id
+            call_id=call_id,
+            hyper_script=script_ivr_hyperscript
         )
-        print('----------------------------')
-        print(params)
-        print('----------------------------')
         await self.__set_status_redis(params)
         if params.status_code == "precall":
             await asyncio.sleep(0.1)

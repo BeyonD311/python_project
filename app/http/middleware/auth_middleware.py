@@ -12,7 +12,7 @@ from app.database.repository.super import UserIsFired
 path_exception = ("docs", "openapi.json", "images")
 path_exception_aster = ("/users/status/asterisk", "/users/status/test", "/users/status/fill", "/users/fill", "/auth/login")
 
-user_path_exception = ("/users/status", "/users/current", "users/departments", "/queue", "/users/inner_phone/settings")
+user_path_exception = ("/users/status", "/users/current", "/users/departments", "/queue", "/users/inner_phone/settings")
 
 @inject
 def get_user(id, user_repository = Depends(Provide[Container.user_repository])):
