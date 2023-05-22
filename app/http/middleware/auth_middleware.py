@@ -29,9 +29,8 @@ def get_user(id, user_repository = Depends(Provide[Container.user_repository])):
 def get_user_permission(user, user_repository = Depends(Provide[Container.user_repository])):
     user_roles:dict = user_repository.get_user_permission(user.id)
     roles = user_repository.get_role_permission(user.id)
-    for key, user_role in user_roles.items():
-        if key in roles:
-            roles[key] = user_role
+    if user_roles != {}:
+        roles = user_roles
     return roles
 
 @inject

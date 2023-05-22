@@ -286,7 +286,6 @@ class Asterisk():
                 action = queueFilter[filter.field.upper()]
                 res = res + " " + action(filter.value)
             except Exception:
-                print(filter.field)
                 continue
         return res
 
@@ -409,8 +408,5 @@ class Asterisk():
         with self.session_asterisk() as session:
             while self.stack_multiple_query != []:
                 query = self.stack_multiple_query.pop()
-                print('-----------------------')
-                print(query)
-                print('-----------------------')
                 session.execute(query)
             session.commit()

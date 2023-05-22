@@ -363,7 +363,6 @@ class UserService:
                     "module_name": p['module_name'],
                     "module_id": p['module_id']
                 })
-                print(p)
             result_roles[role_id]['access'] = permission
         userDetail.roles = list(result_roles.values())
         del status_user

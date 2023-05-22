@@ -135,7 +135,6 @@ class InnerPhones(SuperRepository):
                     phone_number.append(f"{phone.phone_number}")
                 session.delete(phone)
                 session.commit()
-        print(phone_number)
         if phone_number != []:
             self.session_asterisk.delete_sip_user_asterisk(",".join(phone_number))
             self.session_asterisk.execute()
