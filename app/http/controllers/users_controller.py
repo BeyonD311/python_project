@@ -286,7 +286,7 @@ async def user_set_permission(
             if slef_id != id:
                 # TODO проверить исключение
                 description: str = "Недостаточно прав доступа."
-                raise AccessException(entity_id=slef_id, entity_description=description)
+                raise AccessException(entity_id=slef_id,entity_message="123",entity_description=description)
         result = user_service.set_permission(params)
     except Exception as e:
         err = default_error(e, source='Users Permission')

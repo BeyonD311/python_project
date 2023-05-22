@@ -10,7 +10,14 @@ from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
 from app.database.repository.super import UserIsFired
 
 path_exception = ("docs", "openapi.json", "images")
-path_exception_aster = ("/users/status/asterisk", "/users/status/test", "/users/status/fill", "/users/fill", "/auth/login")
+path_exception_aster = (
+    "/users/status/asterisk", 
+    "/users/status/test", 
+    "/users/status/fill", 
+    "/users/fill", 
+    "/auth/login",
+    "/auth/logout"
+    )
 
 user_path_exception = ("/users/status", "/users/current", "/users/departments", "/queue", "/users/inner_phone/settings")
 
