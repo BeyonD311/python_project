@@ -7,9 +7,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.kernel.container import Container
 from app.http.services.access import Access
 from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
+from app.database.repository.super import UserIsFired
 
-path_exception = ("auth", "docs", "openapi.json", "images")
-path_exception_aster = ("/users/status/asterisk", "/users/status/test", "/users/status/fill", "/users/fill")
+path_exception = ("docs", "openapi.json", "images")
+path_exception_aster = ("/users/status/asterisk", "/users/status/test", "/users/status/fill", "/users/fill", "/auth/login")
 
 user_path_exception = ("/users/status", "/users/current", "users/departments", "/queue", "/users/inner_phone/settings")
 
@@ -32,22 +33,22 @@ async def redis(jwt_m: JwtManagement = Depends(Provide[Container.jwt])):
 
 class Auth(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
-        path = str(request.get("path")).split("/")
-        if  path[1] in path_exception:
-            return await call_next(request)
-        if request.get("path") in path_exception_aster:
-            return await call_next(request)
-        token = request.headers.get('authorization')
-        if token is None:
-            return responses.JSONResponse(
-                content={
-                    "messgae": "No auth",
-                    "description": "Нет авторизации"
-                    },
-                status_code=status.HTTP_401_UNAUTHORIZED
-            )
-        token = token.replace("Bearer ", "")
         try:
+            path = str(request.get("path")).split("/")
+            if  path[1] in path_exception:
+                return await call_next(request)
+            if request.get("path") in path_exception_aster:
+                return await call_next(request)
+            token = request.headers.get('authorization')
+            if token is None:
+                return responses.JSONResponse(
+                    content={
+                        "messgae": "No auth",
+                        "description": "Нет авторизации"
+                        },
+                    status_code=status.HTTP_401_UNAUTHORIZED
+                )
+            token = token.replace("Bearer ", "")
             generate = await redis()
             async with generate as g:
                 await g.check_black_list(token)
@@ -57,6 +58,8 @@ class Auth(BaseHTTPMiddleware):
             if decode_jwt['azp'] == 0:
                 return await call_next(request)
             user = get_user(decode_jwt['azp'])
+            if user.employment_status == False or user.date_dismissal_at is not None:
+                raise UserIsFired()
             method = request.method.lower()
             for upx in user_path_exception:
                 upx = upx.replace('/', '\/')
@@ -80,6 +83,14 @@ class Auth(BaseHTTPMiddleware):
                     "description": "Запрещено для роли этого пользователя."
                 },
                 status_code=status.HTTP_423_LOCKED
+            )
+        except UserIsFired:
+            return responses.JSONResponse(
+                content={
+                    "message": "The user is fired",  # "Token Signature expired"
+                    "description": "Пользователь уволен"
+                },
+                status_code=status.HTTP_401_UNAUTHORIZED
             )
         except jwt.exceptions.ExpiredSignatureError as e:
             return responses.JSONResponse(

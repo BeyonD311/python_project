@@ -114,7 +114,6 @@ async def ws_channel_user_status(
         async def read_from_socket(websocket: WebSocket):
             async for data in websocket.iter_json():
                 queue.put_nowait(data)
-
         async def get_data_and_send():
             data = await queue.get()
             fetch_task = asyncio.create_task(user_service.redis_pub_sub(websocket, data['user_id']))
