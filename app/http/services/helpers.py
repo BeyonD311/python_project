@@ -1,11 +1,14 @@
-import re
+import re, typing, jwt, os
+from fastapi import Request
 from datetime import time
 from aioredis import Redis
 from fastapi import status
 from fastapi.websockets import WebSocket
 from asyncio.queues import Queue
+from app.http.services.jwt_managment import TokenNotFound
+from pydantic import ValidationError
 
-__all__ = ["default_error", "message", "read_from_socket", "convert_second_to_time", "convert_time_to_second"]
+__all__ = ["default_error", "message", "read_from_socket", "convert_second_to_time", "convert_time_to_second", "get_token", "token_decode"]
 
 class RedisInstance():
     def __init__(self, redis: Redis) -> None:
@@ -27,7 +30,7 @@ class ProjectExceptionsImport:
     """
     from app.database.repository.super import (
         NotFoundError, ExpectationError, ExistsException, AccessException,
-        RequestException, BadFileException, UserNotFoundError
+        RequestException, BadFileException, UserNotFoundError, UserIsFired
     )
 
 
@@ -97,3 +100,21 @@ def convert_second_to_time(seconds: int) -> str:
 
 def convert_time_to_second(input_time: time) -> int:
     return (input_time.hour * 60 + input_time.minute) * 60 + input_time.second
+
+
+def get_token(request: Request) -> str:
+    access_token = request.headers.get('authorization')
+    if access_token is None:
+        raise TokenNotFound
+    return access_token.replace("Bearer", "").strip()
+
+def token_decode(token: str) -> typing.Mapping:
+    """
+    Exceptions:
+        DecodeError
+    """
+    try:
+        result = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
+    except jwt.DecodeError:
+        raise
+    return result

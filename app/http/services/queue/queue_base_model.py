@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 from pydantic import Field
-from pydantic import ValidationError
 from pydantic import validator
 from datetime import time
 from typing import Any
@@ -69,7 +68,7 @@ class BaseInfo(BaseModel):
     @validator('exten')
     def valid_exten(cls, v:int):
         if (v // 100) < 1 or (v // 1000) > 0:
-            raise ValidationError("Номер должен состоять 3 цифр")
+            raise ValueError("Номер должен состоять 3 цифр")
         return v
 
 class ConfigCalls(BaseModel):

@@ -350,7 +350,7 @@ async def user_dismiss(
                 description: str = "Недостаточно прав доступа."
                 raise AccessException(entity_id=slef_id, entity_description=description)
         result = user_service.recover(id)
-        await user_service.set_status(id,status_id=1)
+        await user_service.set_status(id,status_id=15)
     except Exception as e:
         description = f"Пользователя с ID={id} не существует."
         err = default_error(e, source='Users')
