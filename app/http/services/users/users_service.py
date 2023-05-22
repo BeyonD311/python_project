@@ -52,7 +52,7 @@ class UserService:
             if disposition == "":
                 disposition = cdr.disposition
             total_billsec = total_billsec + cdr.billsec
-        
+
         return {
             "billsec": total_billsec,
             "disposition": disposition
@@ -89,11 +89,14 @@ class UserService:
         del user
         return userDetail
 
+    def get_uuid_by_id(self, user_id: int):
+        return self._repository.get_uuid_by_id(user_id=user_id)
+
     def by_id(self, id):
         return self._repository.get_by_id(id)
 
     def find_user_by_login(self, login: str):
-        return self._repository.get_by_login(login) 
+        return self._repository.get_by_login(login)
 
     async def create_user(self, user: UserRequest) -> UserDetailResponse:
         user:UserDetailResponse = self._repository.add(self.__fill_fields(user))
@@ -102,7 +105,7 @@ class UserService:
         }
         await self._redis.redis.set(f"user:uuid:{user.uuid}", json.dumps(user_param))
         return self.__user_response(user)
-    
+
     async def all(self):
         users = self._repository.items()
         for user in users:
@@ -123,7 +126,7 @@ class UserService:
             description = f"Не найден пользователь с ID={id}."
             raise UserNotFoundError(entity_id=user_id, entity_description=description)
         return self._repository.soft_delete(user_id)
-    
+
     def get_all_status_users(self):
         return self._repository.get_all_status()
 
@@ -256,7 +259,7 @@ class UserService:
         return {
             "message": "Password is update"
         }
-    
+
     def set_permission(self, params: UserPermission):
         self._repository.set_permission(params)
         return {
@@ -370,14 +373,14 @@ class UserService:
         await self._redis.redis.set(f"status.user.{status_info.user_id}", json.dumps(dict(status_info)))
         channel = f"user:status:{status_info.user_id}:c"
         await publisher(self._redis.redis, channel, dict(status_info))
-            
+
 class SkillService:
     def __init__(self, skill_repository: SkillsRepository) -> None:
         self._repository: SkillsRepository = skill_repository
-    
+
     def add(self, text: str):
         return self._repository.add_skill(text)
-    
+
     def find(self, text:str):
         return self._repository.find_skill(text)
 
