@@ -2,8 +2,9 @@ from fastapi import status
 
 class BaseException(Exception):
 
-    """ Super Class Exceptions """
-    code_err: int = 500
+    """ Super Class Exceptions 
+        Базовый класс для 
+    """
 
     def __init__(self,
             message: str,
