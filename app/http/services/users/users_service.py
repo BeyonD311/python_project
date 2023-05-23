@@ -169,11 +169,13 @@ class UserService:
                     result['status_at'] = convert_second_to_time(status_at.seconds)
                     await websocket.send_json(result)
             except ConnectionClosedOK as connection_close:
-                log.error(str(connection_close))
+                log.error(connection_close, stack_info=True)
                 return
             except WebSocketDisconnect as web_socket_disconnect:
-                log.error(str(web_socket_disconnect))
+                log.error(web_socket_disconnect, stack_info=True)
                 return
+            except Exception as exception:
+                log.error(exception, stack_info=True)
 
     async def add_status_to_redis(self):
         statuses = self._repository.get_all_status()
@@ -183,7 +185,15 @@ class UserService:
             del params['_sa_instance_state']
             await self._redis.redis.set(f"status:code:{status.code}", json.dumps(params))
 
-    async def set_status_by_aster(self, uuid: str, status_code: str, status_time: str, incoming_call: str = None, call_id: str = None):
+    async def set_status_by_aster(
+            self, 
+            uuid: str, 
+            status_code: str, 
+            status_time: str, 
+            incoming_call: str = None, 
+            call_id: str = None,
+            script_ivr_hyperscript: str = None
+            ):
         """ Используется для установки статуса из астериска """
         status_time = datetime.datetime.fromtimestamp(status_time).__format__("%Y-%m-%d %H:%M:%S.%f")
         status = await self._redis.redis.get(f"status:code:{status_code}")
@@ -213,11 +223,9 @@ class UserService:
             event=event,
             color=status['color'],
             incoming_call=incoming_call,
-            call_id=call_id
+            call_id=call_id,
+            hyper_script=script_ivr_hyperscript
         )
-        print('----------------------------')
-        print(params)
-        print('----------------------------')
         await self.__set_status_redis(params)
         if params.status_code == "precall":
             await asyncio.sleep(0.1)
@@ -352,7 +360,6 @@ class UserService:
                     "module_name": p['module_name'],
                     "module_id": p['module_id']
                 })
-                print(p)
             result_roles[role_id]['access'] = permission
         userDetail.roles = list(result_roles.values())
         del status_user

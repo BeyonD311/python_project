@@ -1,11 +1,11 @@
-import os, jwt, typing
+import jwt
 from hashlib import sha256
 from fastapi import APIRouter, Depends, status, Response, Request
 from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
-from app.http.services.helpers import default_error
+from app.http.services.helpers import default_error, get_token, token_decode
 from app.http.services.users import UserLoginParams, UserService
-from app.http.services.jwt_managment import JwtManagement, TokenNotFound
+from app.http.services.jwt_managment import JwtManagement
 from app.database import NotFoundError, UnauthorizedException
 from app.kernel import Container
 from app.http.services.jwt_managment import TokenInBlackList
@@ -16,23 +16,6 @@ route = APIRouter(
 )
 
 security = HTTPBearer()
-
-def get_token(request: Request) -> str:
-    access_token = request.headers.get('authorization')
-    if access_token is None:
-        raise TokenNotFound
-    return access_token.replace("Bearer", "").strip()
-
-def token_decode(token: str) -> typing.Mapping:
-    """
-    Exceptions:
-        DecodeError
-    """
-    try:
-        result = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=["HS256"])
-    except jwt.DecodeError:
-        raise
-    return result
 
 @route.get("/logout")
 @inject
@@ -60,9 +43,7 @@ async def logout(
             if decode['type'] == "a" and 'rf' in decode:
                 await j.add_to_black_list(decode['rf'])
             await j.check_black_list(access_token)
-            await j.add_to_black_list(access_token)    
-            # await j.add_to_black_list(tokens['access_token'])
-            # await j.add_to_black_list(tokens['refresh_token'])
+            await j.add_to_black_list(access_token)
             result = {
                 "message": "logout success",
                 "description": "Успешный выход из системы"
@@ -165,6 +146,8 @@ async def login(
     password = sha256(params.password.encode()).hexdigest()
     try:
         user = user_service.find_user_by_login(params.login)
+        if user.employment_status == False or user.date_dismissal_at is not None:
+            raise TokenInBlackList()
         await user_service.set_status(user.id, 18)
         await user_service.set_status(user.id, 15)
     except NotFoundError:
@@ -172,6 +155,12 @@ async def login(
         return {
             "message": "Invalid login",
             "description": "Логин неверный"
+        }
+    except TokenInBlackList:
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return {
+            "message": "The user is fired",
+            "description": "Пользователь уволен"
         }
     if user.hashed_password is None:
         user.hashed_password = sha256(user.password.encode()).hexdigest()

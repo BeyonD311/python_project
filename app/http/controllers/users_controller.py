@@ -283,10 +283,10 @@ async def user_set_permission(
     try:
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
             slef_id = request.state.for_user['user'].id
-            if slef_id != id:
+            if slef_id != params.user_id:
                 # TODO проверить исключение
                 description: str = "Недостаточно прав доступа."
-                raise AccessException(entity_id=slef_id, entity_description=description)
+                raise AccessException(entity_id=slef_id,entity_message="123",entity_description=description)
         result = user_service.set_permission(params)
     except Exception as e:
         err = default_error(e, source='Users Permission')
@@ -350,7 +350,7 @@ async def user_dismiss(
                 description: str = "Недостаточно прав доступа."
                 raise AccessException(entity_id=slef_id, entity_description=description)
         result = user_service.recover(id)
-        await user_service.set_status(id,status_id=1)
+        await user_service.set_status(id,status_id=15)
     except Exception as e:
         description = f"Пользователя с ID={id} не существует."
         err = default_error(e, source='Users')

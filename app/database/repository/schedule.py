@@ -42,7 +42,6 @@ class ScheduleRepository:
                 'offset': (pagination.page - 1) * pagination.size,
                 'size': pagination.size
             }
-            print(params)
             result = session.execute(text(query), params).fetchall()
             total_count = self.__get_total_count(queue_name=queue_name)
             total_page = ceil(total_count / pagination.size)
@@ -122,7 +121,6 @@ class ScheduleRepository:
                                                                 AND id = :update_id;'''
             result = session.execute(text(query), {'beginning': beginning, 'ending': ending, 'update_id': update_id, 'queue_name': queue_name})
             r = result.scalar()
-            print(r)
             return bool(r)
 
     def __get_total_count(self, queue_name: str):

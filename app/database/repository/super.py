@@ -192,3 +192,9 @@ class UnauthorizedException(BaseException):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+
+class UserIsFired(UnauthorizedException):
+    def __init__(self) -> None:
+        message = "The user is fired"
+        description = "Пользователь уволен"
+        super().__init__(entity_message=message, entity_description=description)

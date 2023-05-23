@@ -1,5 +1,5 @@
 import jwt, os, asyncio
-from fastapi import Depends, APIRouter, Response, Request, WebSocket
+from fastapi import Depends, APIRouter, Response, Request, WebSocket, WebSocketException
 from fastapi.security import HTTPBearer
 from app.kernel.container import Container
 from dependency_injector.wiring import Provide, inject
@@ -55,8 +55,6 @@ async def update_status(
         if user_id == None:
             user_id = request.state.current_user_id
         await user_service.set_status(user_id, status_id=status_id, call_id=call_id)
-        # if call_id is not None:
-        #     await send_call_post(call_id, "1003")
         result = {
             "message": "set status",
             "description": f"Новый статус ID={status_id} установлен."
@@ -79,6 +77,7 @@ async def update_status_asterisk(
     request: Request, 
     caller: str = None,
     call_id: str = None,
+    script_ivr_hyperscript: str = None,
     user_service: UserService = Depends(Provide[Container.user_service])):
     """ 
         **status_cod** - код статуса\n
@@ -87,7 +86,14 @@ async def update_status_asterisk(
     """
     try:
         log.debug(f"Input params: status_cod = {status_cod}; uuid = {uuid}; status_time = {status_time}; caller = {caller}")
-        await user_service.set_status_by_aster(uuid=uuid, status_code=status_cod, status_time=status_time, incoming_call=caller, call_id=call_id)
+        await user_service.set_status_by_aster(
+            uuid=uuid, 
+            status_code=status_cod, 
+            status_time=status_time, 
+            incoming_call=caller, 
+            call_id=call_id, 
+            script_ivr_hyperscript=script_ivr_hyperscript
+            )
         if status_cod == 'precall':
             if call_id is not None:
                 await send_call_post(call_id, caller)
@@ -114,7 +120,6 @@ async def ws_channel_user_status(
         async def read_from_socket(websocket: WebSocket):
             async for data in websocket.iter_json():
                 queue.put_nowait(data)
-
         async def get_data_and_send():
             data = await queue.get()
             fetch_task = asyncio.create_task(user_service.redis_pub_sub(websocket, data['user_id']))
@@ -125,8 +130,8 @@ async def ws_channel_user_status(
                 fetch_task = asyncio.create_task(user_service.redis_pub_sub(websocket, data['user_id']))
         await asyncio.gather(read_from_socket(websocket), get_data_and_send())
     except Exception as e:
-        err = default_error(e, source='UserService')
-        await websocket.send_json(err[1])
+        log.error(e, stack_info=True)
+        websocket.close()
 
 @route.get("/fill",  include_in_schema=False)
 @inject

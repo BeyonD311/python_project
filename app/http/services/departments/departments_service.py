@@ -89,7 +89,7 @@ class DepartmentsService:
                     status_id=employee.id,
                     status_at=employee.status_at,
                     color=employee.status.color,
-                    status=employee.status.name
+                    status=employee.status.alter_name
                 )
             users.append(user)
         result['employees'] = users

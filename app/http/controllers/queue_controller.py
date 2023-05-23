@@ -11,6 +11,7 @@ from dependency_injector.wiring import inject
 from dependency_injector.wiring import Provide
 from app.kernel.container import Container
 from app.http.services.helpers import default_error
+from pydantic import ValidationError
 
 route = APIRouter(
     prefix="/queue",
@@ -19,6 +20,7 @@ route = APIRouter(
 )
 
 security = HTTPBearer()
+
 
 @route.get("")
 @inject
@@ -196,7 +198,7 @@ async def get_queue_statuses(
         uuids = uuids.split(",")
         result = queue_service.get_status(uuids)
     except Exception as exception:
-        err = default_error(exception, item='Queue')
+        err = default_error(exception, source='Queue')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -214,7 +216,7 @@ async def save_queue_members(
     try:
         result = queue_service.save_queue_members(uuid, params)
     except Exception as exception:
-        err = default_error(exception, item='Queue')
+        err = default_error(exception, source='Queue')
         response.status_code = err[0]
         result = err[1]
     return result
@@ -286,7 +288,7 @@ async def delete_queue(
     try:
         result = queue_service.delete(uuid)
     except Exception as exception:
-        err = default_error(exception, item='Queue')
+        err = default_error(exception, source='Queue')
         response.status_code = err[0]
         result = err[1]
     return result
