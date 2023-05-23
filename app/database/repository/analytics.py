@@ -59,8 +59,18 @@ class AnalyticsRepository:
                 raise ValueError(f'{calculation_method} method is not supported')
             subquery = subquery.format(method)
             query = f'''
-                        SELECT status_code, TIME_FORMAT(SEC_TO_TIME(delta_time), "%H:%i:%s") delta_time
+                        SELECT status_code as name, TIME_FORMAT(SEC_TO_TIME(delta_time), "%H:%i:%s") as textValue,
+                        SEC_TO_TIME(delta_time) as value
                         FROM ({subquery}) utils
                                             '''
             result = session.execute(query, {'uuid': uuid, 'beginning': beginning, 'ending': ending}).fetchall()
             return result
+
+    def get_call_count(self, phone_number: str):
+        with self.session_asterisk() as session:
+            query = '''
+                        SELECT COUNT(src) + COUNT(dst) as call_count
+                        FROM cdr
+                        WHERE src = :phone_number OR dst = :phone_number
+            '''
+            return session.execute(query, {'phone_number': phone_number}).scalar()

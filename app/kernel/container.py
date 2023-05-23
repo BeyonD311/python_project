@@ -153,5 +153,7 @@ class Container(containers.DeclarativeContainer):
 
     analytics_service = providers.Factory(
         AnalyticsService,
-        analytics_repository=analytics_repository
+        analytics_repository=analytics_repository,
+        inner_phone_repository=inner_phone_repository,
+        user_repository=user_repository
     )
