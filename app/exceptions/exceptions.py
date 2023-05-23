@@ -2,9 +2,10 @@ from fastapi import status
 
 class BaseException(Exception):
 
-    """ Super Class Exceptions """
-    code_err: int = 500
-
+    """ Super Class Exceptions 
+        Базовый класс для 
+    """
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     def __init__(self,
             message: str,
             description: str
@@ -12,39 +13,18 @@ class BaseException(Exception):
         """  """
         self.message = message
         self.description = description
-        self.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     def __str__(self):
         return self.message
 
 
 class NotFoundError(BaseException):
-    message_err: str = "Unable to find the resource"
-    code_err: int = 404
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        if 'item' in kwargs:
-            self.message = f"{self.message_err} with value '{kwargs['item']}'"
-        elif 'entity_id' in kwargs:
-            self.message = f"{self.message_err} with id={kwargs['entity_id']}"
-
-
-class UserNotFoundError(NotFoundError):
-    message_err: str = "User could not be found"
-    code_err: int = 404
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    status_code = status.HTTP_404_NOT_FOUND
 
 
 class ExpectationError(BaseException):
     """Не удаётся обработать данные в запросе.
     """
-    message_err: str = ""
-    code_err = 417
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    status_code = status.HTTP_400_BAD_REQUEST
 
 
 class AccessException(BaseException):
