@@ -283,7 +283,7 @@ async def user_set_permission(
     try:
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
             slef_id = request.state.for_user['user'].id
-            if slef_id != id:
+            if slef_id != params.user_id:
                 # TODO проверить исключение
                 description: str = "Недостаточно прав доступа."
                 raise AccessException(entity_id=slef_id,entity_message="123",entity_description=description)
