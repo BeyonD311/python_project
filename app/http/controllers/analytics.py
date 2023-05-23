@@ -27,14 +27,12 @@ async def get_disposal_analytic(
         response: Response,
         calculation_method: CalculationMethod = CalculationMethod.SUM,
         analytics_service: AnalyticsService = Depends(Provide[Container.analytics_service]),
-        user_service: UserService = Depends(Provide[Container.user_service]),
         HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
     try:
-        uuid = user_service.get_uuid_by_id(user_id=user_id)
-        disposal_data = DisposalAnalytic(uuid=uuid, beginning=beginning, ending=ending,
+        disposal_data = DisposalAnalytic(user_id=user_id, beginning=beginning, ending=ending,
                                          calculation_method=calculation_method)
-        result = analytics_service.get_disposal_analytic(disposal_data=disposal_data)
+        result = analytics_service.get_disposal_analytic(data=disposal_data)
         return result
     except ValueError as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
@@ -56,12 +54,10 @@ async def get_ant_analytic(
         response: Response,
         calculation_method: CalculationMethod = CalculationMethod.SUM,
         analytics_service: AnalyticsService = Depends(Provide[Container.analytics_service]),
-        user_service: UserService = Depends(Provide[Container.user_service]),
         HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
     try:
-        uuid = user_service.get_uuid_by_id(user_id=user_id)
-        ant_data = AntAnalytic(uuid=uuid, beginning=beginning, ending=ending,
+        ant_data = AntAnalytic(user_id=user_id, beginning=beginning, ending=ending,
                                calculation_method=calculation_method)
         result = analytics_service.get_ant_analytic(data=ant_data)
         return result

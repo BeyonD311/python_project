@@ -115,10 +115,10 @@ class UserRepository(SuperRepository):
     def get_uuid_by_id(self, user_id: int):
         with self.session_factory() as session:
             result = session.query(self.base_model.uuid).filter(self.base_model.id == user_id).first()
-            if result:
-                return result[0]
-            else:
-                raise NotFoundError(entity_id=user_id, entity_description=f'Пользователь с id={user_id} не найден')
+            if not result:
+                description = f"Не найден пользователь с ID={user_id}."
+                raise NotFoundError(entity_id=user_id, entity_description=description)
+            return result[0]
 
     def get_users_department(self, department_id):
         with self.session_factory() as session:

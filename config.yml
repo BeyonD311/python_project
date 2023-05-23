@@ -1,5 +1,6 @@
 db:
   uri: "postgresql+psycopg2://${DB_NAME}:${DB_PASS}@db/${DB_USER}"
+#  uri: "postgresql+psycopg2://${DB_NAME}:${DB_PASS}@10.3.0.48:5432/${DB_USER}"
 asterisk:
   uri: "mysql+pymysql://${ASTERISK_USER}:${ASTERISK_PASS}@${ASTERISK_HOST}:${ASTERISK_DB_PORT}/${ASTERISK_DB}?charset=utf8mb4"
   host: "${ASTERISK_SETTINGS_HOST}"

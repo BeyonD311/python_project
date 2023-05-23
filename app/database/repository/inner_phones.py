@@ -13,8 +13,8 @@ class InnerPhones(SuperRepository):
 
     base_model = InnerPhone
 
-    def __init__(self, 
-                 session_factory: Callable[..., AbstractContextManager[Session]], 
+    def __init__(self,
+                 session_factory: Callable[..., AbstractContextManager[Session]],
                  session_asterisk: Callable[..., AbstractContextManager[Session]] = None,
                  asterisk_host: Callable[..., AbstractContextManager[Session]] = None,
                  asterisk_port: Callable[..., AbstractContextManager[Session]] = None,
@@ -57,7 +57,7 @@ class InnerPhones(SuperRepository):
                 description = f"У пользователя не обнаруженны номера с ID={user_id}."
                 raise NotFoundError(entity_id=user_id, entity_description=description)
             return query
-    
+
     def get_by_user_id_all(self, user_id: int):
         """ Для получения всех телефонов по id если нет то пустой массив """
         with self.session_factory() as session:
@@ -67,7 +67,7 @@ class InnerPhones(SuperRepository):
                 phone.users
                 result.append(phone)
             return result
-        
+
     def create_or_update(self, params) -> list:
         count_default = 0
         response = []
@@ -139,14 +139,14 @@ class InnerPhones(SuperRepository):
         if phone_number != []:
             self.session_asterisk.delete_sip_user_asterisk(",".join(phone_number))
             self.session_asterisk.execute()
-    
+
     def __find_user(self, session: Session, user_id: int):
         user = session.query(UserModel).filter(UserModel.id == user_id, UserModel.is_active == True).first()
         if user is None:
             description = f"Не найден пользователь с ID={user_id}."
             raise NotFoundError(entity_id=user_id, entity_description=description)
         return user
-    
+
     def __params(self, user: UserModel, inner_phone: InnerPhone, inner_phone_params) -> AsteriskParams:
         asterisk_params = AsteriskParams(
             phone_number=inner_phone.phone_number,
@@ -161,6 +161,15 @@ class InnerPhones(SuperRepository):
             + inner_phone_params.duration_conversation.second,
         )
         return asterisk_params
+
+    def get_phone_by_id(self, user_id: int):
+        with self.session_factory() as session:
+            phone = session.query(self.base_model.phone_number).filter(self.base_model.user_id == user_id).first()
+            if not phone:
+                description = f"Inner phone пользователя с ID={user_id} не найден."
+                raise NotFoundError(entity_id=user_id, entity_description=description)
+            return phone[0]
+
 
 class PhoneFoundError(NotFoundError):
     def __init__(self, message):

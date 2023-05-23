@@ -21,7 +21,7 @@ class BaseAnalytic(BaseModel):
 
 
 class DisposalAnalytic(BaseAnalytic):
-    uuid: str
+    user_id: int
     calculation_method: CalculationMethod = CalculationMethod.SUM
 
 
