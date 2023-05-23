@@ -89,9 +89,6 @@ class UserService:
         del user
         return userDetail
 
-    def get_uuid_by_id(self, user_id: int):
-        return self._repository.get_uuid_by_id(user_id=user_id)
-
     def by_id(self, id):
         return self._repository.get_by_id(id)
 
