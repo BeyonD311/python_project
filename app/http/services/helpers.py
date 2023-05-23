@@ -6,7 +6,6 @@ from fastapi import status
 from fastapi.websockets import WebSocket
 from asyncio.queues import Queue
 from app.http.services.jwt_managment import TokenNotFound
-from pydantic import ValidationError
 
 __all__ = ["default_error", "message", "read_from_socket", "convert_second_to_time", "convert_time_to_second", "get_token", "token_decode"]
 
