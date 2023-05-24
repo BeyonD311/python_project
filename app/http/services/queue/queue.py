@@ -2,7 +2,7 @@ import requests, json
 from http.client import HTTPException
 from collections.abc import Iterable
 from app.http.services.logger_default import get_logger
-from app.database import PositionRepository, ExistsException, InnerPhones
+from app.database import PositionRepository, ExistsException, InnerPhones, NotFoundError
 from app.http.services.helpers import RedisInstance
 from app.database.repository import Asterisk
 from app.http.services.ssh import Ssh
@@ -125,7 +125,7 @@ class QueueService:
             if filter_member.value != "":
                 params.filter.append(filter_member)
             else:
-                raise ExistsException(
+                raise NotFoundError(
                     entity_message = "queue not found", entity_description = "Очередь для пользователей не найдена"
                 )
         queues = self._asterisk.get_all_queue(params)
