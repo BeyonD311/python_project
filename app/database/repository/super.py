@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from math import ceil
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from fastapi import status
 import json
 
 class Pagination(BaseModel):
@@ -176,7 +177,7 @@ class ExistsException(RequestException):
     """Поле или объект уже существует.
     """
     message_err: str = "Resource already exists"
-
+    code_err: int = status.HTTP_404_NOT_FOUND
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         if 'item' in kwargs:
