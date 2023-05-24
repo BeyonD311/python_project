@@ -10,9 +10,16 @@ from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
 from app.database.repository.super import UserIsFired
 
 path_exception = ("docs", "openapi.json", "images")
-path_exception_aster = ("/users/status/asterisk", "/users/status/test", "/users/status/fill", "/users/fill", "/auth/login")
+path_exception_aster = (
+    "/users/status/asterisk", 
+    "/users/status/test", 
+    "/users/status/fill", 
+    "/users/fill", 
+    "/auth/login",
+    "/auth/logout"
+    )
 
-user_path_exception = ("/users/status", "/users/current", "users/departments", "/queue", "/users/inner_phone/settings")
+user_path_exception = ("/users/status", "/users/current", "/users/departments", "/queue", "/users/inner_phone/settings")
 
 @inject
 def get_user(id, user_repository = Depends(Provide[Container.user_repository])):
@@ -22,9 +29,8 @@ def get_user(id, user_repository = Depends(Provide[Container.user_repository])):
 def get_user_permission(user, user_repository = Depends(Provide[Container.user_repository])):
     user_roles:dict = user_repository.get_user_permission(user.id)
     roles = user_repository.get_role_permission(user.id)
-    for key, user_role in user_roles.items():
-        if key in roles:
-            roles[key] = user_role
+    if user_roles != {}:
+        roles = user_roles
     return roles
 
 @inject

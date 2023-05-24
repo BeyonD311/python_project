@@ -183,7 +183,7 @@ class Asterisk():
     def get_queues(self, queue_name: str = None, phones: list = None):
         select_queue = '''
             select q.name name, q.uuid uuid from queue_members qm 
-            join queues q on q.name = qm.queue_name 
+            right join queues q on q.name = qm.queue_name 
             where 1=1
         '''
         if queue_name is not None:
@@ -195,7 +195,6 @@ class Asterisk():
         with self.session_asterisk() as asterisk:
             query = asterisk.execute(select_queue).all()
             return query
-
     def delete_phones(self, phones: list):
         phones_concat = ",".join(phones)
         delete_queue_members = f"delete from queue_members where membername in ({phones_concat})"
@@ -287,7 +286,6 @@ class Asterisk():
                 action = queueFilter[filter.field.upper()]
                 res = res + " " + action(filter.value)
             except Exception:
-                print(filter.field)
                 continue
         return res
 
@@ -410,8 +408,5 @@ class Asterisk():
         with self.session_asterisk() as session:
             while self.stack_multiple_query != []:
                 query = self.stack_multiple_query.pop()
-                print('-----------------------')
-                print(query)
-                print('-----------------------')
                 session.execute(query)
             session.commit()

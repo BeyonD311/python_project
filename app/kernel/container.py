@@ -153,5 +153,10 @@ class Container(containers.DeclarativeContainer):
 
     analytics_service = providers.Factory(
         AnalyticsService,
-        analytics_repository=analytics_repository
+        analytics_repository=analytics_repository,
+        inner_phone_repository=inner_phone_repository,
+        user_repository=user_repository,
+        disposal_status_codes=config.analytics.disposal_status_codes,
+        ant_status_codes=config.analytics.ant_status_codes,
+        call_dispositions=config.analytics.call_dispositions
     )

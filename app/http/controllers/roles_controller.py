@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Response
 from dependency_injector.wiring import inject, Provide
 from app.kernel.container import Container
 from app.http.services.roles import RolesServices, Create, Update
 from app.http.services.helpers import default_error
-from app.database import NotFoundError, RequestException
 from fastapi.security import HTTPBearer
 
 security = HTTPBearer()

@@ -99,7 +99,7 @@ class UserService:
         return self._repository.get_by_id(id)
 
     def find_user_by_login(self, login: str):
-        return self._repository.get_by_login(login) 
+        return self._repository.get_by_login(login)
 
     async def create_user(self, user: UserRequest) -> UserDetailResponse:
         user:UserDetailResponse = self._repository.add(self.__fill_fields(user))
@@ -108,7 +108,7 @@ class UserService:
         }
         await self._redis.redis.set(f"user:uuid:{user.uuid}", json.dumps(user_param))
         return self.__user_response(user)
-    
+
     async def all(self):
         users = self._repository.items()
         for user in users:
@@ -129,7 +129,7 @@ class UserService:
             description = f"Не найден пользователь с ID={id}."
             raise UserNotFoundError(entity_id=user_id, entity_description=description)
         return self._repository.soft_delete(user_id)
-    
+
     def get_all_status_users(self):
         return self._repository.get_all_status()
 
@@ -191,7 +191,15 @@ class UserService:
             del params['_sa_instance_state']
             await self._redis.redis.set(f"status:code:{status.code}", json.dumps(params))
 
-    async def set_status_by_aster(self, uuid: str, status_code: str, status_time: str, incoming_call: str = None, call_id: str = None):
+    async def set_status_by_aster(
+            self, 
+            uuid: str, 
+            status_code: str, 
+            status_time: str, 
+            incoming_call: str = None, 
+            call_id: str = None,
+            script_ivr_hyperscript: str = None
+            ):
         """ Используется для установки статуса из астериска """
         status_time = datetime.datetime.fromtimestamp(status_time).__format__("%Y-%m-%d %H:%M:%S.%f")
         status = await self._redis.redis.get(f"status:code:{status_code}")
@@ -221,11 +229,9 @@ class UserService:
             event=event,
             color=status['color'],
             incoming_call=incoming_call,
-            call_id=call_id
+            call_id=call_id,
+            hyper_script=script_ivr_hyperscript
         )
-        print('----------------------------')
-        print(params)
-        print('----------------------------')
         await self.__set_status_redis(params)
         if params.status_code == "precall":
             await asyncio.sleep(0.1)
@@ -256,7 +262,7 @@ class UserService:
         return {
             "message": "Password is update"
         }
-    
+
     def set_permission(self, params: UserPermission):
         self._repository.set_permission(params)
         return {
@@ -360,7 +366,6 @@ class UserService:
                     "module_name": p['module_name'],
                     "module_id": p['module_id']
                 })
-                print(p)
             result_roles[role_id]['access'] = permission
         userDetail.roles = list(result_roles.values())
         del status_user
@@ -390,10 +395,10 @@ class UserService:
 class SkillService:
     def __init__(self, skill_repository: SkillsRepository) -> None:
         self._repository: SkillsRepository = skill_repository
-    
+
     def add(self, text: str):
         return self._repository.add_skill(text)
-    
+
     def find(self, text:str):
         return self._repository.find_skill(text)
 

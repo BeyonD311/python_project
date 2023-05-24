@@ -21,9 +21,7 @@ class BaseAnalytic(BaseModel):
 
 
 class DisposalAnalytic(BaseAnalytic):
-    uuid: str
-    beginning: date
-    ending: date
+    user_id: int
     calculation_method: CalculationMethod = CalculationMethod.SUM
 
 
@@ -32,4 +30,17 @@ class AntAnalytic(DisposalAnalytic):
 
 
 class CallAnalytic(BaseAnalytic):
-    number: str
+    user_id: int
+
+
+# class AnalyticResponse(BaseModel):
+#     status_code: str
+#     delta: str
+#
+#
+# class DisposalResponse(BaseModel):
+#     analytic: list[AnalyticResponse]
+#
+#
+# class AntResponse(AnalyticResponse):
+#     pass
