@@ -39,7 +39,7 @@ class AnalyticsRepository:
     def get_call_analytic(self, phone: str, beginning: date, ending: date):
         with self.session_asterisk() as session:
             query = '''
-                        SELECT disposition, (COUNT(src) + COUNT(dst)) call_count
+                        SELECT disposition as name, (COUNT(src) + COUNT(dst)) as value, (COUNT(src) + COUNT(dst)) as textValue
                         FROM cdr
                         WHERE src = :phone OR dst = :phone AND disposition IN ('ANSWERED', 'NO ANSWER', 'BUSY') 
                         AND DATE(calldate) BETWEEN :beginning AND :ending

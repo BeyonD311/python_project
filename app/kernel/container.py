@@ -156,7 +156,7 @@ class Container(containers.DeclarativeContainer):
         analytics_repository=analytics_repository,
         inner_phone_repository=inner_phone_repository,
         user_repository=user_repository,
-        disposal_status_codes=config.analytics.disposal_status_codes,
-        ant_status_codes=config.analytics.ant_status_codes,
-        call_dispositions=config.analytics.call_dispositions
+        disposal_statuses=config.analytics.disposal,
+        ant_statuses=config.analytics.ant,
+        call_dispositions=config.analytics.call
     )
