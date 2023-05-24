@@ -16,3 +16,8 @@ asterisk_ssh:
 
 hyperscript:
   uri: "${HYPERSCRIPT_HOST}:${HYPERSCRIPT_PORT}"
+
+analytics:
+  disposal_status_codes: ['break', 'break_lunch', 'break_toilet', 'break_training']
+  ant_status_codes: ['precall', 'aftercall', 'externalcall', 'callwaiting']
+  call_dispositions: ['ANSWERED', 'NO ANSWER', 'BUSY']

@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import timedelta
 from typing import Union
 
 from app.database import AnalyticsRepository, InnerPhones, UserRepository
@@ -8,13 +8,17 @@ from app.http.services.analytics.analytics_base_model import DisposalAnalytic, A
 class AnalyticsService:
     def __init__(self, analytics_repository: AnalyticsRepository,
                  inner_phone_repository: InnerPhones,
-                 user_repository: UserRepository) -> None:
+                 user_repository: UserRepository,
+                 disposal_status_codes: list[str],
+                 ant_status_codes: list[str],
+                 call_dispositions: list[str]
+                 ) -> None:
         self._repository = analytics_repository
         self._inner_phones_repository = inner_phone_repository
         self._user_repository = user_repository
-        self._disposal_status_codes = ['break', 'break_lunch', 'break_toilet', 'break_training']
-        self._ant_status_codes = ['precall', 'aftercall', 'externalcall', 'callwaiting']
-        self._call_dispositions = ['ANSWERED', 'NO ANSWER', 'BUSY']
+        self._disposal_status_codes = disposal_status_codes
+        self._ant_status_codes = ant_status_codes
+        self._call_dispositions = call_dispositions
 
     def get_disposal_analytic(self, data: DisposalAnalytic):
         uuid = self._user_repository.get_uuid_by_id(user_id=data.user_id)
@@ -35,7 +39,8 @@ class AnalyticsService:
         return self._get_total_data_for_ant(ant_data=ant_data, user_id=data.user_id)
 
     def get_call_analytic(self, data: CallAnalytic):
-        result = self._repository.get_call_analytic(number=data.number,
+        phone = self._inner_phones_repository.get_phone_by_id(user_id=data.user_id)
+        result = self._repository.get_call_analytic(phone=phone,
                                                     beginning=data.beginning,
                                                     ending=data.ending)
         analytic_data = self._fill_empty_data_for_call(dispositions=self._call_dispositions, analytic_data=result)
