@@ -1,4 +1,4 @@
-import datetime, json, asyncio
+import datetime, json, asyncio, os
 from fastapi.websockets import WebSocket, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosedOK
 from aioredis.client import PubSub
@@ -47,15 +47,21 @@ class UserService:
         """ Формирование данных из таблицы cdr для отправки в sutecrm """
         total_billsec = 0
         disposition = ""
+        files = ''
         cdrs = self._repository.get_call_by_call_id(call_id=call_id)
         for cdr in cdrs:
             if disposition == "":
                 disposition = cdr.disposition
             total_billsec = total_billsec + cdr.billsec
-
+            calldate=cdr.calldate
+            # files.append(cdr.recordingfile)
+            if files=='':
+                files=cdr.recordingfile
         return {
             "billsec": total_billsec,
-            "disposition": disposition
+            "disposition": disposition,
+            "files": files,
+            "calldate":calldate
         }
     def get_departments_employees(self, department_id):
         department_headers, department_employees = [], []
@@ -369,7 +375,23 @@ class UserService:
         await self._redis.redis.set(f"status.user.{status_info.user_id}", json.dumps(dict(status_info)))
         channel = f"user:status:{status_info.user_id}:c"
         await publisher(self._redis.redis, channel, dict(status_info))
+    
+    async def push_filename_asterisk(self, file_name: str ='', calldate: datetime.datetime=datetime.datetime.now()):
+        if file_name:
+            aster_path_file = os.getenv('ASTERISK_PATH_FILECALL')
+            try:
+                date_time=calldate.strftime('%Y/%m/%d')
+            except:
+                date_time=datetime.datetime.now().strftime('%Y/%m/%d')
 
+            file_download=f'{aster_path_file}/{date_time}/{file_name}'
+            print(file_download)
+            try:
+                await self._redis.redis.rpush('download_file_asterisk', file_download)
+            except Exception as exception:
+                log.error(msg=exception, stack_info=True)
+
+            
 class SkillService:
     def __init__(self, skill_repository: SkillsRepository) -> None:
         self._repository: SkillsRepository = skill_repository
