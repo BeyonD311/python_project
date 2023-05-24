@@ -30,7 +30,7 @@ class AntAnalytic(DisposalAnalytic):
 
 
 class CallAnalytic(BaseAnalytic):
-    number: str
+    user_id: int
 
 
 # class AnalyticResponse(BaseModel):
