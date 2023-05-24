@@ -9,7 +9,7 @@ from app.http.services.access import Access
 from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
 from app.database.repository.super import UserIsFired
 
-path_exception = ("docs", "openapi.json", "images")
+path_exception = ("docs", "openapi.json", "images", "audio")
 path_exception_aster = (
     "/users/status/asterisk", 
     "/users/status/test", 
