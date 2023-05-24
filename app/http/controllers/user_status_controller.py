@@ -6,7 +6,8 @@ from dependency_injector.wiring import Provide, inject
 from app.http.services.users import UserService
 from app.http.services.helpers import default_error
 from app.http.services.logger_default import get_logger
-from app.http.services.sutecrm import send_call_post
+from app.http.services.sutecrm import send_call_post, send_call_patch
+
 
 log = get_logger("status_controller.log")
 
@@ -52,9 +53,15 @@ async def update_status(
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     """ Если параметр '**user_id** == null' то будет изменен статус текущего пользователя """
     try:
+        
         if user_id == None:
             user_id = request.state.current_user_id
         await user_service.set_status(user_id, status_id=status_id, call_id=call_id)
+        if status_id == 17 and call_id is not None:
+            params = user_service.get_call_by_call_id(call_id)
+            print(params)
+            await send_call_patch(call_id, params['disposition'], params['billsec'], params['files'])
+            await user_service.push_filename_asterisk(params['files'], params['calldate'])
         result = {
             "message": "set status",
             "description": f"Новый статус ID={status_id} установлен."

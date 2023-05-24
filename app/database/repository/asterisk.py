@@ -75,9 +75,10 @@ class Asterisk():
             session.close()
             return  query
 
-    def get_call_by_id(self, call_id: str):
+    def get_call_by_call_id(self, call_id):
         with self.session_asterisk() as session:
-            query = session.execute(f"select ")
+            query = session.execute("select * from cdr where uniqueid = :call_id order by calldate desc", params={"call_id":call_id}).all()
+            return query
 
     def get_by_user_phone(self, phone: str):
         with self.session_asterisk() as session:
