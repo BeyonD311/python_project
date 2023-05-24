@@ -9,7 +9,9 @@ URI = getenv("SUTECRM_URI")
 
 async def send_contact_post(phone: str, id = None) -> int:
     async with aiohttp.ClientSession() as session:
-        async with session.post(f"{URI}/api/call/phone", json={"phone":phone}) as res:
+        async with session.post(f"{URI}/call/phone", json={"phone":phone}) as res:
+            logger.debug(phone)
+            logger.debug(f"{URI}/api/call/phone")
             logger.debug(await res.json())
             return res.status
 
