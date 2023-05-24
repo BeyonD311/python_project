@@ -84,7 +84,10 @@ class UserRepository(SuperRepository):
                 description = f"Не найден пользователь с логином '{login}'."
                 raise NotFoundError(item=login, entity_description=description)
             return user
-
+        
+    def get_call_by_call_id(self, call_id):
+        return self.session_asterisk.get_call_by_call_id(call_id=call_id)
+    
     def get_by_id(self, id: int) -> User:
         description = f"Не найден пользователь с ID={id}."
         try:
