@@ -57,12 +57,14 @@ class AnalyticsService:
     def _fill_empty_data(status_data: dict, analytic_data: Union[DisposalAnalytic, AntAnalytic]):
         data = [dict(row) for row in analytic_data]
         existed_statuses = [row['name'] for row in data]
-        status_data_dict = dict(zip(status_data['status_codes'], status_data['descriptions']))
-        for code in status_data_dict.keys():
+        for code in status_data.keys():
             if code not in existed_statuses:
                 data.append({'name': code, 'textValue': '00:00:00', 'value': 0})
         for item in data:
-            item.update({'description': status_data_dict[item['name']]})
+            item.update({
+                'description': status_data[item['name']]['description'],
+                'color': status_data[item['name']]['color']
+            })
         return data
 
     def _get_total_data_for_ant(self, ant_data: list[dict], user_id: int):

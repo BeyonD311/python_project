@@ -1,5 +1,5 @@
 db:
-  uri: "postgresql+psycopg2://${DB_USER}:${DB_PASS}@${DB_HOST}:5432/${DB_NAME}"
+  uri: "postgresql+psycopg2://${DB_NAME}:${DB_PASS}@10.3.0.48:5432/${DB_USER}"
 asterisk:
   uri: "mysql+pymysql://${ASTERISK_USER}:${ASTERISK_PASS}@${ASTERISK_HOST}:${ASTERISK_DB_PORT}/${ASTERISK_DB}?charset=utf8mb4"
   host: "${ASTERISK_SETTINGS_HOST}"
@@ -19,12 +19,41 @@ hyperscript:
 
 analytics:
   disposal:
-    status_codes: [ 'break', 'break_lunch', 'break_toilet', 'break_training', 'ready' ]
-    descriptions: [ 'Перерыв', 'Перерыв (обед)', 'Перерыв (туалет)', 'Перерыв (обучение)', 'Готов' ]
+    break:
+      description: 'Перерыв'
+      color: '#1890FF'
+    break_lunch:
+      description: 'Перерыв (обед)'
+      color: '#096DD9'
+    break_toilet:
+      description: 'Перерыв (туалет)'
+      color: '#40A9FF'
+    break_training:
+      description: 'Перерыв (обучение)'
+      color: '#46D3C2'
+    ready:
+      description: 'Готов'
+      color: '#B9DD79'
   ant:
-    status_codes: [ 'precall', 'aftercall', 'externalcall', 'callwaiting' ]
-    descriptions: [ 'Время предвызовной обработки', 'Время поствызывной обработки', 'Время разговора', 'Ожидание ответа абонента' ]
+    precall:
+      description: 'Время предвызовной обработки'
+      color: '#B9DD79'
+    aftercall:
+      description: 'Время поствызывной обработки'
+      color: '#FD7077'
+    externalcall:
+      description: 'Время разговора'
+      color: '#46D3C2'
+    callwaiting:
+      description: 'Ожидание ответа абонента'
+      color: '#40A9FF'
   call:
-    status_codes: [ 'ANSWERED', 'NO ANSWER', 'BUSY' ]
-    descriptions: [ 'Принято', 'Пропущено', 'Переведено' ]
-
+    ANSWERED:
+      description: 'Принято'
+      color: '#B9DD79'
+    'NO ANSWER':
+      description: 'Пропущено'
+      color: '#C78FFE'
+    BUSY:
+      description: 'Переведено'
+      color: '#51D5C6'
