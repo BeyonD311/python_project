@@ -146,3 +146,4 @@ async def fill(
 ):
     await user_service.add_status_to_redis()
     await user_service.all()
+    await user_service.add_status_user_to_redis()
