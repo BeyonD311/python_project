@@ -19,7 +19,15 @@ path_exception_aster = (
     "/auth/logout"
     )
 
-user_path_exception = ("/users/status", "/users/current", "/users/departments", "/queue", "/users/inner_phone/settings")
+user_path_exception = (
+    "/users/status", 
+    "/users/current", 
+    "/users/departments", 
+    "/queue", 
+    "/users/inner_phone/settings"
+    "/users/inner_phone/user",
+    "/users/analytics"
+    )
 
 @inject
 def get_user(id, user_repository = Depends(Provide[Container.user_repository])):
