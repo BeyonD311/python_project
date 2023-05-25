@@ -191,6 +191,31 @@ class UserService:
             del params['_sa_instance_state']
             await self._redis.redis.set(f"status:code:{status.code}", json.dumps(params))
 
+    async def add_status_user_to_redis(self):
+        params = UserParams(
+            page=1,
+            size=10000,
+            sort_field="id",
+            sort_dir="asc"
+        )
+        result = self._repository.get_all_status_users()
+        enums = EventRoute
+        for user in result:
+            try:
+                event = enums[user.status.code.upper()].value
+            except Exception as e:  # TODO: определить тип исключений
+                event = "CHANGE_STATUS"
+            params = PublisherParams(
+                user_id=user.id,
+                status_id=user.status.id,
+                status_code=user.status.code,
+                status_at=str(user.status_at),
+                status=user.status.alter_name,
+                event=event,
+                color=user.status.color,
+            )
+            await self.__set_status_redis(params)
+
     async def set_status_by_aster(
             self, 
             uuid: str, 

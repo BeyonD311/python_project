@@ -77,6 +77,12 @@ class UserRepository(SuperRepository):
             result['users'] = query.all()
             return result
 
+    def get_all_status_users(self):
+        with self.session_factory() as session:
+            users = session.query(self.base_model).filter(self.base_model.id != 0).all()
+            for user in users:
+                user.status
+            return users
     def get_by_login(self, login: str) -> User:
         with self.session_factory() as session:
             user = session.query(self.base_model).filter(self.base_model.login == login).first()
