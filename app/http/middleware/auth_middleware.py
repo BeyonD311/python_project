@@ -27,6 +27,8 @@ user_path_exception = (
     "/users/inner_phone/settings"
     "/users/inner_phone/user",
     "/users/analytics"
+    "users/inner_phone/user",
+    
     )
 
 @inject
