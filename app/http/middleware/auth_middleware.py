@@ -24,11 +24,9 @@ user_path_exception = (
     "/users/current", 
     "/users/departments", 
     "/queue", 
-    "/users/inner_phone/settings"
+    "/users/inner_phone/settings",
     "/users/inner_phone/user",
     "/users/analytics"
-    "users/inner_phone/user",
-    
     )
 
 @inject
@@ -78,8 +76,8 @@ class Auth(BaseHTTPMiddleware):
                 raise UserIsFired()
             method = request.method.lower()
             for upx in user_path_exception:
-                upx = upx.replace('/', '\/')
-                if re.search(r''+upx, str(request.get("path"))) is not None:
+                # upx = upx.replace('/', '\/')
+                if str(request.get("path")).find(upx) != -1:
                     return await call_next(request)
             access = Access(method=method)
             perms = get_user_permission(user).items()

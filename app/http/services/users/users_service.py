@@ -54,7 +54,6 @@ class UserService:
                 disposition = cdr.disposition
             total_billsec = total_billsec + cdr.billsec
             calldate=cdr.calldate
-            # files.append(cdr.recordingfile)
             if files=='':
                 files=cdr.recordingfile
         return {

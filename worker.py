@@ -78,9 +78,9 @@ celery_app.conf.beat_schedule = {
         'task': 'check_queue',
         'schedule': 10.0
     },
-    'add-every-20-seconds': {
+    'add-every-10-seconds': {
         'task': 'download_audio_asterisk',
-        'schedule': 8.0
+        'schedule': 10.0
     },
     'execute-daily-at-midnight': {
         'task': 'deleted_old_audio_file',
