@@ -324,6 +324,10 @@ class UserRepository(SuperRepository):
             inner_phone: InnerPhone
             for inner_phone in current.inner_phone:
                 if inner_phone.is_default and inner_phone.is_registration:
+                    if status_id == 9:
+                        self.session_asterisk.set_break(str(inner_phone.phone_number), True)
+                    elif status_id == 10:
+                        self.session_asterisk.set_break(str(inner_phone.phone_number), False)
                     status_history_params = StatusHistoryParams(
                         time_at=int(current.status_at.timestamp()),
                         user_uuid=current.uuid,
