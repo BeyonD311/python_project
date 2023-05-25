@@ -110,6 +110,11 @@ class Asterisk():
         query = f" update ps_auths set status = {status_id} where ps_auths.uuid = \"{uuid}\" "
         self.stack_multiple_query.append(query)
     
+    def set_break(self, phone: str, pause: bool):
+        pause = int(pause)
+        query = f" update queue_members set paused = {pause} where membername=\"{phone}\""
+        self.stack_multiple_query.append(query)
+
     def check_device_status(self, uuid) -> bool:
         '''
             Фукция для проверки статуса оборудования (если offline или None == false) true

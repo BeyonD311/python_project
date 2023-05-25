@@ -56,7 +56,7 @@ celery_app.conf.beat_schedule = {
 }
 
 celery_app.conf.beat_schedule = {
-    'add-every-20-seconds': {
+    'add-every-10-seconds': {
         'task': 'download_audio_asterisk',
         'schedule': 20.0
     },
