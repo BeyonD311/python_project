@@ -1,3 +1,2 @@
-from .departments_service import DepartmentsService, DepartmentParams, Filter
-
-__all__ = ['DepartmentsService', 'DepartmentParams', 'Filter']
+from .departments_service import *
+from .departments_base_model import *
