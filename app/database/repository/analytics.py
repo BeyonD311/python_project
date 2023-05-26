@@ -1,6 +1,5 @@
 from contextlib import AbstractContextManager
 from datetime import date
-
 from sqlalchemy.orm import Session
 from typing import Callable
 
@@ -37,16 +36,16 @@ class AnalyticsRepository:
                                               beginning=beginning,
                                               ending=ending)
 
-    def get_call_analytic(self, number: str, beginning: date, ending: date):
+    def get_call_analytic(self, phone: str, beginning: date, ending: date):
         with self.session_asterisk() as session:
             query = '''
-                        SELECT disposition, (COUNT(src) + COUNT(dst)) call_count
+                        SELECT disposition as name, (COUNT(src) + COUNT(dst)) as value, (COUNT(src) + COUNT(dst)) as textValue
                         FROM cdr
-                        WHERE src = :number OR dst = :number AND disposition IN ('ANSWERED', 'NO ANSWER', 'BUSY') 
+                        WHERE src = :phone OR dst = :phone AND disposition IN ('ANSWERED', 'NO ANSWER', 'BUSY') 
                         AND DATE(calldate) BETWEEN :beginning AND :ending
                         GROUP BY disposition
             '''
-            return session.execute(query, {'number': number, 'beginning': beginning, 'ending': ending}).fetchall()
+            return session.execute(query, {'phone': phone, 'beginning': beginning, 'ending': ending}).fetchall()
 
     def _get_analytic_by_subquery(self, subquery: str, uuid: str, calculation_method: str, beginning: date,
                                   ending: date):

@@ -165,8 +165,7 @@ class InnerPhones(SuperRepository):
         with self.session_factory() as session:
             phone = session.query(self.base_model.phone_number).filter(self.base_model.user_id == user_id).first()
             if not phone:
-                description = f"Inner phone пользователя с ID={user_id} не найден."
-                raise NotFoundError(entity_id=user_id, entity_description=description)
+                return None
             return phone[0]
 
 

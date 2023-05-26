@@ -75,9 +75,10 @@ class Asterisk():
             session.close()
             return  query
 
-    def get_call_by_id(self, call_id: str):
+    def get_call_by_call_id(self, call_id):
         with self.session_asterisk() as session:
-            query = session.execute(f"select ")
+            query = session.execute("select * from cdr where uniqueid = :call_id order by calldate desc", params={"call_id":call_id}).all()
+            return query
 
     def get_by_user_phone(self, phone: str):
         with self.session_asterisk() as session:
@@ -109,6 +110,11 @@ class Asterisk():
         query = f" update ps_auths set status = {status_id} where ps_auths.uuid = \"{uuid}\" "
         self.stack_multiple_query.append(query)
     
+    def set_break(self, phone: str, pause: bool):
+        pause = int(pause)
+        query = f" update queue_members set paused = {pause} where membername=\"{phone}\""
+        self.stack_multiple_query.append(query)
+
     def check_device_status(self, uuid) -> bool:
         '''
             Фукция для проверки статуса оборудования (если offline или None == false) true
@@ -182,7 +188,7 @@ class Asterisk():
     def get_queues(self, queue_name: str = None, phones: list = None):
         select_queue = '''
             select q.name name, q.uuid uuid from queue_members qm 
-            join queues q on q.name = qm.queue_name 
+            right join queues q on q.name = qm.queue_name 
             where 1=1
         '''
         if queue_name is not None:
@@ -194,7 +200,6 @@ class Asterisk():
         with self.session_asterisk() as asterisk:
             query = asterisk.execute(select_queue).all()
             return query
-
     def delete_phones(self, phones: list):
         phones_concat = ",".join(phones)
         delete_queue_members = f"delete from queue_members where membername in ({phones_concat})"

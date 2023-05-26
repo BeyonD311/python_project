@@ -3,7 +3,6 @@ from fastapi import APIRouter, Depends, status, Response
 from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
 from app.database import NotFoundError
-from app.http.services.users import UserService
 from app.kernel import Container
 from app.http.services.analytics.analytics import AnalyticsService
 from app.http.services.analytics.analytics_base_model import DisposalAnalytic, AntAnalytic, CallAnalytic, \
@@ -75,15 +74,15 @@ async def get_ant_analytic(
 @route.get('/call')
 @inject
 async def get_call_analytic(
+        user_id: int,
         beginning: date,
         ending: date,
-        number: str,
         response: Response,
         analytics_service: AnalyticsService = Depends(Provide[Container.analytics_service]),
         HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
     try:
-        call_data = CallAnalytic(beginning=beginning, ending=ending, number=number)
+        call_data = CallAnalytic(beginning=beginning, ending=ending, user_id=user_id)
         result = analytics_service.get_call_analytic(data=call_data)
         return result
     except ValueError as e:

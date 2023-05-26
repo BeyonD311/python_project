@@ -9,7 +9,7 @@ from app.http.services.access import Access
 from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
 from app.database.repository.super import UserIsFired
 
-path_exception = ("docs", "openapi.json", "images")
+path_exception = ("docs", "openapi.json", "images", "audio")
 path_exception_aster = (
     "/users/status/asterisk", 
     "/users/status/test", 
@@ -19,7 +19,16 @@ path_exception_aster = (
     "/auth/logout"
     )
 
-user_path_exception = ("/users/status", "/users/current", "/users/departments", "/queue", "/users/inner_phone/settings")
+user_path_exception = (
+    "/users/status", 
+    "/users/current", 
+    "/users/departments", 
+    "/queue", 
+    "/users/inner_phone/settings",
+    "/users/inner_phone/user",
+    "/users/analytics",
+    "/users/departments"
+    )
 
 @inject
 def get_user(id, user_repository = Depends(Provide[Container.user_repository])):
@@ -68,8 +77,8 @@ class Auth(BaseHTTPMiddleware):
                 raise UserIsFired()
             method = request.method.lower()
             for upx in user_path_exception:
-                upx = upx.replace('/', '\/')
-                if re.search(r''+upx, str(request.get("path"))) is not None:
+                # upx = upx.replace('/', '\/')
+                if str(request.get("path")).find(upx) != -1:
                     return await call_next(request)
             access = Access(method=method)
             perms = get_user_permission(user).items()

@@ -1,9 +1,9 @@
-import datetime, json, asyncio
+import datetime, json, asyncio, os
 from fastapi.websockets import WebSocket, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosedOK
 from aioredis.client import PubSub
 from hashlib import sha256
-from app.http.services.logger_default import get_logger
+from app.logger_default import get_logger
 from app.database import UserModel
 from app.database import UserRepository
 from app.database import NotFoundError, UserNotFoundError
@@ -47,15 +47,20 @@ class UserService:
         """ Формирование данных из таблицы cdr для отправки в sutecrm """
         total_billsec = 0
         disposition = ""
+        files = ''
         cdrs = self._repository.get_call_by_call_id(call_id=call_id)
         for cdr in cdrs:
             if disposition == "":
                 disposition = cdr.disposition
             total_billsec = total_billsec + cdr.billsec
-
+            calldate=cdr.calldate
+            if files=='':
+                files=cdr.recordingfile
         return {
             "billsec": total_billsec,
-            "disposition": disposition
+            "disposition": disposition,
+            "files": files,
+            "calldate":calldate
         }
     def get_departments_employees(self, department_id):
         department_headers, department_employees = [], []
@@ -104,6 +109,7 @@ class UserService:
         return self.__user_response(user)
 
     async def all(self):
+        """ Запись пользователей в редис по key=uuid """
         users = self._repository.items()
         for user in users:
             u = {
@@ -184,6 +190,31 @@ class UserService:
             params = status.__dict__
             del params['_sa_instance_state']
             await self._redis.redis.set(f"status:code:{status.code}", json.dumps(params))
+
+    async def add_status_user_to_redis(self):
+        params = UserParams(
+            page=1,
+            size=10000,
+            sort_field="id",
+            sort_dir="asc"
+        )
+        result = self._repository.get_all_status_users()
+        enums = EventRoute
+        for user in result:
+            try:
+                event = enums[user.status.code.upper()].value
+            except Exception as e:  # TODO: определить тип исключений
+                event = "CHANGE_STATUS"
+            params = PublisherParams(
+                user_id=user.id,
+                status_id=user.status.id,
+                status_code=user.status.code,
+                status_at=str(user.status_at),
+                status=user.status.alter_name,
+                event=event,
+                color=user.status.color,
+            )
+            await self.__set_status_redis(params)
 
     async def set_status_by_aster(
             self, 
@@ -369,7 +400,23 @@ class UserService:
         await self._redis.redis.set(f"status.user.{status_info.user_id}", json.dumps(dict(status_info)))
         channel = f"user:status:{status_info.user_id}:c"
         await publisher(self._redis.redis, channel, dict(status_info))
+    
+    async def push_filename_asterisk(self, file_name: str ='', calldate: datetime.datetime=datetime.datetime.now()):
+        if file_name:
+            aster_path_file = os.getenv('ASTERISK_PATH_FILECALL')
+            try:
+                date_time=calldate.strftime('%Y/%m/%d')
+            except:
+                date_time=datetime.datetime.now().strftime('%Y/%m/%d')
 
+            file_download=f'{aster_path_file}/{date_time}/{file_name}'
+            print(file_download)
+            try:
+                await self._redis.redis.rpush('download_file_asterisk', file_download)
+            except Exception as exception:
+                log.error(msg=exception, stack_info=True)
+
+            
 class SkillService:
     def __init__(self, skill_repository: SkillsRepository) -> None:
         self._repository: SkillsRepository = skill_repository

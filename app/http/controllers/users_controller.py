@@ -7,12 +7,12 @@ from app.http.services.users import UserService
 from app.http.services.users import UserRequest
 from app.http.services.users import UsersFilter
 from app.http.services.users import UserParams
-from app.http.services.departments import DepartmentsService
 from app.http.services.groups import GroupsService
 from app.http.services.users import SkillService, UserPermission
 from app.database import ExpectationError, AccessException
 from fastapi.security import HTTPBearer
 from pydantic import ValidationError
+from app.exceptions import exceptions_handling
 
 
 security = HTTPBearer()
@@ -28,36 +28,8 @@ route = APIRouter(
 async def fill_redis(
     user_service: UserService = Depends(Provide[Container.user_service]),
 ):
+    """ для начальной записи пользователей в redis """
     await user_service.all()
-
-@route.get("/departments")
-@inject
-async def get_departments(
-    departments_service: DepartmentsService = Depends(Provide[Container.department_service]),
-    HTTPBearerSecurity: HTTPBearer = Depends(security)):
-    return departments_service.get_all()
-
-@route.get("/departments/{departments_id}")
-@inject
-async def get_departments_user(
-    departments_id: int,
-    response: Response,
-    user_service: UserService = Depends(Provide[Container.user_service]),
-    HTTPBearerSecurity: HTTPBearer = Depends(security)):
-    '''
-
-    Результат - вывод Супервизоров и руководителя отдела ("head_of_department": true)
-
-     описание полей \n
-     - departments_id - id отдела пользователя
-    '''
-    try:
-        result = user_service.get_departments_employees(departments_id)
-    except Exception as e:
-        err = default_error(e, source='Users Department')
-        response.status_code = err[0]
-        result = err[1]
-    return result
 
 @route.get("/groups")
 @inject
@@ -261,9 +233,7 @@ async def add_user(
         await user_service.set_status(user.id,user.status.status_id)
         result = user
     except Exception as e:
-        err = default_error(e, source='Users')
-        response.status_code = err[0]
-        result = err[1]
+        result = exceptions_handling(e)
     return result
 
 

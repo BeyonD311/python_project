@@ -77,6 +77,12 @@ class UserRepository(SuperRepository):
             result['users'] = query.all()
             return result
 
+    def get_all_status_users(self):
+        with self.session_factory() as session:
+            users = session.query(self.base_model).filter(self.base_model.id != 0).all()
+            for user in users:
+                user.status
+            return users
     def get_by_login(self, login: str) -> User:
         with self.session_factory() as session:
             user = session.query(self.base_model).filter(self.base_model.login == login).first()
@@ -84,7 +90,10 @@ class UserRepository(SuperRepository):
                 description = f"Не найден пользователь с логином '{login}'."
                 raise NotFoundError(item=login, entity_description=description)
             return user
-
+        
+    def get_call_by_call_id(self, call_id):
+        return self.session_asterisk.get_call_by_call_id(call_id=call_id)
+    
     def get_by_id(self, id: int) -> User:
         description = f"Не найден пользователь с ID={id}."
         try:
@@ -315,6 +324,10 @@ class UserRepository(SuperRepository):
             inner_phone: InnerPhone
             for inner_phone in current.inner_phone:
                 if inner_phone.is_default and inner_phone.is_registration:
+                    if status_id == 9:
+                        self.session_asterisk.set_break(str(inner_phone.phone_number), True)
+                    elif status_id == 10:
+                        self.session_asterisk.set_break(str(inner_phone.phone_number), False)
                     status_history_params = StatusHistoryParams(
                         time_at=int(current.status_at.timestamp()),
                         user_uuid=current.uuid,

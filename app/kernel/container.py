@@ -155,5 +155,8 @@ class Container(containers.DeclarativeContainer):
         AnalyticsService,
         analytics_repository=analytics_repository,
         inner_phone_repository=inner_phone_repository,
-        user_repository=user_repository
+        user_repository=user_repository,
+        disposal_statuses=config.analytics.disposal,
+        ant_statuses=config.analytics.ant,
+        call_dispositions=config.analytics.call
     )
