@@ -2,40 +2,10 @@ from app.database import DepartmentsRepository
 from app.database import DepartmentsModel
 from app.http.services.users import UserStatus
 from app.http.services.users import UsersResponse
-from pydantic import BaseModel
-from pydantic import validator
-from typing import List
+from typing import List, Any
+from .departments_base_model import (Filter, DepartmentParams, Status, DepartmentFilter, PositionFilter, FilterParams)
 
-class DepartmentParams(BaseModel):
-    name: str
-    source_department: int = None
-    director_user_id: int = None
-    deputy_head_id: List[int] = None
-
-class Node(BaseModel):
-    name:str
-    id: int
-    child: List = []
-
-class Filter(BaseModel):
-    fio: str = None
-    department: list = None
-    position: list = None
-    status: list = None
-    phone: str = None
-
-    @validator('fio')
-    def check_fio(cls, v):
-        if v is "":
-            return None
-        return v
-    @validator('phone')
-    def check_phone(cls, v):
-        if v is "":
-            return None
-        return v
-class DepartmentResponse(BaseModel):
-    nodes: Node
+__all__ = ["DepartmentsService"]
 
 class DepartmentsService:
 
@@ -44,6 +14,36 @@ class DepartmentsService:
 
     def get_all(self):
         return self._repository.get_all()
+
+    def get_filter_params(self):
+        params = self._repository.get_filters()
+        fields = {
+            'statuses': [
+                Status(id=10, name="Доступен"),
+                Status(id=16, name="Уволен"),
+                Status(id=14, name="Оффлайн(Недоступен)"),
+                Status(id=15, name="Оффлайн(Нерабочее время)"),
+                Status(id=9, name="Перерыв"),
+                Status(id=19, name="Обед"),
+                Status(id=20, name="Туалет"),
+                Status(id=21, name="Обучение"),
+                Status(id=4, name="Занят(Разговор с абонентом)"),
+                Status(id=5, name="Занят(Разговор между операторами)")
+            ],
+            'departments': [],
+            'positions': []
+        }
+        for param in params:
+            if param.type in fields:
+                item: Any
+                if param.type == 'departments':
+                    item = DepartmentFilter(id=param.id, name=param.name)
+                elif  param.type == 'positions':
+                    item = PositionFilter(id=param.id, name=param.name)
+                fields[param.type].append(item)
+        fields = FilterParams(**fields)
+        return fields
+
 
     """ Получение структуры с фильтрами """
     def __check_filter(self, filter: set):
