@@ -3,7 +3,7 @@ from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
 from app.http.services.helpers import parse_params_num
 from app.kernel import Container
-from app.http.services.departments import DepartmentsService, DepartmentParams, Filter
+from app.http.services.departments import (DepartmentsService, DepartmentParams, Filter, FilterParams)
 from app.http.services.helpers import default_error
 
 route = APIRouter(
@@ -25,10 +25,14 @@ def get_departments(
     phone: str = None,
     department_service: DepartmentsService = Depends(Provide[Container.department_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
-    """
-    Exceptions:
-        NotFoundError
-    """
+    """ 
+    Получение отделов и сотрудников \n
+    **fio: str,\n
+    **department: str = пример "1,2,3" ввод id через запятую,
+    **position: str = пример "1,2,3" ввод id через запятую,
+    **status: str = пример "1,2,3" ввод id через запятую,
+    **phone: str,
+     """
     try:
         department = parse_params_num(department)
         position = parse_params_num(position)
@@ -47,6 +51,15 @@ def get_departments(
         response.status_code = err[0]
         result = err[1]
     return result
+
+@route.get("/filter", response_model=FilterParams)
+@inject
+def get_filter_params_departments(
+    department_service: DepartmentsService = Depends(Provide[Container.department_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)):
+    """ Получение данных для полей фильрации \n """
+    return department_service.get_filter_params()
+
 
 @route.post("/")
 @inject
