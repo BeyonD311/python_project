@@ -14,7 +14,7 @@ __all__ = ["Asterisk", "AsteriskParams", "ExistsException", "StatusHistoryParams
 # Параметры для фильтрации выборки
 queueFilter = {
     "NAME": lambda n: "and LOWER(name) like '%"+n+"%'",
-    "STATUS": lambda status: "and status in (" + status + ")",
+    "STATUS": lambda status: "and queue_enabled in (" + status + ")",
     "TYPE": lambda type: "and LOWER(type) = '" + str(type).lower() + "'",
     "MEMBERNAME": lambda membername: "and membername in ("+membername+")"
 }
@@ -216,6 +216,9 @@ class Asterisk():
                         " left join ps_auths pa on qm.membername = pa.id and pa.status not in (14, 9, 15) "\
                         f" where 1=1 and q.uuid is not NULL "
         select_queue = select_queue + " " + self.__filter_queues(params.filter)
+        print('----------------------------')
+        print(select_queue)
+        print('----------------------------')
         # часть запроса для подсчета
         select_wrapper = f"select uuid, name, status, type, operators, online from ({select_queue}) temp_queue "\
             '''
