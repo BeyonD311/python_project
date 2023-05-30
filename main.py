@@ -1,8 +1,9 @@
 from dotenv import load_dotenv, find_dotenv
-from fastapi import FastAPI
-from dependency_injector.wiring import register_loader_containers
+from fastapi import FastAPI, Depends
+from dependency_injector.wiring import register_loader_containers, inject, Provide
 from starlette.middleware.cors import CORSMiddleware
 from app.http.middleware.auth_middleware import Auth
+from app.http.services.users.users_service import UserService
 import os
 find_dotenv()
 load_dotenv()   
@@ -58,3 +59,11 @@ modules = import_modules_controller(container)
 
 for route_name in modules:
     app.include_router(modules[route_name])
+
+
+@app.on_event("startup")
+async def start():
+    user_service = await container.user_service()
+    await user_service.add_status_to_redis()
+    await user_service.all()
+    await user_service.add_status_user_to_redis()
