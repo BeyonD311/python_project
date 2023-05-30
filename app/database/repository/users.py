@@ -110,6 +110,7 @@ class UserRepository(SuperRepository):
                 user.groups
                 user.groups
                 user.inner_phone
+                session.commit()
                 return user
         except AttributeError as e:
             raise NotFoundError(entity_id=id, entity_description=description)
@@ -427,25 +428,23 @@ class UserRepository(SuperRepository):
 
     def user_dismiss(self, user_id: int, date_dismissal_at: datetime = None):
         try:
-            user = self.get_by_id(user_id)
             global event_type
             event_type = 0
             phones = []
             with self.session_factory() as session:
-                status = session.query(StatusModel).filter(StatusModel.code == 'dismiss').first()
-                if status == None:
-                    raise NotFoundError(entity_id=user_id, entity_description="Не найден статус увольнения")
+                user: User = session.query(self.base_model).filter(self.base_model.id == user_id).first()
                 user.date_dismissal_at = date_dismissal_at
                 user.status_at =  date_dismissal_at
-                user.status_id = status.id
+                user.status_id = 16
                 user.employment_status = False
                 for phone in user.inner_phone:
                     phones.append(str(phone.phone_number))
                     session.delete(phone)
                 session.add(user)
                 session.commit()
-            if phones != []:
-                self.session_asterisk.delete_asterisk(",".join(phones))
+            if phones is not []:
+                [self.session_asterisk.delete_sip_user_asterisk(phone) for phone in phones]
+                self.session_asterisk.delete_phones(phones)
                 self.session_asterisk.execute()
         except Exception as e:
             raise
@@ -563,12 +562,14 @@ def after_update_handler(mapper, connection: Connection, target: User):
     if event_type != None:
         with connection.begin():
             status_current = connection.execute(f"select update_at, status_id, user_id from status_history where user_id = {target.id} and is_active = true").first()
-            if type(target.status_at) == str:
-                target.status_at = datetime.strptime(target.status_at, "%Y-%m-%d %H:%M:%S")
+            target.status_at = datetime.fromisoformat(target.status_at.__format__("%Y-%m-%d %H:%M:%S.%f"))
             time_at = None
             if status_current is not None:
                 date:datetime = status_current[0]
-                td: timedelta = target.status_at - date
+                if target.status_at > date:
+                    td: timedelta = target.status_at - date
+                else:
+                    td = 0
                 if td.days > 0:
                     DAY = timedelta(1)
                     for i in range(td.days):
