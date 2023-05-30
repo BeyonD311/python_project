@@ -216,9 +216,6 @@ class Asterisk():
                         " left join ps_auths pa on qm.membername = pa.id and pa.status not in (14, 9, 15) "\
                         f" where 1=1 and q.uuid is not NULL "
         select_queue = select_queue + " " + self.__filter_queues(params.filter)
-        print('----------------------------')
-        print(select_queue)
-        print('----------------------------')
         # часть запроса для подсчета
         select_wrapper = f"select uuid, name, status, type, operators, online from ({select_queue}) temp_queue "\
             '''
