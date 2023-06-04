@@ -1,3 +1,4 @@
+import re
 from contextlib import AbstractContextManager
 from datetime import date
 from sqlalchemy.orm import Session
@@ -47,6 +48,28 @@ class AnalyticsRepository:
             '''
             return session.execute(query, {'phone': phone, 'beginning': beginning, 'ending': ending}).fetchall()
 
+    def get_call_quality_assessment(self, phones: list, calculation_method: str, beginning: date, ending: date):
+        phones = ",".join(phones)
+        with self.session_asterisk() as session:
+            query = '''
+                SELECT q.name, [num_of_rating] from (
+                    SELECT id_qualities FROM quality_control
+                    WHERE quality_control.operator_num in (:phones) AND
+                    (quality_control.calldate >= :beginning and quality_control.calldate <= :ending)
+                    AND quality_control.id_qualities != 0
+                ) qc
+                RIGHT JOIN qualities q on qc.id_qualities = q.id 
+                GROUP BY q.id 
+            '''
+            fields_replace = {
+                "num_of_rating": {
+                    "query": "IF(qc.id_qualities is NULL, 0, 1)",
+                    "alias": "num_of_rating"
+                }
+            }
+            query = self._calculation_method(query, calculation_method.upper(),fields_replace)
+            return session.execute(query, {'phones': phones, 'beginning': beginning, 'ending': ending}).all()
+
     def _get_analytic_by_subquery(self, subquery: str, uuid: str, calculation_method: str, beginning: date,
                                   ending: date):
         with self.session_asterisk() as session:
@@ -64,12 +87,36 @@ class AnalyticsRepository:
                                             '''
             result = session.execute(query, {'uuid': uuid, 'beginning': beginning, 'ending': ending}).fetchall()
             return result
-
-    def get_call_count(self, phone_number: str):
+        
+    def _calculation_method(self,query: str, method: str, field_calculate: dict) -> str:
+        """ Опеределение метода расчета SUM или AVG \n
+            **field_calculate - описание map \n
+                                {
+                                    "искомая строка для замены: {
+                                        "query": на что меняем
+                                        "alias": присвоение имени
+                                    }
+                                }
+        """
+        if method != 'SUM' and method != 'AVG':
+            raise ValueError(f'{method} method is not supported')
+        result = query
+        for field, value in field_calculate.items():
+            field = f'\[{field}\]'
+            result  = re.sub(field, f"{method}({value['query']}) {value['alias']}", query)
+        return result
+    
+    def get_call_count(self, phone_number: list,  beginning: date, ending: date):
         with self.session_asterisk() as session:
+            phones = ",".join(phone_number)
             query = '''
                         SELECT COUNT(src) + COUNT(dst) as call_count
                         FROM cdr
-                        WHERE src = :phone_number OR dst = :phone_number
+                        WHERE src in (:phone_number) OR dst in (:phone_number) AND
+                        (calldate >= :beginning and calldate <= :ending)
             '''
-            return session.execute(query, {'phone_number': phone_number}).scalar()
+            return session.execute(query, {
+                'phone_number': phones, 
+                "beginning": beginning, 
+                "ending": ending
+                }).scalar()

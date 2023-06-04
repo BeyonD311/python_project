@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Union
 
 from app.database import AnalyticsRepository, InnerPhones, UserRepository
-from app.http.services.analytics.analytics_base_model import DisposalAnalytic, AntAnalytic, CallAnalytic
+from app.http.services.analytics.analytics_base_model import DisposalAnalytic, AntAnalytic, CallAnalytic, QualityAnalytic
 
 
 class AnalyticsService:
@@ -53,6 +53,17 @@ class AnalyticsService:
             }
         }
 
+    def get_call_quality_assessment(self, data: QualityAnalytic):
+        phone = self._inner_phones_repository.get_phone_by_id(user_id=data.user_id)
+        totalData = self._repository.get_call_quality_assessment(phones=phone,
+                                                              calculation_method=data.calculation_method.value,
+                                                              beginning=data.beginning,
+                                                              ending=data.ending)
+        total_call = self._repository.get_call_count(phone_number=phone,
+                                                    beginning=data.beginning,
+                                                    ending=data.ending)
+        print(total_call)
+        return totalData
     @staticmethod
     def _fill_empty_data(status_data: dict, analytic_data: Union[DisposalAnalytic, AntAnalytic]):
         data = [dict(row) for row in analytic_data]
