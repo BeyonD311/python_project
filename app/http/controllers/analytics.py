@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import datetime
 from fastapi import APIRouter, Depends, status, Response
 from fastapi.security import HTTPBearer
 from dependency_injector.wiring import Provide, inject
@@ -21,8 +21,8 @@ route = APIRouter(
 @inject
 async def get_disposal_analytic(
         user_id: int,
-        beginning: date,
-        ending: date,
+        beginning: datetime,
+        ending: datetime,
         response: Response,
         calculation_method: CalculationMethod = CalculationMethod.SUM,
         analytics_service: AnalyticsService = Depends(Provide[Container.analytics_service]),
@@ -48,8 +48,8 @@ async def get_disposal_analytic(
 @inject
 async def get_ant_analytic(
         user_id: int,
-        beginning: date,
-        ending: date,
+        beginning: datetime,
+        ending: datetime,
         response: Response,
         calculation_method: CalculationMethod = CalculationMethod.SUM,
         analytics_service: AnalyticsService = Depends(Provide[Container.analytics_service]),
@@ -75,8 +75,8 @@ async def get_ant_analytic(
 @inject
 async def get_call_analytic(
         user_id: int,
-        beginning: date,
-        ending: date,
+        beginning: datetime,
+        ending: datetime,
         response: Response,
         analytics_service: AnalyticsService = Depends(Provide[Container.analytics_service]),
         HTTPBearerSecurity: HTTPBearer = Depends(security)

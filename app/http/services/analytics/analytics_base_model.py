@@ -35,9 +35,15 @@ class CallAnalytic(BaseAnalytic):
 class QualityAnalytic(DisposalAnalytic):
     pass
 
+
+class TotalRatingNums(BaseModel):
+    name: str
+    value: int
+
 class QualityAnalyticResponse(BaseModel):
-    data: dict
+    data: list[TotalRatingNums]
     totalData: dict
+
 
 # class AnalyticResponse(BaseModel):
 #     status_code: str
