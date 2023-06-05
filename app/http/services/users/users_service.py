@@ -48,6 +48,7 @@ class UserService:
         total_billsec = 0
         disposition = ""
         files = ''
+        calldate = ''
         cdrs = self._repository.get_call_by_call_id(call_id=call_id)
         for cdr in cdrs:
             if disposition == "":
