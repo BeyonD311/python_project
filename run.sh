@@ -1,4 +1,4 @@
-# !/usr/bin/sh
+!/usr/bin/sh
 celery -A worker.celery_app worker -l DEBUG &
 celery -A worker.celery_app beat -l DEBUG &
 
