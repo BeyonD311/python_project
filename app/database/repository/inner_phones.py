@@ -161,12 +161,12 @@ class InnerPhones(SuperRepository):
         )
         return asterisk_params
 
-    def get_phone_by_id(self, user_id: int):
+    def get_phone_by_id(self, user_id: int) -> list:
         with self.session_factory() as session:
             phone = session.query(self.base_model.phone_number).filter(self.base_model.user_id == user_id).first()
             if not phone:
                 return None
-            return phone[0]
+            return [str(p) for p in phone]
 
 
 class PhoneFoundError(NotFoundError):

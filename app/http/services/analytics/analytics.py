@@ -2,7 +2,9 @@ from datetime import timedelta
 from typing import Union
 
 from app.database import AnalyticsRepository, InnerPhones, UserRepository
-from app.http.services.analytics.analytics_base_model import DisposalAnalytic, AntAnalytic, CallAnalytic
+from app.http.services.analytics.analytics_base_model import (
+    DisposalAnalytic, AntAnalytic, CallAnalytic, QualityAnalytic, QualityAnalyticResponse, TotalRatingNums
+)
 
 
 class AnalyticsService:
@@ -36,11 +38,11 @@ class AnalyticsService:
                                                    beginning=data.beginning,
                                                    ending=data.ending)
         ant_data = self._fill_empty_data(status_data=self._ant_status_codes, analytic_data=result)
-        return self._get_total_data_for_ant(ant_data=ant_data, user_id=data.user_id)
+        return self._get_total_data_for_ant(ant_data=ant_data, user_id=data.user_id, beginning=data.beginning,ending=data.ending)
 
     def get_call_analytic(self, data: CallAnalytic):
-        phone = self._inner_phones_repository.get_phone_by_id(user_id=data.user_id)
-        result = self._repository.get_call_analytic(phone=phone,
+        phones = self._inner_phones_repository.get_phone_by_id(user_id=data.user_id)
+        result = self._repository.get_call_analytic(phones=phones,
                                                     beginning=data.beginning,
                                                     ending=data.ending)
         analytic_data = self._fill_empty_data(status_data=self._call_dispositions, analytic_data=result)
@@ -53,6 +55,36 @@ class AnalyticsService:
             }
         }
 
+    def get_call_quality_assessment(self, data: QualityAnalytic):
+        phone = self._inner_phones_repository.get_phone_by_id(user_id=data.user_id)
+
+        nums_of_rating = self._repository.get_call_quality_assessment(phones=phone,
+                                                              calculation_method=data.calculation_method.value,
+                                                              beginning=data.beginning,
+                                                              ending=data.ending)
+        total_call = self._repository.get_call_count(phone_number=phone,
+                                                    beginning=data.beginning,
+                                                    ending=data.ending)
+        result = []
+        total_nums_rating = 0
+        for rating in nums_of_rating:
+            total_nums_rating = total_nums_rating + rating.num_of_rating
+            result.append(TotalRatingNums(name=rating.name, value=int(rating.num_of_rating)))
+        return QualityAnalyticResponse(
+            totalData={
+                "total_rating": {
+                    "name": "total number of ratings",
+                    "value": total_nums_rating,
+                    "description": "Общее  количество оценок"
+                },
+                "total_calls": {
+                    'name': 'callsCount',
+                    'value': total_call,
+                    'description': 'Количество звонков'
+                }
+            },
+            data=result
+        )
     @staticmethod
     def _fill_empty_data(status_data: dict, analytic_data: Union[DisposalAnalytic, AntAnalytic]):
         data = [dict(row) for row in analytic_data]
@@ -67,12 +99,12 @@ class AnalyticsService:
             })
         return data
 
-    def _get_total_data_for_ant(self, ant_data: list[dict], user_id: int):
+    def _get_total_data_for_ant(self, ant_data: list[dict], user_id: int, beginning, ending):
         ant_data = self._convert_all_values_to_timedelta(data=ant_data)
         total_sec = sum(int(item['value'].total_seconds()) for item in ant_data)
         avg_sec = round(total_sec / len(ant_data))
         phone_number = self._inner_phones_repository.get_phone_by_id(user_id=user_id)
-        calls_count = self._repository.get_call_count(phone_number=phone_number)
+        calls_count = self._repository.get_call_count(phone_number=phone_number, beginning=beginning, ending=ending)
         return {
             'data': ant_data,
             'totalData': [

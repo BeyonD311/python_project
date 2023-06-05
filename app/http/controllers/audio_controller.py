@@ -2,16 +2,10 @@ import os
 from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import Response
-from fastapi import status
-from fastapi import UploadFile
-from fastapi import File
 from fastapi.security import HTTPBearer
 from fastapi.responses import FileResponse
 from app.database.repository import NotFoundError
 from app.http.services.helpers import default_error
-from app.http.services.images_service import ImagesServices
-from app.kernel import Container
-from dependency_injector.wiring import Provide
 from dependency_injector.wiring import inject
 
 route = APIRouter(

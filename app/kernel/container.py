@@ -22,8 +22,8 @@ from app.http.services.ssh import Ssh
 class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(modules=['app.http.middleware.auth_middleware'])
     config = providers.Configuration(yaml_files=[Path('config.yml')])
-    db = providers.Singleton(Database, db_url=config.db.uri)
-    asterisk = providers.Singleton(Database, db_url=config.asterisk.uri)
+    db = providers.Singleton(Database, db_url=config.db.uri, echo=False)
+    asterisk = providers.Singleton(Database, db_url=config.asterisk.uri, echo=True)
     # Service Provider
     redis_pool = providers.Resource(
         init_redis_pool,

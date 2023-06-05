@@ -1,6 +1,6 @@
 from enum import Enum
 from pydantic import BaseModel, validator
-from datetime import date, time
+from datetime import date, datetime
 from typing import Optional, Dict
 
 
@@ -10,8 +10,8 @@ class CalculationMethod(Enum):
 
 
 class BaseAnalytic(BaseModel):
-    beginning: date
-    ending: date
+    beginning: datetime
+    ending: datetime
 
     @validator('ending')
     def validate_ending(cls, v, values):
@@ -26,11 +26,23 @@ class DisposalAnalytic(BaseAnalytic):
 
 
 class AntAnalytic(DisposalAnalytic):
-    pass
+    pass 
 
 
 class CallAnalytic(BaseAnalytic):
     user_id: int
+
+class QualityAnalytic(DisposalAnalytic):
+    pass
+
+
+class TotalRatingNums(BaseModel):
+    name: str
+    value: int
+
+class QualityAnalyticResponse(BaseModel):
+    data: list[TotalRatingNums]
+    totalData: dict
 
 
 # class AnalyticResponse(BaseModel):
