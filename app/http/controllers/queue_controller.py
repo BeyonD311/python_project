@@ -1,4 +1,3 @@
-import asyncio
 from fastapi import Depends, APIRouter, Response
 from fastapi.security import HTTPBearer
 from app.http.services.queue import QueueService
@@ -11,7 +10,6 @@ from dependency_injector.wiring import inject
 from dependency_injector.wiring import Provide
 from app.kernel.container import Container
 from app.http.services.helpers import default_error
-from pydantic import ValidationError
 
 route = APIRouter(
     prefix="/queue",
