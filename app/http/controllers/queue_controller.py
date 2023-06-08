@@ -9,7 +9,7 @@ from app.http.services.queue import AddPhonesToTheQueue
 from dependency_injector.wiring import inject
 from dependency_injector.wiring import Provide
 from app.kernel.container import Container
-from app.http.services.helpers import default_error
+from app.http.services.helpers import default_error 
 
 route = APIRouter(
     prefix="/queue",

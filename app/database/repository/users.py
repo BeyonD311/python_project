@@ -333,7 +333,7 @@ class UserRepository(SuperRepository):
                         time_at=int(current.status_at.timestamp()),
                         user_uuid=current.uuid,
                         user_c=str(inner_phone.phone_number),
-                        source=0,
+                        source=inner_phone.phone_number,
                         destination=0,
                         code=status['code']
                     )

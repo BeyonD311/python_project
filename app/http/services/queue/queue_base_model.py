@@ -1,8 +1,7 @@
-from pydantic import BaseModel
-from pydantic import Field
-from pydantic import validator
+from pydantic import BaseModel, Field, validator
 from datetime import time
 from typing import Any
+from enum import Enum
 
 __all__ = [
     "BaseInfo", 
@@ -22,7 +21,9 @@ __all__ = [
     "IvrParams",
     "QueueStatus",
     "QueueSelected",
-    "AddPhonesToTheQueue"
+    "AddPhonesToTheQueue",
+    "PeriodsActiveQueue",
+    "PeriodsLoadQueue"
 ]
 
 
@@ -150,3 +151,31 @@ class GetAllQueue(BaseModel):
     filter: list[Filter] = []
     order_field: str
     order_direction:str
+
+class PeriodsLoadQueue(Enum):
+    """ Период выбора загруженных очередей """
+    DAY = "DAY"
+    HOUR = "HOUR"
+    HALF_HOUR = "HALF_HOUR"
+
+class PeriodsActiveQueue(Enum):
+    """ Период выбора активных очередей """
+    DAY = "DAY"
+    HOUR = "HOUR"
+    HALF_HOUR = "WEEKS"
+class QueueLoadResponseParams(BaseModel):
+    time_at: time = Field(alias='time', default=None)
+    error: int = Field(alias='Кол-во ошибок', default=0)
+    no_answer: int = Field(alias='Кол-во «Нет ответа»', default=0)
+    successful: int = Field(alias='Успешные', default=0)
+    busy: int = Field(alias="Кол-во «Занято»", default=0)
+    unavailable: int = Field(alias="Номер недоступен", default=0)
+    class Config:
+        allow_population_by_field_name = True
+
+
+class QueueActiveResponse(BaseModel):
+    name: str
+    value: int
+    type: str
+    group: str

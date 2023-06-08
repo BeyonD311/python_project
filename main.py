@@ -4,11 +4,12 @@ from dependency_injector.wiring import register_loader_containers, inject, Provi
 from starlette.middleware.cors import CORSMiddleware
 from app.http.middleware.auth_middleware import Auth
 from app.http.services.users.users_service import UserService
-import os
+import os, time
 find_dotenv()
 load_dotenv()   
 
 os.environ['TZ'] = os.getenv('TIME_ZONE')
+time.tzset()
 
 def create_container():
     from app.kernel import Container
@@ -22,8 +23,7 @@ def import_modules_controller(container):
     for loader, module_name, is_pkg in pkgutil.walk_packages(['/app/./app/http/controllers']):
         module = loader.find_module(module_name).load_module(module_name)
         if 'route' in module.__dict__:
-            nameSplit = module_name.split("_")
-            routes[nameSplit[0]] = module.__dict__['route']
+            routes[module_name] = module.__dict__['route'] 
     return routes
 
 

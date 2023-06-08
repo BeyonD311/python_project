@@ -68,8 +68,13 @@ class AnalyticsService:
         result = []
         total_nums_rating = 0
         for rating in nums_of_rating:
+            if rating.id == 0:
+                continue
             total_nums_rating = total_nums_rating + rating.num_of_rating
-            result.append(TotalRatingNums(name=rating.name, value=int(rating.num_of_rating)))
+            result.append(TotalRatingNums(id = rating.id,
+                                          name=rating.name,
+                                          value=int(rating.num_of_rating),
+                                          color=rating.color))
         return QualityAnalyticResponse(
             totalData={
                 "total_rating": {
