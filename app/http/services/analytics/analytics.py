@@ -57,7 +57,8 @@ class AnalyticsService:
 
     def get_call_quality_assessment(self, data: QualityAnalytic):
         phone = self._inner_phones_repository.get_phone_by_id(user_id=data.user_id)
-
+        if phone is None:
+            phone = []
         nums_of_rating = self._repository.get_call_quality_assessment(phones=phone,
                                                               calculation_method=data.calculation_method.value,
                                                               beginning=data.beginning,
