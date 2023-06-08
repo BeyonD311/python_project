@@ -110,6 +110,8 @@ class AnalyticsService:
         total_sec = sum(int(item['value'].total_seconds()) for item in ant_data)
         avg_sec = round(total_sec / len(ant_data))
         phone_number = self._inner_phones_repository.get_phone_by_id(user_id=user_id)
+        if phone_number is None:
+            phone_number = []
         calls_count = self._repository.get_call_count(phone_number=phone_number, beginning=beginning, ending=ending)
         return {
             'data': ant_data,
