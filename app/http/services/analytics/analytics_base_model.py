@@ -37,8 +37,10 @@ class QualityAnalytic(DisposalAnalytic):
 
 
 class TotalRatingNums(BaseModel):
+    id: int
     name: str
     value: int
+    color: str
 
 class QualityAnalyticResponse(BaseModel):
     data: list[TotalRatingNums]

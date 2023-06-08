@@ -12,7 +12,7 @@ from app.http.services.images_service import ImagesServices
 from app.http.services.inner_phone import InnerPhoneServices
 from app.http.services.schedule.schedule import ScheduleService
 from app.http.services.analytics.analytics import AnalyticsService
-from app.http.services.queue import QueueService
+from app.http.services.queue import QueueService, QueueStatisticsService
 from .redis import init_redis_pool
 from app.http.services.jwt_managment import JwtManagement
 from app.http.services.helpers import RedisInstance
@@ -159,4 +159,14 @@ class Container(containers.DeclarativeContainer):
         disposal_statuses=config.analytics.disposal,
         ant_statuses=config.analytics.ant,
         call_dispositions=config.analytics.call
+    )
+
+    queue_statistics_repository = providers.Factory(
+        DatabaseCustom.QueueStatistics,
+        session_asterisk=asterisk.provided.session
+    )
+
+    queue_statistics_service = providers.Factory(
+        QueueStatisticsService,
+        queue_statistics_repository=queue_statistics_repository
     )

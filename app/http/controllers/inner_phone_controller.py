@@ -1,14 +1,12 @@
 import jwt
 import os
-from fastapi import Depends, APIRouter, Response, status, Request
+from fastapi import Depends, APIRouter, Response, Request
 from fastapi.security import HTTPBearer
 from app.kernel.container import Container
 from dependency_injector.wiring import Provide, inject
 from app.http.services.inner_phone import RequestInnerPhone
 from app.http.services.inner_phone import InnerPhoneServices
 from app.http.services.helpers import default_error
-
-from sqlalchemy.exc import IntegrityError
 
 security = HTTPBearer()
 

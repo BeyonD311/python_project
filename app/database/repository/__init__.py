@@ -15,3 +15,4 @@ from .inner_phones import InnerPhones
 from .schedule import ScheduleRepository
 from .asterisk import *
 from .analytics import AnalyticsRepository
+from .queue_statistics import QueueStatistics

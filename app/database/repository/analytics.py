@@ -74,13 +74,13 @@ class AnalyticsRepository:
         phones = ",".join(phones)
         with self.session_asterisk() as session:
             query = '''
-                SELECT q.name, [num_of_rating] from (
+                SELECT q.id, q.name, [num_of_rating], q.color from (
                     SELECT id_qualities FROM quality_control
                     WHERE quality_control.operator_num in (:phones) AND
                     (quality_control.calldate >= :beginning and quality_control.calldate <= :ending)
                     AND quality_control.id_qualities != 0
                 ) qc
-                RIGHT JOIN qualities q on qc.id_qualities = q.id 
+                RIGHT JOIN qualities q on qc.id_qualities = q.id
                 GROUP BY q.id 
             '''
             fields_replace = {
