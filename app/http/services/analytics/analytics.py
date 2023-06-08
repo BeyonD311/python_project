@@ -42,6 +42,8 @@ class AnalyticsService:
 
     def get_call_analytic(self, data: CallAnalytic):
         phones = self._inner_phones_repository.get_phone_by_id(user_id=data.user_id)
+        if phones is None:
+            phones = []
         result = self._repository.get_call_analytic(phones=phones,
                                                     beginning=data.beginning,
                                                     ending=data.ending)
