@@ -22,9 +22,6 @@ class QueueStatistics:
             GROUP BY qm.queue_name
         '''
         with self.session_asterisk() as session:
-            print('---------------------------------')
-            print({"start": str(start_date), "end": str(end_date)})
-            print('---------------------------------')
             res = session.execute(query, params={"start": start_date, "end": end_date}).all()
             return res
     def loading_the_queue(self, queue_uuid: str, period: str):
@@ -62,5 +59,6 @@ class QueueStatistics:
                 group by `{temp_table}`.start, event
             ) total_temp
             right join `{temp_table}` t on total_temp.start = t.start
+            order by t.start
         '''
         return query.format(temp_table=queue_uuid, q_uuid=queue_uuid)
