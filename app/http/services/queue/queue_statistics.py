@@ -7,7 +7,7 @@ from hashlib import md5
 __all__ = ["QueueStatisticsService"]
 
 # Количество частей на которое делиться временной отрезок
-BREAK_TIME_INTERVAL = 6
+BREAK_TIME_INTERVAL = 8
 
 tz = timezone(timedelta(hours=3), "MSK")
 
@@ -96,7 +96,6 @@ class QueueStatisticsService:
             result.append(param)
         hash_table_params = None
         result_select = None
-        result.sort(key=lambda elem: elem.time_at)
         return result
     
     def active_queues(self, type_period: PeriodsActiveQueue):
@@ -113,7 +112,6 @@ class QueueStatisticsService:
         select_raw = self._stat.active_queue(Periods.calculate(type_period, calculate_map[type_period]), Periods.DATE)
         result = []
         for queue in select_raw:
-            print(queue.queue_name, queue.total_online, queue.total, queue.total_online // queue.total)
             percentage_of_activity = (queue.total_online / queue.total) * 100
             loading_status = "unloaded"
             if percentage_of_activity >= 60:

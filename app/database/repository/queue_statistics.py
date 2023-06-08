@@ -62,5 +62,6 @@ class QueueStatistics:
                 group by `{temp_table}`.start, event
             ) total_temp
             right join `{temp_table}` t on total_temp.start = t.start
+            order by t.start
         '''
         return query.format(temp_table=queue_uuid, q_uuid=queue_uuid)
