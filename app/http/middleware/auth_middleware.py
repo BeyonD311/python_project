@@ -13,7 +13,8 @@ path_exception = ("docs", "openapi.json", "images", "audio")
 path_exception_aster = (
     "/users/status/asterisk", 
     "/users/status/test", 
-    "/users/status/fill", 
+    "/users/status/fill",
+    "/users/status/end_call", 
     "/users/fill", 
     "/auth/login",
     "/auth/logout"
