@@ -1,12 +1,12 @@
 import jwt, os, asyncio
-from fastapi import Depends, APIRouter, Response, Request, WebSocket, WebSocketException
+from fastapi import Depends, APIRouter, Response, Request, WebSocket, BackgroundTasks
 from fastapi.security import HTTPBearer
 from app.kernel.container import Container
 from dependency_injector.wiring import Provide, inject
 from app.http.services.users import UserService
 from app.http.services.helpers import default_error
 from app.http.services.logger_default import get_logger
-from app.http.services.sutecrm import Events,send_call_post, send_call_patch
+from app.http.services.sutecrm import Events, send_call_patch
 
 
 log = get_logger("status_controller.log")
@@ -148,13 +148,25 @@ async def fill(
     await user_service.all()
     await user_service.add_status_user_to_redis()
 
+
+async def task(call_id, user_service):
+    await asyncio.sleep(5)
+    log.debug("Run download")
+    params = user_service.get_call_by_call_id(call_id)
+    await send_call_patch(call_id, params['disposition'], params['billsec'], params['files'])
+    await user_service.push_filename_asterisk(params['files'], params['calldate'])
+
+def task_download(call_id, user_service):
+    asyncio.run(task(call_id, user_service))
+
 @route.get('/end_call')
 @inject
 async def end_call(
     call_id: str,
+    background_tasks: BackgroundTasks,
     user_service: UserService = Depends(Provide[Container.user_service])):
-    await asyncio.sleep(5)
-    params = user_service.get_call_by_call_id(call_id)
-    await send_call_patch(call_id, params['disposition'], params['billsec'], params['files'])
-    await user_service.push_filename_asterisk(params['files'], params['calldate'])
+    background_tasks.add_task(task_download, call_id=call_id, user_service=user_service)
+    return {
+        "message": "load"
+    }
     

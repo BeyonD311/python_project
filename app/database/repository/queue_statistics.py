@@ -31,7 +31,7 @@ class QueueStatistics:
             select = self.__select_loading_the_queue(queue_uuid=queue_uuid)
             for query in create_temporary_table:
                 session.execute(query)
-                session.commit()
+            session.commit()
             res = session.execute(select).all()
             session.close()
             return res
