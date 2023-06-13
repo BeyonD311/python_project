@@ -15,8 +15,11 @@ COPY . .
 
 RUN chmod 777 ./run.sh
 
-RUN python -m pip install --upgrade pip && \
-pip install --no-cache-dir --disable-pip-version-check --no-warn-script-location --requirement  requirements.txt
+RUN python -m pip install --upgrade pip
+RUN python -m pip install virtualenv
+
+RUN virtualenv venv && source venv/bin/activate
+RUN pip install --no-cache-dir --disable-pip-version-check --no-warn-script-location --requirement  requirements.txt
 
 RUN pip install redis
 RUN pip install --no-cache-dir flower

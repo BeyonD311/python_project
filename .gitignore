@@ -7,4 +7,3 @@ status.txt
 .vscode
 !/openvpn-repo-pkg-key.pub
 /celerybeat-schedule
-./grpc
