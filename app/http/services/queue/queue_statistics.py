@@ -151,7 +151,8 @@ class QueueStatisticsService:
         hash_table_params = {}
         result = []
         for raw_select in result_select:
-            hash_key = md5("{}{}".format(str(raw_select.start), str(raw_select.end)).encode()).hexdigest()
+            hash_key = md5("{}{}".format(str(raw_select.start.__format__("%Y-%m-%d %H:%M:%S")), 
+                                         str(raw_select.end.__format__("%Y-%m-%d %H:%M:%S"))).encode()).hexdigest()
             if hash_key not in hash_table_params:
                 hash_table_params[hash_key] = []
             hash_table_params[hash_key].append({

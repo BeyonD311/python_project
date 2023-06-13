@@ -46,7 +46,6 @@ async def scp_asterisk_conn(file_download):
                                     password=password, 
                                     username=username, 
                                     known_hosts=None) as conn:
-            
             await asyncssh.scp((conn, file_download), f'{local_path_file}') 
             conn.close()
     except Exception as exception:
