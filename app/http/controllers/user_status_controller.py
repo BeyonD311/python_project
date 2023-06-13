@@ -153,7 +153,7 @@ async def fill(
 async def end_call(
     call_id: str,
     user_service: UserService = Depends(Provide[Container.user_service])):
-    asyncio.sleep(5)
+    await asyncio.sleep(5)
     params = user_service.get_call_by_call_id(call_id)
     await send_call_patch(call_id, params['disposition'], params['billsec'], params['files'])
     await user_service.push_filename_asterisk(params['files'], params['calldate'])
