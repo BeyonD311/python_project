@@ -24,6 +24,7 @@ class QueueStatistics:
         with self.session_asterisk() as session:
             res = session.execute(query, params={"start": start_date, "end": end_date}).all()
             return res
+    
     def loading_the_queue(self, queue_uuid: str, period: str):
         with self.session_asterisk() as session:
             create_temporary_table = self.__create_temporary_table(queue_uuid, period)
@@ -35,8 +36,32 @@ class QueueStatistics:
             session.close()
             return res
 
-    def operation_of_active_queues(self):
-        ...
+    def queue_stat(self, uuid: str, statuses: str, start_date: datetime = None, end_date: datetime = None):
+        """ Получение статистики для очереди """
+        condition_date = f"AND ql.event in ({statuses}) "
+        if start_date and end_date:
+            condition_date = condition_date + f"AND (ql.time >= \"{str(start_date)}\" AND ql.time <= \"{str(end_date)}\")"
+        query = f'''
+                SELECT event, count(event) cnt_calls, sum(call_time) total_time FROM ({self.__query_static_calls().format(condition_date)}) total_queue_calls
+                GROUP BY event
+            '''
+        with self.session_asterisk() as session:
+            select = session.execute(query, {"uuid": uuid}).all()
+            return select
+
+    @staticmethod
+    def __query_static_calls() -> str:
+        query = '''
+            SELECT ql.event, (ql.data1 + ql.data2) call_time  FROM queue_log ql 
+            JOIN queues q ON ql.queuename = q.name
+            WHERE q.uuid = :uuid and ql.callid != "NONE" 
+            AND (ql.event != "ENTERQUEUE" and ql.event != "CONNECT")
+            {}
+            GROUP BY ql.callid
+            ORDER BY ql.`time` DESC
+        '''
+
+        return query
 
     @staticmethod
     def __create_temporary_table(name: str, values: str) -> str:

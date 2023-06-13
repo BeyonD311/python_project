@@ -47,3 +47,20 @@ def operation_of_active_queues(
         response.status_code = err[0]
         result = err[1]
     return result
+
+@route.get("/total_statistics/{uuid}")
+@inject
+def total_statistics_this_queue(
+    uuid: str,
+    seconds: int,
+    response: Response,
+    stat_service: QueueStatisticsService = Depends(Provide[Container.queue_statistics_service]),
+    HTTPBearerSecurity: HTTPBearer = Depends(security)
+):
+    try:
+        result = stat_service.total_stat_queue(uuid, seconds)
+    except Exception as e:
+        err = default_error(e)
+        response.status_code = err[0]
+        result = err[1]
+    return result

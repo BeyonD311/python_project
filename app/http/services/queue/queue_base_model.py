@@ -163,6 +163,7 @@ class PeriodsActiveQueue(Enum):
     DAY = "DAY"
     HOUR = "HOUR"
     HALF_HOUR = "WEEKS"
+
 class QueueLoadResponseParams(BaseModel):
     time_at: time = Field(alias='time', default=None)
     error: int = Field(alias='Кол-во ошибок', default=0)
@@ -173,6 +174,27 @@ class QueueLoadResponseParams(BaseModel):
     class Config:
         allow_population_by_field_name = True
 
+class QueueTotalOptionsParams(BaseModel):
+    value: int = 0
+    percent: int = 0
+    class Config:
+        allow_population_by_field_name = True
+class QueueTotalOptions(BaseModel):
+    calls: QueueTotalOptionsParams = Field(alias="Звонки", default=QueueTotalOptionsParams)
+    received_calls: QueueTotalOptionsParams = Field(alias="Принятых звонков", default=QueueTotalOptionsParams)
+    calls_with_errors: QueueTotalOptionsParams = Field(alias="Звонков с ошибками", default=QueueTotalOptionsParams)
+    calls_not_received: QueueTotalOptionsParams = Field(alias="Не принятых звонков", default=QueueTotalOptionsParams)
+    calls_busy: QueueTotalOptionsParams = Field(alias="Звонков занято", default=QueueTotalOptionsParams)
+    duration_calls: QueueTotalOptionsParams = Field(alias="Длительность звонков", default=QueueTotalOptionsParams)
+    contacts_completed: QueueTotalOptionsParams = Field(alias="Контактов завершено", default=QueueTotalOptionsParams)
+    total_contacts: QueueTotalOptionsParams = Field(alias="Всего контактов", default=QueueTotalOptionsParams)
+    average_talk_time: QueueTotalOptionsParams = Field(alias="Среднее время разговора", default=QueueTotalOptionsParams)
+    class Config:
+        allow_population_by_field_name = True
+
+class QueueTotalStat(BaseModel):
+    total: QueueTotalOptions
+    period: QueueTotalOptions
 
 class QueueActiveResponse(BaseModel):
     name: str

@@ -168,5 +168,6 @@ class Container(containers.DeclarativeContainer):
 
     queue_statistics_service = providers.Factory(
         QueueStatisticsService,
-        queue_statistics_repository=queue_statistics_repository
+        queue_statistics_repository=queue_statistics_repository,
+        asterisk=asterisk_repository
     )

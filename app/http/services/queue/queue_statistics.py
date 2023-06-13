@@ -1,7 +1,10 @@
 from datetime import datetime, timedelta, timezone
 from app.database.repository.super import NotFoundError
-from app.database import QueueStatistics
-from .queue_base_model import QueueLoadResponseParams, PeriodsActiveQueue, PeriodsLoadQueue, QueueActiveResponse
+from app.database import QueueStatistics, Asterisk
+from .queue_base_model import (
+    QueueLoadResponseParams, PeriodsActiveQueue, PeriodsLoadQueue, QueueActiveResponse,
+    QueueTotalOptions, QueueTotalOptionsParams, QueueTotalStat
+    )
 from hashlib import md5
 
 __all__ = ["QueueStatisticsService"]
@@ -42,7 +45,12 @@ class Periods:
     def __calculate_date_days(cls, days: int):
         """ Вычитание от текущего времени переданное количество дней """
         return cls.DATE - timedelta(days=days)
-
+    
+    @classmethod
+    def __calculate_date_seconds(cls, seconds: int):
+        """ Вычитание от текущего времени переданное количество секунд """
+        return cls.DATE - timedelta(seconds=seconds)
+    
     @classmethod
     def get_interval(cls, name: str) -> int:
         if name.upper() in cls.__dict__:
@@ -60,18 +68,84 @@ class Periods:
             "DAY": cls.__calculate_date_hour,
             "HOUR": cls.__calculate_date_min,
             "HALF_HOUR": cls.__calculate_date_min,
-            "WEEKS": cls.__calculate_date_days
+            "WEEKS": cls.__calculate_date_days,
+            "SECONDS": cls.__calculate_date_seconds
         }
+
         if name.upper() in calculate_map:
             return calculate_map[name.upper()](number)
         
         raise NotFoundError(entity_message="Period calculate not found", entity_description="Заданный период вычесления не найден") 
 
 class QueueStatisticsService:
-    def __init__(self, queue_statistics_repository: QueueStatistics):
+    def __init__(self, queue_statistics_repository: QueueStatistics, asterisk: Asterisk):
         self._stat:QueueStatistics = queue_statistics_repository
+        self._asterisk: Asterisk = asterisk
     
+    def __fill_result_total_stat(self, comparison_statuses: dict, raw_select) -> dict:
+        result = (QueueTotalOptions()).dict()
+        total_calls = 0
+        total_time_calls = 0
+        calculate_params = {}
+        for param in raw_select:
+            total_calls = total_calls + param.cnt_calls
+            call_time = param.total_time
+            if param.event == "RINGNOANSWER":
+                call_time = call_time / 60
+            if param.event in comparison_statuses:
+                if comparison_statuses[param.event] in calculate_params:
+                    calculate_params[comparison_statuses[param.event]] = calculate_params[comparison_statuses[param.event]] + param.cnt_calls
+                else:
+                    calculate_params[comparison_statuses[param.event]] = param.cnt_calls
+            total_time_calls = total_time_calls + call_time
+        for key in result:
+            result[key] = QueueTotalOptionsParams()
+        for param, value in calculate_params.items():
+            result[param] = QueueTotalOptionsParams(
+                    value=value,
+                    percent=int((value / total_calls) * 100)
+                )
+        result['calls'] = QueueTotalOptionsParams(
+            percent=100,
+            value=total_calls
+        )
+        avg_time_calls = 0
+        if total_time_calls != 0:
+            avg_time_calls = int(total_time_calls / total_calls)
+        result['average_talk_time'] = QueueTotalOptionsParams(
+            percent=100,
+            value=avg_time_calls
+        )
+
+        return QueueTotalOptions(**result)
+    
+    def total_stat_queue(self, uuid, seconds: int):
+        self._asterisk.get_queue_by_uuid(uuid)
+        #Сопоставление статусов таблицы и 
+        comparison_statuses = {
+            "EXITEMPTY": "calls_not_received",
+            "EXITWITHTIMEOUT": "calls_not_received",
+            "RINGNOANSWER": "calls_not_received",
+            "COMPLETECALLER": "received_calls",
+            "COMPLETEAGENT": "received_calls",
+            "ABANDON": "calls_with_errors",
+            "RINGCANCELED": "calls_with_errors",
+            "SYSCOMPAT": "calls_with_errors"
+        }
+        start = Periods.DATE
+        end = Periods.calculate("SECONDS", seconds)
+        find_statuses = []
+        for status in comparison_statuses:
+            find_statuses.append(f"\'{status}\'")
+        total_select = self._stat.queue_stat(uuid=uuid, statuses=",".join(find_statuses))
+        period = self._stat.queue_stat(uuid=uuid, statuses=",".join(find_statuses), start_date=start, end_date=end)
+        return QueueTotalStat(
+            total=self.__fill_result_total_stat(comparison_statuses=comparison_statuses, raw_select = total_select),
+            period=self.__fill_result_total_stat(comparison_statuses=comparison_statuses, raw_select = period)
+        )
+        
     def queue_load(self, uuid: str, type_period: PeriodsLoadQueue):
+        self._asterisk.get_queue_by_uuid(uuid)
         period=self._generate_period(type_period.value)
         result_select = self._stat.loading_the_queue(queue_uuid=uuid, period=(",".join(period[0])))
         hash_table_params = {}

@@ -35,7 +35,6 @@ def check_queue():
 
 
 async def download_audio_asterisk():
-    
     _redis = await redis
     while await _redis.llen('download_file_asterisk')!=0:
         file_download =await _redis.rpop('download_file_asterisk')
