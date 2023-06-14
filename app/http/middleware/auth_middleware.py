@@ -10,7 +10,7 @@ from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
 from app.database.repository.super import UserIsFired
 
 path_exception = ("docs", "openapi.json", "images", "audio")
-path_exception_aster = (
+path_exception_global = (
     "/users/status/asterisk", 
     "/users/status/test", 
     "/users/status/fill",
@@ -20,16 +20,19 @@ path_exception_aster = (
     "/auth/logout"
     )
 
-user_path_exception = (
-    "/users/status", 
-    "/users/current", 
-    "/users/departments", 
-    "/queue", 
-    "/users/inner_phone/settings",
-    "/users/inner_phone/user",
-    "/users/analytics",
-    "/users/departments"
+user_path_exception_map = {
+    "get": (
+        "/users/status", 
+        "/users/current", 
+        "/users/departments", 
+        "/queue", 
+        "/users/inner_phone/settings",
+        "/users/inner_phone/user",
+        "/users/analytics",
+        "/users/departments",
+        "/users/(\d{1,})"
     )
+}
 
 @inject
 def get_user(id, user_repository = Depends(Provide[Container.user_repository])):
@@ -53,7 +56,7 @@ class Auth(BaseHTTPMiddleware):
             path = str(request.get("path")).split("/")
             if  path[1] in path_exception:
                 return await call_next(request)
-            if request.get("path") in path_exception_aster:
+            if request.get("path") in path_exception_global:
                 return await call_next(request)
             token = request.headers.get('authorization')
             if token is None:
@@ -77,10 +80,11 @@ class Auth(BaseHTTPMiddleware):
             if user.employment_status == False or user.date_dismissal_at is not None:
                 raise UserIsFired()
             method = request.method.lower()
-            for upx in user_path_exception:
-                # upx = upx.replace('/', '\/')
-                if str(request.get("path")).find(upx) != -1:
-                    return await call_next(request)
+            if method in user_path_exception_map:
+                exceptions_paths = user_path_exception_map[method]
+                for upx in exceptions_paths:
+                    if re.search(upx, request.get("path")) is not None:
+                        return await call_next(request)
             access = Access(method=method)
             perms = get_user_permission(user).items()
             for _, value in perms:
