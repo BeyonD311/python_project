@@ -162,7 +162,7 @@ class PeriodsActiveQueue(Enum):
     """ Период выбора активных очередей """
     DAY = "DAY"
     HOUR = "HOUR"
-    HALF_HOUR = "WEEKS"
+    HALF_HOUR = "WEEK"
 
 class QueueLoadResponseParams(BaseModel):
     time_at: time = Field(alias='time', default=None)

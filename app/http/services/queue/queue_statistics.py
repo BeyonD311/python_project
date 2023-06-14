@@ -28,7 +28,7 @@ class Periods:
     DAY = 24/BREAK_TIME_INTERVAL
     HOUR = 60/BREAK_TIME_INTERVAL
     HALF_HOUR = 30/BREAK_TIME_INTERVAL
-    WEEKS = 7//BREAK_TIME_INTERVAL
+    WEEK = 7//BREAK_TIME_INTERVAL
     DATE = datetime.now(tz=tz)
 
     @classmethod
@@ -68,7 +68,7 @@ class Periods:
             "DAY": cls.__calculate_date_hour,
             "HOUR": cls.__calculate_date_min,
             "HALF_HOUR": cls.__calculate_date_min,
-            "WEEKS": cls.__calculate_date_days,
+            "WEEK": cls.__calculate_date_days,
             "SECONDS": cls.__calculate_date_seconds
         }
 
@@ -179,7 +179,7 @@ class QueueStatisticsService:
             "DAY": 24,
             "HOUR": 60,
             "HALF_HOUR": 30,
-            "WEEKS": 7
+            "WEEK": 7
         }
         if type_period not in calculate_map:
             raise NotFoundError(entity_message="Period calculate not found", entity_description="Заданный период вычесления не найден")
