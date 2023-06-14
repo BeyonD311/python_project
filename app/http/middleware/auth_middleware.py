@@ -31,6 +31,9 @@ user_path_exception_map = {
         "/users/analytics",
         "/users/departments",
         "/users/(\d{1,})"
+    ),
+    "patch": (
+        "/users/status"
     )
 }
 
