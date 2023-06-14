@@ -146,8 +146,8 @@ class AccessException(BaseException):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    def __str__(self) -> None:
-        super().__str__()
+    def __str__(self) -> None: 
+        return self.message_err
 
 
 class RequestException(BaseException):

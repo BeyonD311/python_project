@@ -63,7 +63,7 @@ def default_error(error: Exception, source=None):
         description = "Данные не обнаружены"
         return message(source, message=err_message, description=description)
     if name_err in exceptions_array:  # NOTE: Custom project exceptions
-        return error.http_code, message(source, message=error, description=error.description)
+        return error.http_code, message("User", message=error, description=error.description)
     raise error
 
 

@@ -195,6 +195,9 @@ async def current_password(
     try:
         if user_id == None:  # NOTE: Get own password
             user_id = request.state.current_user_id
+        if user_id == 0:
+            description: str = "Недостаточно прав доступа."
+            raise AccessException(entity_message=user_id, entity_description=description)
         if hasattr(request.state,'for_user') and request.state.for_user['status']:
             request.state.for_user['user']
             if request.state.for_user['user'].id != user_id:
