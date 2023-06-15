@@ -1,4 +1,4 @@
-from fastapi import Depends, APIRouter, Response, status, Body, Request, HTTPException
+from fastapi import Depends, APIRouter, Response, status, Body, Request
 from datetime import datetime
 from dependency_injector.wiring import inject, Provide
 from app.kernel.container import Container
@@ -74,11 +74,9 @@ def get_user_skill(
     skill_service: SkillService = Depends(Provide[Container.skill_service]),
     HTTPBearerSecurity: HTTPBearer = Depends(security)):
     '''
-
     Результат - вывод пользовательского навыка по его ID.
-
-     описание полей \n
-     - skill - id навыка пользователя
+    описание полей \n
+    - skill - id навыка пользователя
     '''
     try:
         result = skill_service.find(skill)

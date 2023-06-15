@@ -9,17 +9,19 @@ from app.http.services.access import Access
 from app.http.services.jwt_managment import JwtManagement, TokenInBlackList
 from app.database.repository.super import UserIsFired
 
+# Проверка осущетвляется перед проверки авторизации
 path_exception = ("docs", "openapi.json", "images", "audio")
+# Проверка осущетвляется перед проверки авторизации
 path_exception_global = (
-    "/users/status/asterisk", 
-    "/users/status/test", 
-    "/users/status/fill",
-    "/users/status/end_call", 
-    "/users/fill", 
-    "/auth/login",
-    "/auth/logout"
+        "/users/status/asterisk", 
+        "/users/status/test", 
+        "/users/status/fill",
+        "/users/status/end_call", 
+        "/users/fill", 
+        "/auth/login",
+        "/auth/logout"
     )
-
+# Проверка осущетвляется после проверки авторизации
 user_path_exception_map = {
     "get": (
         "/users/status", 
@@ -115,26 +117,26 @@ class Auth(BaseHTTPMiddleware):
                 },
                 status_code=status.HTTP_401_UNAUTHORIZED
             )
-        except jwt.exceptions.ExpiredSignatureError as e:
+        except jwt.exceptions.ExpiredSignatureError as signature:
             return responses.JSONResponse(
                 content={
-                    "message": str(e),  # "Token Signature expired"
+                    "message": str(signature),  # "Token Signature expired"
                     "description": "Срок действия токена истек. Войдите в систему еще раз."
                 },
                 status_code=status.HTTP_401_UNAUTHORIZED
             )
-        except TokenInBlackList as e:
+        except TokenInBlackList as token:
             return responses.JSONResponse(
                 content={
-                    "message": str(e),  # "Token blacklisted. Login again."
+                    "message": str(token),  # "Token blacklisted. Login again."
                     "description": "Токен заблокирован. Войдите в систему еще раз."
                 },
                 status_code=status.HTTP_400_BAD_REQUEST
             )
-        except jwt.DecodeError as e:
+        except jwt.DecodeError as decode:
             return responses.JSONResponse(
                 content={
-                    "message": str(e),  # "Invaid JWT generated."
+                    "message": str(decode),  # "Invaid JWT generated."
                     "description": "Сгенерирован недопустимый JWT."
                 },
                 status_code=status.HTTP_401_UNAUTHORIZED
