@@ -40,7 +40,9 @@ class QueueStatistics:
         """ Получение статистики для очереди """
         condition_date = f"AND ql.event in ({statuses}) "
         if start_date and end_date:
-            condition_date = condition_date + f"AND (ql.time >= \"{str(start_date)}\" AND ql.time <= \"{str(end_date)}\")"
+            start = start_date.__format__("%Y-%m-%d %H:%M:%S")
+            end = end_date.__format__("%Y-%m-%d %H:%M:%S")
+            condition_date = condition_date + f"AND (ql.time >= \"{start}\" AND ql.time <= \"{end}\")"
         query = f'''
                 SELECT event, count(event) cnt_calls, sum(call_time) total_time FROM ({self.__query_static_calls().format(condition_date)}) total_queue_calls
                 GROUP BY event
@@ -55,7 +57,6 @@ class QueueStatistics:
             SELECT ql.event, (ql.data1 + ql.data2) call_time  FROM queue_log ql 
             JOIN queues q ON ql.queuename = q.name
             WHERE q.uuid = :uuid and ql.callid != "NONE" 
-            AND (ql.event != "ENTERQUEUE" and ql.event != "CONNECT")
             {}
             GROUP BY ql.callid
             ORDER BY ql.`time` DESC
