@@ -91,7 +91,7 @@ class QueueStatisticsService:
             total_calls = total_calls + param.cnt_calls
             call_time = param.total_time
             if param.event == "RINGNOANSWER":
-                call_time = call_time / 60
+                call_time = call_time / 1000
             if param.event in comparison_statuses:
                 if comparison_statuses[param.event] in calculate_params:
                     calculate_params[comparison_statuses[param.event]] = calculate_params[comparison_statuses[param.event]] + param.cnt_calls
@@ -110,10 +110,11 @@ class QueueStatisticsService:
             value=total_calls
         )
         avg_time_calls = 0
+        percent = 100
         if total_time_calls != 0:
-            avg_time_calls = int(total_time_calls / total_calls)
+            avg_time_calls = total_time_calls / total_calls
         result['average_talk_time'] = QueueTotalOptionsParams(
-            percent=100,
+            percent=percent,
             value=avg_time_calls
         )
 
