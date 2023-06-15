@@ -133,8 +133,8 @@ class QueueStatisticsService:
             "RINGCANCELED": "calls_with_errors",
             "SYSCOMPAT": "calls_with_errors"
         }
-        start = Periods.DATE
-        end = Periods.calculate("SECONDS", seconds)
+        end = Periods.DATE
+        start = Periods.calculate("SECONDS", seconds)
         find_statuses = []
         for status in comparison_statuses:
             find_statuses.append(f"\'{status}\'")
