@@ -1,4 +1,4 @@
-import jwt, os, asyncio
+import asyncio
 from fastapi import Depends, APIRouter, Response, Request, WebSocket, BackgroundTasks
 from fastapi.security import HTTPBearer
 from app.kernel.container import Container
@@ -7,6 +7,7 @@ from app.http.services.users import UserService
 from app.http.services.helpers import default_error
 from app.http.services.logger_default import get_logger
 from app.http.services.sutecrm import Events, send_call_patch
+from datetime import datetime
 
 
 log = get_logger("status_controller.log")
@@ -151,7 +152,7 @@ async def fill(
 
 async def task(call_id, user_service):
     await asyncio.sleep(5)
-    log.debug("Run download")
+    log.debug(f"Run download {call_id} {datetime.now()}")
     params = user_service.get_call_by_call_id(call_id)
     await send_call_patch(call_id, params['disposition'], params['billsec'], params['files'])
     await user_service.push_filename_asterisk(params['files'], params['calldate'])
