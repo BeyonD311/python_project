@@ -412,7 +412,7 @@ class UserService:
             try:
                 await self._redis.redis.rpush('download_file_asterisk', file_download)
             except Exception as exception:
-                log.error(msg=exception.__str__(), stack_info=True)
+                log.error(msg=exception.__str__())
 
             
 class SkillService:
