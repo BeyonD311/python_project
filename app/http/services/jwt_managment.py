@@ -1,6 +1,6 @@
 import jwt, os, json, asyncio
 from datetime import datetime
-from aioredis import Redis
+from aioredis import Redis, ConnectionError
 from app.database.repository.super import UnauthorizedException
 from app.database import UserModel
 class Jwt:
@@ -46,10 +46,14 @@ class Jwt:
         # время жизни неделя
         await self.redis.set(name = f"users:black_list:{token}", value= 0, ex=(self.hour * 24) * 7)
 
-    async def check_black_list(self, token: str):
-        black_list = await self.redis.get(f"users:black_list:{token}")
-        if black_list is not None:
-            raise TokenInBlackList
+    async def check_black_list(self, token: str, attempts: int = 0):
+        if attempts < 2:
+            try:
+                black_list = await self.redis.get(f"users:black_list:{token}")
+                if black_list is not None:
+                    raise TokenInBlackList
+            except ConnectionError:
+                await self.check_black_list(token=token, attempts=attempts+1)
 
     async def tokens(self):
         refresh = await self._refresh_token()

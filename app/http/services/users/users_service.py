@@ -2,20 +2,14 @@ import datetime, json, asyncio, os
 from fastapi.websockets import WebSocket, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosedOK
 from aioredis.client import PubSub
+from aioredis.exceptions import ConnectionError
 from hashlib import sha256
 from app.http.services.logger_default import get_logger
-from app.database import UserModel
-from app.database import UserRepository
-from app.database import NotFoundError, UserNotFoundError
-from app.database import SkillsRepository
+from app.database import UserModel,UserRepository,NotFoundError,UserNotFoundError,SkillsRepository
 from app.http.services.helpers import RedisInstance, convert_second_to_time
-from app.http.services.users.user_base_models import UsersResponse
-from app.http.services.users.user_base_models import ResponseList
-from app.http.services.users.user_base_models import UserRequest
-from app.http.services.users.user_base_models import UserParams
-from app.http.services.users.user_base_models import UserDetailResponse
-from app.http.services.users.user_base_models import UserStatus
-from app.http.services.users.user_base_models import UserPermission
+from app.http.services.users.user_base_models import (
+    UsersResponse, ResponseList, UserRequest, UserParams, UserDetailResponse, UserStatus, UserPermission
+    )
 from app.http.services.event_channel import (
     subscriber, publisher, Params as PublisherParams, EventRoute
 )
@@ -223,45 +217,56 @@ class UserService:
             status_time: str, 
             incoming_call: str = None, 
             call_id: str = None,
-            script_ivr_hyperscript: str = None
+            script_ivr_hyperscript: str = None,
+            attempts: int = 0
             ):
         """ Используется для установки статуса из астериска """
-        status_time = datetime.datetime.fromtimestamp(status_time).__format__("%Y-%m-%d %H:%M:%S.%f")
-        status = await self._redis.redis.get(f"status:code:{status_code}")
-        user_id = await self._redis.redis.get(f"user:uuid:{uuid}")
-        description = f"Пользователь не найден с {uuid}"
-        if user_id is None:
-            raise NotFoundError(entity_message="user not found", entity_description=description)
-        user_id = json.loads(user_id)
-        if status is None:
-            description = f"Не найден статус"
-            raise NotFoundError(entity_message="status not found", entity_description=description)
-        status = json.loads(status)
-        log.debug(f"uuid={uuid},status_id={status['id']},status_time={status_time}")
-        await self._repository.set_status_by_uuid(uuid=uuid,status_id=status['id'],status_time=status_time)
-        enums = EventRoute
-        event = None
-        try:
-            event = enums[status['behavior'].upper()].value
-        except Exception as e:  # TODO: определить тип исключений
-            event = "CHANGE_STATUS"
-        params = PublisherParams(
-            user_id=user_id['id'],
-            status_id=status['id'],
-            status_code=status['code'],
-            status_at=status_time,
-            status=status['alter_name'],
-            event=event,
-            color=status['color'],
-            incoming_call=incoming_call,
-            call_id=call_id,
-            hyper_script=script_ivr_hyperscript
-        )
-        await self.__set_status_redis(params)
-        if params.status_code == "precall":
-            await asyncio.sleep(0.1)
-            params.event = "CHANGE_STATUS"
+        if attempts < 2:
+            status_time = datetime.datetime.fromtimestamp(status_time).__format__("%Y-%m-%d %H:%M:%S.%f")
+            try:
+                status = await self._redis.redis.get(f"status:code:{status_code}")
+                user_id = await self._redis.redis.get(f"user:uuid:{uuid}")
+            except ConnectionError:
+                self.set_status_by_aster(uuid=uuid, 
+                                        status_code=status_code,
+                                        status_time=status_time,
+                                        incoming_call=incoming_call,
+                                        call_id=call_id,
+                                        script_ivr_hyperscript=script_ivr_hyperscript,
+                                        attempts=attempts+1)
+            description = f"Пользователь не найден с {uuid}"
+            if user_id is None:
+                raise NotFoundError(entity_message="user not found", entity_description=description)
+            user_id = json.loads(user_id)
+            if status is None:
+                description = f"Не найден статус"
+                raise NotFoundError(entity_message="status not found", entity_description=description)
+            status = json.loads(status)
+            log.debug(f"uuid={uuid},status_id={status['id']},status_time={status_time}")
+            await self._repository.set_status_by_uuid(uuid=uuid,status_id=status['id'],status_time=status_time)
+            enums = EventRoute
+            event = None
+            try:
+                event = enums[status['behavior'].upper()].value
+            except Exception as e:  # TODO: определить тип исключений
+                event = "CHANGE_STATUS"
+            params = PublisherParams(
+                user_id=user_id['id'],
+                status_id=status['id'],
+                status_code=status['code'],
+                status_at=status_time,
+                status=status['alter_name'],
+                event=event,
+                color=status['color'],
+                incoming_call=incoming_call,
+                call_id=call_id,
+                hyper_script=script_ivr_hyperscript
+            )
             await self.__set_status_redis(params)
+            if params.status_code == "precall":
+                await asyncio.sleep(0.1)
+                params.event = "CHANGE_STATUS"
+                await self.__set_status_redis(params)
 
     def dismiss(self, id: int, date_dismissal_at: datetime.datetime = None):
         if date_dismissal_at == None:

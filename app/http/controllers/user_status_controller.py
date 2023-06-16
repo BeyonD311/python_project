@@ -94,11 +94,11 @@ async def update_status_asterisk(
     try:
         log.debug(f"Input params: status_cod = {status_cod}; uuid = {uuid}; status_time = {status_time}; caller = {caller}")
         await user_service.set_status_by_aster(
-            uuid=uuid, 
-            status_code=status_cod, 
-            status_time=status_time, 
-            incoming_call=caller, 
-            call_id=call_id, 
+            uuid=uuid,
+            status_code=status_cod,
+            status_time=status_time,
+            incoming_call=caller,
+            call_id=call_id,
             script_ivr_hyperscript=script_ivr_hyperscript
             )
         if status_cod.upper() in Events:
