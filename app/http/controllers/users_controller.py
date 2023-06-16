@@ -13,6 +13,7 @@ from app.http.services.users import SkillService, UserPermission
 from app.database import ExpectationError, AccessException
 from fastapi.security import HTTPBearer
 from pydantic import ValidationError
+import functools
 
 
 security = HTTPBearer()
@@ -178,8 +179,18 @@ async def current_user(
         result = err[1]
     return result
 
+def check_permission_for_user(func):
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        print('------------------------')
+        print(kwargs['request'].state.for_user['user'])
+        print('------------------------')
+        return await func(*args, **kwargs)
+    return wrapper
+
 @route.get("/get_pass")
 @inject
+@check_permission_for_user
 async def current_password(
     response: Response,
     request: Request,
@@ -196,12 +207,12 @@ async def current_password(
         if user_id == 0:
             description: str = "Недостаточно прав доступа."
             raise AccessException(entity_message=user_id, entity_description=description)
-        if hasattr(request.state,'for_user') and request.state.for_user['status']:
-            request.state.for_user['user']
-            if request.state.for_user['user'].id != user_id:
-                # TODO проверить исключение
-                description: str = "Недостаточно прав доступа."
-                raise AccessException(entity_id=user_id, entity_description=description)
+        if hasattr(request.state,'for_user'):
+            if request.state.for_user['status']:
+                if request.state.for_user['user'].id != user_id:
+                    # TODO проверить исключение
+                    description: str = "Недостаточно прав доступа."
+                    raise AccessException(entity_id=user_id, entity_description=description)
             del request.state.for_user['user']
         current = user_service.by_id(user_id)
         result = {

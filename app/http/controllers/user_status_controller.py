@@ -159,7 +159,7 @@ async def task(call_id, user_service):
     await user_service.push_filename_asterisk(params['files'], params['calldate'])
 
 def task_download(call_id, user_service):
-    asyncio.run(task(call_id, user_service))
+    asyncio.run(task(call_id, user_service), debug=True)
 
 @route.get('/end_call')
 @inject

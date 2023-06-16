@@ -1,4 +1,4 @@
-import paramiko, asyncssh, os, nest_asyncio
+import paramiko, asyncssh, os, nest_asyncio, asyncio
 from app.http.services.logger_default import get_logger
 nest_asyncio.apply()
 logger = get_logger("ssh_module.txt")
@@ -41,12 +41,12 @@ async def scp_asterisk_conn(file_download):
     local_path_file = os.getenv('LOCAL_PATH_FILECALL')
 
     try:
-        
-        async with asyncssh.connect(host=host, 
-                                    password=password, 
-                                    username=username, 
+        await asyncio.sleep(5)
+        async with asyncssh.connect(host=host,
+                                    password=password,
+                                    username=username,
                                     known_hosts=None) as conn:
-            await asyncssh.scp((conn, file_download), f'{local_path_file}') 
+            await asyncssh.scp((conn, file_download), f'{local_path_file}')
             conn.close()
     except Exception as exception:
-        logger.error(exception, stack_info=True)
+        logger.error(str(exception))
