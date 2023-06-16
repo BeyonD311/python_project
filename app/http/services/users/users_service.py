@@ -227,7 +227,7 @@ class UserService:
                 status = await self._redis.redis.get(f"status:code:{status_code}")
                 user_id = await self._redis.redis.get(f"user:uuid:{uuid}")
             except ConnectionError:
-                self.set_status_by_aster(uuid=uuid, 
+                await self.set_status_by_aster(uuid=uuid, 
                                         status_code=status_code,
                                         status_time=status_time,
                                         incoming_call=incoming_call,
