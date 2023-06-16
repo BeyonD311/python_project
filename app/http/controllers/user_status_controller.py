@@ -150,15 +150,24 @@ async def fill(
     await user_service.all()
     await user_service.add_status_user_to_redis()
 
-@route.get('/end_call')
-@inject
-async def end_call(
-    call_id: str,
-    user_service: UserService = Depends(Provide[Container.user_service])):
+
+async def task(call_id, user_service):
+    await asyncio.sleep(5)
     log.debug(f"Run download {call_id} {datetime.now()}")
     params = user_service.get_call_by_call_id(call_id)
     await send_call_patch(call_id, params['disposition'], params['billsec'], params['files'])
     await user_service.push_filename_asterisk(params['files'], params['calldate'])
+
+def task_download(call_id, user_service):
+    asyncio.run(task(call_id, user_service), debug=True)
+
+@route.get('/end_call')
+@inject
+async def end_call(
+    call_id: str,
+    background_tasks: BackgroundTasks,
+    user_service: UserService = Depends(Provide[Container.user_service])):
+    background_tasks.add_task(task_download, call_id=call_id, user_service=user_service)
     return {
         "message": "load"
     }
