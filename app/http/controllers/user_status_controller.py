@@ -108,6 +108,7 @@ async def update_status_asterisk(
             "message": "set status"
         }
     except Exception as e:
+        log.debug(f" {datetime.now()} {str(e)}")
         err = default_error(e, source='UserService')
         response.status_code = err[0]
         result = {

@@ -1,7 +1,4 @@
-import jwt
-import os
-import json
-import asyncio
+import jwt, os, json, asyncio
 from datetime import datetime
 from aioredis import Redis
 from app.database.repository.super import UnauthorizedException

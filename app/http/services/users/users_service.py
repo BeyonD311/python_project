@@ -154,7 +154,7 @@ class UserService:
         await self.__set_status_redis(params)
 
     async def redis_pub_sub(self, websocket: WebSocket, user_id: int):
-            pubsub: PubSub = self._redis.redis.pubsub()
+           pubsub: PubSub = self._redis.redis.pubsub()
             try:
                 channel = f"user:status:{user_id}:c"
                 connect_info = await self._repository.user_get_time(user_id)
@@ -408,13 +408,11 @@ class UserService:
                 date_time=calldate.strftime('%Y/%m/%d')
             except:
                 date_time=datetime.datetime.now().strftime('%Y/%m/%d')
-
             file_download=f'{aster_path_file}/{date_time}/{file_name}'
-            print(file_download)
             try:
                 await self._redis.redis.rpush('download_file_asterisk', file_download)
             except Exception as exception:
-                log.error(msg=exception, stack_info=True)
+                log.error(msg=exception.__str__(), stack_info=True)
 
             
 class SkillService:
