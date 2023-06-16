@@ -9,8 +9,7 @@ async def init_redis_pool(host: str, password: str, attempts: int = 0 ) -> Async
     if attempts < 3:
         try:
             session = from_url(f"redis://{host}/0", password=password, encoding="utf-8", decode_responses=True, health_check_interval=30)
-            config = await session.config_get()
-            log.debug(pprint.pprint(json.dumps(config)))
+            session.single_connection_client = True
             yield session
             await session.close()
         except ConnectionError as error:
