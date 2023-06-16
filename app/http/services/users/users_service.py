@@ -154,7 +154,7 @@ class UserService:
         await self.__set_status_redis(params)
 
     async def redis_pub_sub(self, websocket: WebSocket, user_id: int):
-           pubsub: PubSub = self._redis.redis.pubsub()
+            pubsub: PubSub = self._redis.redis.pubsub()
             try:
                 channel = f"user:status:{user_id}:c"
                 connect_info = await self._repository.user_get_time(user_id)
@@ -175,13 +175,13 @@ class UserService:
                     result['status_at'] = convert_second_to_time(status_at.seconds)
                     await websocket.send_json(result)
             except ConnectionClosedOK as connection_close:
-                log.error(connection_close, stack_info=True)
+                log.error(connection_close)
                 return
             except WebSocketDisconnect as web_socket_disconnect:
-                log.error(web_socket_disconnect, stack_info=True)
+                log.error(web_socket_disconnect)
                 return
             except Exception as exception:
-                log.error(exception, stack_info=True)
+                log.error(exception.__str__())
 
     async def add_status_to_redis(self):
         statuses = self._repository.get_all_status()
