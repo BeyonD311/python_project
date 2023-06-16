@@ -1,4 +1,4 @@
-import datetime, json, asyncio, os
+import datetime, json, asyncio, os, asyncio
 from fastapi.websockets import WebSocket, WebSocketDisconnect
 from websockets.exceptions import ConnectionClosedOK
 from aioredis.client import PubSub
@@ -227,6 +227,7 @@ class UserService:
                 status = await self._redis.redis.get(f"status:code:{status_code}")
                 user_id = await self._redis.redis.get(f"user:uuid:{uuid}")
             except ConnectionError:
+                await asyncio.sleep(0.1)
                 await self.set_status_by_aster(uuid=uuid, 
                                         status_code=status_code,
                                         status_time=status_time,
