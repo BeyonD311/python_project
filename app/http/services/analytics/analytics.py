@@ -78,7 +78,7 @@ class AnalyticsService:
                                           name=rating.name,
                                           value=int(rating.num_of_rating),
                                           color=rating.color,
-                                          textValue=int(rating.num_of_rating)))
+                                          textValue=f"{rating.name}: {int(rating.num_of_rating)}"))
         return QualityAnalyticResponse(
             totalData={
                 "total_rating": {
