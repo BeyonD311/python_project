@@ -222,19 +222,19 @@ class UserService:
             ):
         """ Используется для установки статуса из астериска """
         if attempts < 2:
-            status_time = datetime.datetime.fromtimestamp(status_time).__format__("%Y-%m-%d %H:%M:%S.%f")
+            status_time_at = datetime.datetime.fromtimestamp(status_time).__format__("%Y-%m-%d %H:%M:%S.%f")
             try:
                 status = await self._redis.redis.get(f"status:code:{status_code}")
                 user_id = await self._redis.redis.get(f"user:uuid:{uuid}")
             except ConnectionError:
                 await asyncio.sleep(0.1)
-                await self.set_status_by_aster(uuid=uuid, 
-                                        status_code=status_code,
-                                        status_time=status_time,
-                                        incoming_call=incoming_call,
-                                        call_id=call_id,
-                                        script_ivr_hyperscript=script_ivr_hyperscript,
-                                        attempts=attempts+1)
+                await self.set_status_by_aster(uuid=uuid,
+                                               status_code=status_code,
+                                               status_time=status_time,
+                                               incoming_call=incoming_call,
+                                               call_id=call_id,
+                                               script_ivr_hyperscript=script_ivr_hyperscript,
+                                               attempts=attempts+1)
             description = f"Пользователь не найден с {uuid}"
             if user_id is None:
                 raise NotFoundError(entity_message="user not found", entity_description=description)
@@ -243,8 +243,8 @@ class UserService:
                 description = f"Не найден статус"
                 raise NotFoundError(entity_message="status not found", entity_description=description)
             status = json.loads(status)
-            log.debug(f"uuid={uuid},status_id={status['id']},status_time={status_time}")
-            await self._repository.set_status_by_uuid(uuid=uuid,status_id=status['id'],status_time=status_time)
+            log.debug(f"uuid={uuid},status_id={status['id']},status_time={status_time_at}")
+            await self._repository.set_status_by_uuid(uuid=uuid,status_id=status['id'],status_time=status_time_at)
             enums = EventRoute
             event = None
             try:
@@ -255,7 +255,7 @@ class UserService:
                 user_id=user_id['id'],
                 status_id=status['id'],
                 status_code=status['code'],
-                status_at=status_time,
+                status_at=status_time_at,
                 status=status['alter_name'],
                 event=event,
                 color=status['color'],
