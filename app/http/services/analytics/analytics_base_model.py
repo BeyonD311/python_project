@@ -41,6 +41,7 @@ class TotalRatingNums(BaseModel):
     name: str
     value: int
     color: str
+    textValue: str
 
 class QualityAnalyticResponse(BaseModel):
     data: list[TotalRatingNums]

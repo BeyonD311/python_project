@@ -77,7 +77,8 @@ class AnalyticsService:
             result.append(TotalRatingNums(id = rating.id,
                                           name=rating.name,
                                           value=int(rating.num_of_rating),
-                                          color=rating.color))
+                                          color=rating.color,
+                                          textValue=rating.name))
         return QualityAnalyticResponse(
             totalData={
                 "total_rating": {
