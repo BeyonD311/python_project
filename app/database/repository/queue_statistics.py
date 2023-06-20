@@ -33,7 +33,6 @@ class QueueStatistics:
                 session.execute(query)
             res = session.execute(select).all()
             session.commit()
-            session.close()
             return res
 
     def queue_stat(self, uuid: str, statuses: str, start_date: datetime = None, end_date: datetime = None):

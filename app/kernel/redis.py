@@ -1,7 +1,6 @@
 from typing import AsyncIterator
 from app.http.services.logger_default import get_logger
-from aioredis import from_url, Redis
-import json, pprint
+from aioredis import Redis
 
 log = get_logger("redis_connection.log")
 

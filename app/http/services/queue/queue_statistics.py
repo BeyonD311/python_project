@@ -79,6 +79,7 @@ class QueueStatisticsService:
     def __init__(self, queue_statistics_repository: QueueStatistics, asterisk: Asterisk):
         self._stat:QueueStatistics = queue_statistics_repository
         self._asterisk: Asterisk = asterisk
+        Periods.DATE = datetime.now()
     
     def __fill_result_total_stat(self, comparison_statuses: dict, raw_select) -> dict:
         result = (QueueTotalOptions()).dict()
