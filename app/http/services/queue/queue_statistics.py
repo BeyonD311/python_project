@@ -10,7 +10,7 @@ from hashlib import md5
 __all__ = ["QueueStatisticsService"]
 
 # Количество частей на которое делиться временной отрезок
-BREAK_TIME_INTERVAL = 8
+BREAK_TIME_INTERVAL = 6
 
 tz = timezone(timedelta(hours=3), "MSK")
 
