@@ -12,8 +12,6 @@ __all__ = ["QueueStatisticsService"]
 # Количество частей на которое делиться временной отрезок
 BREAK_TIME_INTERVAL = 6
 
-tz = timezone(timedelta(hours=3), "MSK")
-
 queue_load_event_map = {
     "ABANDON": "error",
     "EXITEMPTY": "error",
@@ -29,7 +27,7 @@ class Periods:
     HOUR = 60/BREAK_TIME_INTERVAL
     HALF_HOUR = 30/BREAK_TIME_INTERVAL
     WEEK = 7//BREAK_TIME_INTERVAL
-    DATE = datetime.now(tz=tz)
+    DATE = datetime.now()
 
     @classmethod
     def __calculate_date_hour(cls, hour: int):

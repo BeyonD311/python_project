@@ -1,6 +1,5 @@
 import aiohttp
 from os import getenv
-from enum import Enum
 from .logger_default import get_logger
 
 logger = get_logger(f"{__name__}.txt")

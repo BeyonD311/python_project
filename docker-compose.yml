@@ -11,6 +11,8 @@ services:
     depends_on:
       - db
       - redis
+    environment:
+      - TZ=Europe/Moscow
     ports:
       - 8880:8000
     networks:
@@ -51,7 +53,6 @@ services:
           memory: 1G
     networks:
       - project
-
 
 networks:
   project:
