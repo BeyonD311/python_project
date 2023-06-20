@@ -87,10 +87,11 @@ class QueueStatisticsService:
         total_calls = 0
         total_time_calls = 0
         calculate_params = {}
+        events_time_millisecond = ('RINGCANCELED', 'RINGNOANSWER')
         for param in raw_select:
             total_calls = total_calls + param.cnt_calls
             call_time = param.total_time
-            if param.event == "RINGNOANSWER":
+            if param.event in events_time_millisecond:
                 call_time = call_time / 1000
             if param.event in comparison_statuses:
                 if comparison_statuses[param.event] in calculate_params:
@@ -133,7 +134,7 @@ class QueueStatisticsService:
             "RINGCANCELED": "calls_with_errors",
             "SYSCOMPAT": "calls_with_errors"
         }
-        end = Periods.DATE
+        end = Periods.DATE + timedelta(minutes=30)
         start = Periods.calculate("SECONDS", seconds)
         find_statuses = []
         for status in comparison_statuses:
