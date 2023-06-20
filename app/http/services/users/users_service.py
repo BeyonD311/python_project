@@ -226,8 +226,9 @@ class UserService:
             try:
                 status = await self._redis.redis.get(f"status:code:{status_code}")
                 user_id = await self._redis.redis.get(f"user:uuid:{uuid}")
-            except ConnectionError:
-                await asyncio.sleep(0.1)
+            except ConnectionError as connection_error:
+                log.error(f"error message {connection_error}, {datetime.datetime.now()}")
+                await asyncio.sleep(0.25)
                 await self.set_status_by_aster(uuid=uuid,
                                                status_code=status_code,
                                                status_time=status_time,
