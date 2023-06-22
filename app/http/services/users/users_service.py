@@ -148,34 +148,34 @@ class UserService:
         await self.__set_status_redis(params)
 
     async def redis_pub_sub(self, websocket: WebSocket, user_id: int):
-            pubsub: PubSub = self._redis.redis.pubsub()
-            try:
-                channel = f"user:status:{user_id}:c"
-                connect_info = await self._repository.user_get_time(user_id)
-                async for result in subscriber(pubsub, channel):
-                    if result == 1:
-                        result = connect_info.json()
-                    else:
-                        result = result
-                    result = json.loads(result)
-                    time_kc = datetime.datetime.now() - datetime.datetime.strptime(connect_info.start_time_kc, "%Y-%m-%d %H:%M:%S.%f")
-                    # Проболема с датами(разный формат)
-                    try:
-                        status_at = datetime.datetime.now() - datetime.datetime.strptime(result['status_at'], "%Y-%m-%d %H:%M:%S.%f")
-                    except Exception:
-                        status_at = datetime.datetime.now() - datetime.datetime.strptime(result['status_at'], "%Y-%m-%d %H:%M:%S")
+        pubsub: PubSub = self._redis.redis.pubsub()
+        try:
+            channel = f"user:status:{user_id}:c"
+            connect_info = await self._repository.user_get_time(user_id)
+            async for result in subscriber(pubsub, channel):
+                if result == 1:
+                    result = connect_info.json()
+                else:
+                    result = result
+                result = json.loads(result)
+                time_kc = datetime.datetime.now() - datetime.datetime.strptime(connect_info.start_time_kc, "%Y-%m-%d %H:%M:%S.%f")
+                # Проболема с датами(разный формат)
+                try:
+                    status_at = datetime.datetime.now() - datetime.datetime.strptime(result['status_at'], "%Y-%m-%d %H:%M:%S.%f")
+                except Exception:
+                    status_at = datetime.datetime.now() - datetime.datetime.strptime(result['status_at'], "%Y-%m-%d %H:%M:%S")
 
-                    result['start_time_kc'] = convert_second_to_time(time_kc.seconds)
-                    result['status_at'] = convert_second_to_time(status_at.seconds)
-                    await websocket.send_json(result)
-            except ConnectionClosedOK as connection_close:
-                log.error(connection_close)
-                return
-            except WebSocketDisconnect as web_socket_disconnect:
-                log.error(web_socket_disconnect)
-                return
-            except Exception as exception:
-                log.error(exception.__str__())
+                result['start_time_kc'] = convert_second_to_time(time_kc.seconds)
+                result['status_at'] = convert_second_to_time(status_at.seconds)
+                await websocket.send_json(result)
+        except ConnectionClosedOK as connection_close:
+            log.error(connection_close)
+            return
+        except WebSocketDisconnect as web_socket_disconnect:
+            log.error(web_socket_disconnect)
+            return
+        except Exception as exception:
+            log.error(exception.__str__())
 
     async def add_status_to_redis(self):
         statuses = self._repository.get_all_status()
@@ -211,11 +211,11 @@ class UserService:
             await self.__set_status_redis(params)
 
     async def set_status_by_aster(
-            self, 
-            uuid: str, 
-            status_code: str, 
-            status_time: str, 
-            incoming_call: str = None, 
+            self,
+            uuid: str,
+            status_code: str,
+            status_time: str,
+            incoming_call: str = None,
             call_id: str = None,
             script_ivr_hyperscript: str = None,
             attempts: int = 0
