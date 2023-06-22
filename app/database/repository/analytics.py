@@ -14,7 +14,7 @@ class AnalyticsRepository:
                         SELECT status_code, [delta_time]
                         FROM ps_status_history
                         WHERE (status_code LIKE "break%" OR status_code = "ready") AND uuid = :uuid 
-                        AND DATE(time_at) BETWEEN :beginning AND :ending
+                        AND (time_at >= :beginning AND time_at <= :ending)
                         GROUP BY status_code
                                         '''
         fields_replace = {
@@ -34,7 +34,7 @@ class AnalyticsRepository:
                         SELECT status_code, [delta_time]
                         FROM ps_status_history
                         WHERE status_code IN ('precall', 'aftercall', 'externalcall', 'callwaiting') 
-                        AND uuid = :uuid AND DATE(time_at) BETWEEN :beginning AND :ending
+                        AND uuid = :uuid AND (time_at >= :beginning AND time_at <= :ending)
                         GROUP BY status_code
                                 '''
         fields_replace = {
@@ -135,5 +135,5 @@ class AnalyticsRepository:
                             (calldate >= :beginning AND calldate <= :ending) AND lastapp = 'Dial'
                         ) total_calls
             '''
-            result = session.execute(query, {'phone_number': phones, "beginning": beginning, "ending": ending}).first()
+            result = session.execute(query, {'phone_number': phones, "beginning": beginning.__format__("%Y-%m-%d %H:%M:%S"), "ending": ending.__format__("%Y-%m-%d %H:%M:%S")}).first()
             return result.total

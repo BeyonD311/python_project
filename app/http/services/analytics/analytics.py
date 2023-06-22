@@ -116,6 +116,7 @@ class AnalyticsService:
         if phone_number is None:
             phone_number = []
         calls_count = self._repository.get_call_count(phone_number=phone_number, beginning=beginning, ending=ending)
+        print(calls_count)
         return {
             'data': ant_data,
             'totalData': [
