@@ -16,8 +16,9 @@ queue_load_event_map = {
     "ABANDON": "error",
     "EXITEMPTY": "error",
     "RINGNOANSWER": "no_answer",
+    "EXITWITHTIMEOUT": "no_answer",
     "COMPLETEAGENT": "successful",
-    "COMPLETECALLER": "successful"
+    "COMPLETECALLER": "successful",
 }
 
 
@@ -164,11 +165,11 @@ class QueueStatisticsService:
         for key, params in hash_table_params.items():
             param = QueueLoadResponseParams(
                 time_at=period[1][key]['start'].__format__("%H:%M")
-            )
+            ).dict()
             for result_select in params:
                 if result_select['event'] in queue_load_event_map:
                     param_event = queue_load_event_map[result_select['event']]
-                    setattr(param, param_event, result_select['total'])
+                    param[param_event] = param[param_event] + result_select['total']
             result.append(param)
         hash_table_params = None
         result_select = None
