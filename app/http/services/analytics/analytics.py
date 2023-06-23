@@ -46,7 +46,8 @@ class AnalyticsService:
             phones = []
         result = self._repository.get_call_analytic(phones=phones,
                                                     beginning=data.beginning,
-                                                    ending=data.ending)
+                                                    ending=data.ending,
+                                                    calculation_method=data.calculation_method.value)
         analytic_data = self._fill_empty_data(status_data=self._call_dispositions, analytic_data=result)
         return {
             'data': analytic_data,
@@ -116,7 +117,6 @@ class AnalyticsService:
         if phone_number is None:
             phone_number = []
         calls_count = self._repository.get_call_count(phone_number=phone_number, beginning=beginning, ending=ending)
-        print(calls_count)
         return {
             'data': ant_data,
             'totalData': [

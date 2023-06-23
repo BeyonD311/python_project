@@ -49,11 +49,11 @@ class AnalyticsRepository:
                                               beginning=beginning,
                                               ending=ending)
 
-    def get_call_analytic(self, phones: list, beginning: date, ending: date):
+    def get_call_analytic(self, phones: list, beginning: date, ending: date, calculation_method: str):
         with self.session_asterisk() as session:
             phone = ",".join(phones)
             query = '''
-                        SELECT name, SUM(total) value, SUM(total) textValue FROM (
+                        SELECT name, [total], [textValue] FROM (
                             SELECT disposition as name, COUNT(src) total
                             FROM cdr
                             WHERE src in (:phone) AND disposition IN ('ANSWERED', 'NO ANSWER', 'BUSY') 
@@ -68,6 +68,17 @@ class AnalyticsRepository:
                         ) total_sum
                         GROUP BY name
             '''
+            fields_replace = {
+                "total": {
+                    "query": "total",
+                    "alias": "value"
+                },
+                "textValue": {
+                    "query": "total",
+                    "alias": "textValue"
+                }
+            }
+            query = self._calculation_method(query, calculation_method, fields_replace)
             return session.execute(query, {'phone': phone, 'beginning': beginning, 'ending': ending}).fetchall()
 
     def get_call_quality_assessment(self, phones: list, calculation_method: str, beginning: date, ending: date):
@@ -118,7 +129,7 @@ class AnalyticsRepository:
         result = query
         for field, value in field_calculate.items():
             field = f'\[{field}\]'
-            result  = re.sub(field, f"{method}({value['query']}) {value['alias']}", query)
+            result = re.sub(field, f"{method}({value['query']}) {value['alias']}", result)
         return result
     
     def get_call_count(self, phone_number: list,  beginning: date, ending: date):

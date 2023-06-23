@@ -78,11 +78,12 @@ async def get_call_analytic(
         beginning: datetime,
         ending: datetime,
         response: Response,
+        calculation_method: CalculationMethod = CalculationMethod.SUM,
         analytics_service: AnalyticsService = Depends(Provide[Container.analytics_service]),
         HTTPBearerSecurity: HTTPBearer = Depends(security)
 ):
     try:
-        call_data = CallAnalytic(beginning=beginning, ending=ending, user_id=user_id)
+        call_data = CallAnalytic(beginning=beginning, ending=ending, user_id=user_id, calculation_method=calculation_method)
         result = analytics_service.get_call_analytic(data=call_data)
         return result
     except ValueError as e:

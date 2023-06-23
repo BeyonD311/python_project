@@ -29,8 +29,8 @@ class AntAnalytic(DisposalAnalytic):
     pass 
 
 
-class CallAnalytic(BaseAnalytic):
-    user_id: int
+class CallAnalytic(DisposalAnalytic):
+    pass
 
 class QualityAnalytic(DisposalAnalytic):
     pass
