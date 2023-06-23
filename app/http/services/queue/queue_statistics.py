@@ -170,7 +170,7 @@ class QueueStatisticsService:
                 if result_select['event'] in queue_load_event_map:
                     param_event = queue_load_event_map[result_select['event']]
                     param[param_event] = param[param_event] + result_select['total']
-            result.append(param)
+            result.append(QueueLoadResponseParams(**param))
         hash_table_params = None
         result_select = None
         return result
